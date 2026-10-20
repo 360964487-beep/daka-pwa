@@ -456,6 +456,7 @@
   .mine-profile { background:transparent; border:0; border-radius:0; box-shadow:none; padding:12px 4px 18px; border-bottom:1px solid #e8e9e7; }
   .mine-avatar { width:46px; height:46px; background:transparent; font-size:24px; }
   .mine-name { font-size:15px; font-weight:500; color:#515761; }
+  .mine-name { cursor:pointer; }
   .mine-sub { color:#969ba3; }
   .mine-stats { gap:0; margin-top:0; padding:18px 0; border-bottom:1px solid #e8e9e7; }
   .stat-box { background:transparent; border:0; border-radius:0; box-shadow:none; padding:4px 8px; }
@@ -633,6 +634,9 @@
   .cal-cell.has-task:hover { background:#ecd5b7; }
   .cal-cell.all-done,.cal-cell.all-done.today { background:#e4ecdf; color:#536c52; }
   .cal-cell.all-done:hover { background:#d8e4d1; }
+  .cal-cell.today { box-shadow:inset 0 0 0 2px #c58a5a; }
+  .cal-cell.today:not(.has-task):not(.all-done) { background:transparent; color:inherit; }
+  .cal-cell.has-task.today,.cal-cell.all-done.today { box-shadow:inset 0 0 0 2px #a96d3e; }
   .inline-add-form,.inline-editor.add-editor,.inline-editor.tile-editor,#overlay.checkin-form .dialog { border-color:#ecdfd0; background:linear-gradient(145deg,#fffefa 0%,#faf2e8 100%); box-shadow:0 8px 22px rgba(105,75,48,.10); }
   .inline-add-form .bill-editor-title,.inline-editor.add-editor .inline-editor-title,#overlay .dialog h3,.inline-editor.tile-editor .inline-editor-title { color:#70543e; }
   .inline-add-form textarea,.inline-add-form input,.inline-editor-field input,.inline-editor-field textarea,#overlay .dialog textarea { border-color:#e8dccb; background:#fffefb; }
@@ -646,6 +650,7 @@
   #overlay.checkin-form .btn-ok { background:#b8794b; color:#fff; }
   .bill-editor { border-color:#eadfD2; }
   .bill-row.month-row:hover,.bill-row.bill-editable:hover,.mine-btn:hover { background:#f7efe4; }
+  .cal-item,.pwd-item,.note-item,.bill-row.bill-editable { cursor:pointer; }
   .bill-row.month-row::after,.menu-card .arrow { color:#c2ad95; }
   .bill-row .br-amt.expense,.bill-head-sum .hs-amt.expense { color:#bd7467; }
   .bill-row .br-amt.income,.bill-head-sum .hs-amt.income { color:#668b69; }
@@ -838,7 +843,7 @@
       <div class="mine-profile">
         <div class="mine-avatar">👤</div>
         <div class="mine-info">
-          <div class="mine-name">我的打卡</div>
+          <div class="mine-name inline-editable" onclick="editMineName(event)">我的打卡</div>
           <div class="mine-sub">坚持记录每一天</div>
         </div>
       </div>
@@ -967,6 +972,7 @@ const KEY_PWD  = 'checkin_pwds_v1';     // 密码记录
 const KEY_FIXED = 'checkin_fixed_v1';   // 月固定支出
 const KEY_FIXED_IN = 'checkin_fixed_in_v1'; // 月固定收入
 const KEY_NOTE = 'checkin_notes_v1'; // 小纸条
+const KEY_PROFILE_NAME = 'checkin_profile_name_v1';
 
 // 将任务文本渲染为 HTML：转义特殊字符 + 把换行符转成 <br>
 function textToHTML(s) {
@@ -1899,7 +1905,8 @@ function renderCalendar() {
     row.className = 'cal-item' + (t.done ? ' done' : '');
     const ck = document.createElement('div');
     ck.className = 'ci-check'; ck.textContent = t.done ? '✓' : '';
-    ck.addEventListener('click', () => {
+    ck.addEventListener('click', (e) => {
+      e.stopPropagation();
       t.done = !t.done; calSetTasks(calSelKey, selTasks); renderCalendar();
     });
     const tx = document.createElement('div');
@@ -1913,8 +1920,12 @@ function renderCalendar() {
       calSetTasks(calSelKey, selTasks.filter(x => x.id !== t.id)); renderCalendar();
     });
     row.appendChild(ck); row.appendChild(tx); row.appendChild(tm); row.appendChild(del);
-    tx.classList.add('inline-editable');
-    tx.addEventListener('click', () => calEdit(t, calSelKey, row));
+    row.classList.add('inline-editable');
+    row.addEventListener('click', (e) => {
+      if (e.target.closest('button,.ci-check')) return;
+      e.stopPropagation();
+      calEdit(t, calSelKey, row);
+    });
     items.appendChild(row);
   });
 }
@@ -2128,7 +2139,7 @@ function renderBill() {
       });
       row.appendChild(name); row.appendChild(amt); row.appendChild(del);
       row.classList.add('bill-editable');
-      row.addEventListener('click', () => billStartEdit(b, row));
+      row.addEventListener('click', (e) => { e.stopPropagation(); billStartEdit(b, row); });
       mRows.appendChild(row);
     });
   }
@@ -2289,7 +2300,7 @@ function renderBillFixed(fixed) {
     });
     row.appendChild(name); row.appendChild(amt); row.appendChild(del);
     row.classList.add('inline-editable');
-    row.addEventListener('click', () => billFixedEdit(f, row));
+    row.addEventListener('click', (e) => { e.stopPropagation(); billFixedEdit(f, row); });
     container.appendChild(row);
   });
   // 底部合计行
@@ -2368,8 +2379,6 @@ function renderPwd() {
     const acc = document.createElement('div');
     acc.className = 'pi-account'; acc.textContent = p.account || '';
     title.appendChild(name);
-    title.classList.add('inline-editable');
-    title.addEventListener('click', () => pwdEdit(p, item));
     if (p.account) title.appendChild(acc);
     const del = document.createElement('button');
     del.className = 'pi-del'; del.textContent = '×';
@@ -2379,6 +2388,12 @@ function renderPwd() {
     });
     top.appendChild(icon); top.appendChild(title); top.appendChild(del);
     item.appendChild(top);
+    item.classList.add('inline-editable');
+    item.addEventListener('click', (e) => {
+      if (e.target.closest('button')) return;
+      e.stopPropagation();
+      pwdEdit(p, item);
+    });
 
     const pwRow = document.createElement('div');
     pwRow.className = 'pi-pw-row';
@@ -2459,7 +2474,6 @@ function renderNote() {
     item.className = 'note-item';
     const txt = document.createElement('div');
     txt.className = 'note-text inline-editable'; txt.textContent = n.text;
-    txt.addEventListener('click', () => noteEdit(n, item));
     const tm = document.createElement('div');
     tm.className = 'note-time'; tm.textContent = noteFmtTime(n.time);
     const del = document.createElement('button');
@@ -2468,6 +2482,12 @@ function renderNote() {
       noteSaveAll(noteGetAll().filter(x => x.id !== n.id)); renderNote();
     });
     item.appendChild(txt); item.appendChild(tm); item.appendChild(del);
+    item.classList.add('inline-editable');
+    item.addEventListener('click', (e) => {
+      if (e.target.closest('button')) return;
+      e.stopPropagation();
+      noteEdit(n, item);
+    });
 
     container.appendChild(item);
   });
@@ -2497,6 +2517,7 @@ function noteEdit(n, anchor) {
 }
 // ===== 我的 =====
 function renderMine() {
+  document.querySelector('.mine-name').textContent = load(KEY_PROFILE_NAME, '我的打卡');
   const weekAll = load(KEY_WEEK, {});
   const dayAll = load(KEY_DAY, {});
   let done = 0, undone = 0;
@@ -2516,8 +2537,21 @@ function renderMine() {
   document.getElementById('statDays').textContent = dayKeys.size;
 }
 
+function editMineName(event) {
+  if (event) event.stopPropagation();
+  const anchor = document.querySelector('.mine-name');
+  showInlineEditor(anchor, '编辑名称', [
+    { label:'名称', value:load(KEY_PROFILE_NAME, '我的打卡') }
+  ], values => {
+    const name = values[0].trim();
+    if (!name) { alert('名称不能为空'); return false; }
+    save(KEY_PROFILE_NAME, name);
+    renderMine();
+  });
+}
+
 async function exportData() {
-  const data = { KEY_WEEK, KEY_DAY, KEY_TT, week: load(KEY_WEEK, {}), day: load(KEY_DAY, {}), tt: load(KEY_TT, {}), bill: load(KEY_BILL, []), pwd: load(KEY_PWD, []), fixed: load(KEY_FIXED, []), fixedIn: load(KEY_FIXED_IN, []), note: load(KEY_NOTE, []) };
+  const data = { KEY_WEEK, KEY_DAY, KEY_TT, profileName:load(KEY_PROFILE_NAME, '我的打卡'), week: load(KEY_WEEK, {}), day: load(KEY_DAY, {}), tt: load(KEY_TT, {}), bill: load(KEY_BILL, []), pwd: load(KEY_PWD, []), fixed: load(KEY_FIXED, []), fixedIn: load(KEY_FIXED_IN, []), note: load(KEY_NOTE, []) };
   const contents = JSON.stringify(data, null, 2);
   const filename = '打卡数据_' + dateKey(new Date()) + '.json';
   if (window.showSaveFilePicker) {
@@ -2564,6 +2598,7 @@ function importData() {
         const fx = data.fixed || data[KEY_FIXED] || [];
         const fxi = data.fixedIn || data[KEY_FIXED_IN] || [];
         const nt = data.note || data[KEY_NOTE] || [];
+        if (typeof data.profileName === 'string') save(KEY_PROFILE_NAME, data.profileName);
         save(KEY_WEEK, wk);
         save(KEY_DAY, dy);
         save(KEY_TT, tt);
