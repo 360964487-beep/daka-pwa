@@ -546,9 +546,21 @@
   .inline-editable { cursor:pointer; }
   @keyframes editorReveal { from { opacity:0; transform:translateY(-5px); } to { opacity:1; transform:translateY(0); } }
   #overlay.checkin-form { background:rgba(42,48,77,.42); backdrop-filter:blur(7px); }
-  #overlay.checkin-form .dialog { border:1px solid rgba(255,255,255,.8); border-radius:22px; padding:23px 22px 20px; background:linear-gradient(145deg,#fff 0%,#f7f8ff 100%); box-shadow:0 18px 52px rgba(30,37,72,.28); animation:checkinCardIn .24s cubic-bezier(.2,.7,.25,1) both; }
-  #overlay.checkin-form .dialog h3 { color:#454d73; font-size:17px; margin-bottom:16px; }
-  #overlay.checkin-form .dialog h3::before { content:""; display:block; width:34px; height:4px; margin-bottom:13px; border-radius:8px; background:linear-gradient(90deg,#7378d6,#8ecac2); }
+  #overlay.checkin-form .dialog { border:1px solid rgba(255,255,255,.8); border-radius:18px; padding:16px 16px 14px; background:linear-gradient(145deg,#fff 0%,#f7f8ff 100%); box-shadow:0 14px 38px rgba(30,37,72,.22); animation:checkinCardIn .24s cubic-bezier(.2,.7,.25,1) both; }
+  #overlay.checkin-form .dialog h3 { color:#454d73; font-size:15px; margin-bottom:10px; }
+  #overlay.checkin-form .dialog h3::before { content:none; }
+  #overlay.checkin-form .dialog textarea { min-height:58px; padding:9px 11px; font-size:14px; border-radius:10px; }
+  #overlay.checkin-form .time-toggle-row { margin:9px 0 5px; }
+  #overlay.checkin-form .time-picker { height:62px; gap:7px; padding:0 7px; margin-top:3px; border-radius:12px; }
+  #overlay.checkin-form .tp-inp { width:0; min-width:0; flex:1; height:44px; font-size:20px; border-radius:10px; }
+  #overlay.checkin-form .tp-colon { height:44px; font-size:20px; }
+  #overlay.checkin-form .dur-label { margin:9px 0 6px; font-size:12px; }
+  #overlay.checkin-form .dur-row { gap:6px; }
+  #overlay.checkin-form #ttSlotPicker .dur-row { display:grid; grid-template-columns:repeat(7,minmax(0,1fr)); gap:5px; }
+  #overlay.checkin-form #ttSlotPicker .dur-btn { min-width:0; min-height:38px; padding:5px 0; border-radius:9px; font-size:12px; }
+  #overlay.checkin-form #durRow .dur-btn { padding:6px 10px; }
+  #overlay.checkin-form .dialog-btns { gap:8px; margin-top:12px; }
+  #overlay.checkin-form .dialog-btns button { min-height:44px; padding:9px; border-radius:11px; font-size:14px; }
   #overlay.checkin-form .dialog textarea { border-color:#e1e4f0; background:#fff; }
   #overlay.checkin-form .dur-btn { border-color:#e1e4f0; background:#fff; color:#68708a; }
   #overlay.checkin-form .dur-btn.active { border-color:#676bc9; background:#676bc9; color:#fff; }
