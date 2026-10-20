@@ -882,6 +882,7 @@ let activeInlineEditor = null;
 let activeInlineAnchor = null;
 let activeInlineAnchorHTML = null;
 let activeInlineReposition = null;
+let inlineEditorOpeningAnchor = null;
 function dismissInlineEditor() {
   if (activeInlineReposition) {
     window.removeEventListener('scroll', activeInlineReposition, true);
@@ -893,6 +894,11 @@ function dismissInlineEditor() {
   if (activeInlineAnchor && activeInlineAnchorHTML !== null && activeInlineAnchor.matches('.cal-add,.bill-add,.pwd-add,.checkin-add-btn')) activeInlineAnchor.innerHTML = activeInlineAnchorHTML;
   activeInlineEditor = null; activeInlineAnchor = null; activeInlineAnchorHTML = null;
 }
+document.addEventListener('click', e => {
+  if (!activeInlineEditor || activeInlineEditor.contains(e.target)) return;
+  if (inlineEditorOpeningAnchor && (e.target === inlineEditorOpeningAnchor || inlineEditorOpeningAnchor.contains(e.target))) return;
+  dismissInlineEditor();
+});
 function showInlineEditor(anchor, title, fields, onSave, onCancel, onDelete, placement) {
   if (activeInlineEditor && !activeInlineEditor.isConnected) {
     activeInlineEditor = null; activeInlineAnchor = null; activeInlineAnchorHTML = null;
@@ -956,6 +962,8 @@ function showInlineEditor(anchor, title, fields, onSave, onCancel, onDelete, pla
   editor.addEventListener('click', e => e.stopPropagation());
   activeInlineEditor = editor; activeInlineAnchor = anchor;
   document.body.classList.add('inline-editing');
+  inlineEditorOpeningAnchor = anchor;
+  queueMicrotask(() => { inlineEditorOpeningAnchor = null; });
   if (tilePlacement) editor.classList.add('tile-editor');
   if (anchor && anchor.matches('.cal-add,.bill-add,.pwd-add,.checkin-add-btn')) {
     activeInlineAnchorHTML = anchor.innerHTML;
