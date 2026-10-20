@@ -2,14 +2,13 @@
 <html lang="zh-CN">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-<meta name="theme-color" content="#4f6ef7">
-<meta name="apple-mobile-web-app-capable" content="yes">
-<meta name="apple-mobile-web-app-status-bar-style" content="default">
-<meta name="apple-mobile-web-app-title" content="打卡">
-<link rel="manifest" href="./manifest.json">
-<link rel="apple-touch-icon" href="./icon-192.png">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
 <title>打卡</title>
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="打卡">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<link rel="apple-touch-icon" href="./apple-touch-icon.png">
+<link rel="manifest" href="./manifest.webmanifest">
 <style>
   :root {
     --bg: #f5f6f8;
@@ -20,13 +19,26 @@
     --red: #e5484d;
   }
   * { box-sizing: border-box; margin: 0; padding: 0; }
+  html { overflow-y: scroll; scrollbar-gutter: stable; }
   body {
     font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "PingFang SC", "Microsoft YaHei", sans-serif;
     background: var(--bg); color: var(--text); min-height: 100vh;
     -webkit-font-smoothing: antialiased; user-select: none; -webkit-user-select: none;
     -webkit-tap-highlight-color: transparent; touch-action: manipulation;
   }
-  .app { max-width: 520px; margin: 0 auto; padding: 24px 16px 40px; }
+  body { background:#f7f6f3; }
+  .app { min-height:100vh; display:flex; max-width:none; margin:0; padding:0; }
+  .sidebar { width:220px; flex:0 0 220px; background:#fff; border-right:1px solid #e5e3df; padding:14px 10px; display:flex; flex-direction:column; }
+  .side-nav { display:flex; flex-direction:column; gap:4px; }
+  .side-link { display:flex; align-items:center; gap:12px; border:0; border-radius:10px; padding:13px 14px; background:transparent; text-align:left; font-family:inherit; font-size:15px; font-weight:500; color:var(--text); cursor:pointer; }
+  .side-link.active,.side-link:hover { background:#e9e7f8; color:#5b55a1; }
+  .side-link .icon { width:24px; height:24px; display:inline-flex; align-items:center; justify-content:center; color:currentColor; flex-shrink:0; }
+  .side-link .icon svg { width:19px; height:19px; display:block; fill:none; stroke:currentColor; stroke-width:1.7; stroke-linecap:round; stroke-linejoin:round; }
+  .side-spacer { flex:1; }
+  .main-content { flex:1; min-width:0; padding:24px 32px 40px; }
+  .main-content > div:not(#home) { width:100%; max-width:900px; margin:0 auto; }
+  .home-title { margin-bottom:18px; }
+  @media(max-width:700px) { .sidebar { width:64px; flex-basis:64px; padding:10px 6px; } .side-link { justify-content:center; padding:12px 6px; } .side-label { display:none; } .main-content { padding:18px 12px 30px; } }
 
   .topbar { display: flex; align-items: center; gap: 10px; padding: 4px 0 18px; }
   .back-btn {
@@ -242,6 +254,11 @@
     aspect-ratio: 1/1; display: flex; flex-direction: column; align-items: center; justify-content: center;
     border-radius: 10px; cursor: pointer; font-size: 14px; position: relative; color: var(--text);
   }
+  .cal-day-number { font-size: 14px; line-height: 1.25; }
+  .cal-day-note { max-width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: 9px; line-height: 1.25; font-weight: 400; color: #9299a8; }
+  .cal-day-note.special { color: #777fd2; }
+  .cal-cell.has-task .cal-day-note, .cal-cell.all-done .cal-day-note { color: inherit; opacity: .78; }
+  .cal-cell.other .cal-day-number, .cal-cell.other .cal-day-note { color: #c4c8d0; }
   .cal-cell.other { color: #c4c8d0; }
   .cal-cell:hover { background: #f0f1f4; }
   .cal-cell.today { background: #dfe3f3; color: #4a5580; font-weight: 700; }
@@ -310,9 +327,9 @@
   .bill-head .cal-nav:hover { background: #f0f1f4; }
   .bill-head .cal-title { min-width: 64px; text-align: center; font-size: 14px; font-weight: 600; color: var(--muted); }
   .bill-head-sum { display: flex; align-items: baseline; gap: 8px; margin-left: 10px; }
-  .bill-head-sum .hs-amt { font-size: 15px; font-weight: 700; }
-  .bill-head-sum .hs-amt.income { color: #16a34a; }
-  .bill-head-sum .hs-amt.expense { color: #e5484d; }
+  .bill-head-sum .hs-amt { font-size: 15px; font-weight: 400; }
+  .bill-head-sum .hs-amt.income { color: #4f9568; font-weight:400; }
+  .bill-head-sum .hs-amt.expense { color: #cf6266; font-weight:400; }
   .bill-head-sum .hs-sub { font-size: 12px; color: var(--muted); }
   .bill-card {
     background: #fff; border-radius: 14px; box-shadow: none; border: 1px solid #f0f1f4;
@@ -403,10 +420,11 @@
     -webkit-user-select: none; user-select: none;
   }
   .tt-list.pressing { box-shadow: inset 0 0 0 3px var(--primary), 0 2px 8px rgba(16,24,40,.08); }
-  .tt-row { font-size: 14px; color: var(--text); }
-  .tt-row-day { font-weight: 600; }
-  .tt-row-sep { color: var(--text); }
-  .tt-item { cursor: pointer; font-weight: 300; }
+  .tt-row { font-family: "SimSun", "宋体", serif; font-size: 13px; line-height: 2.05; letter-spacing: 0; color: #596273; font-weight: 300; }
+  .tt-row-day { color: inherit; font-size: inherit; font-weight: 300; letter-spacing: 0; }
+  .tt-row-sep { padding: 0 2px; color: inherit; }
+  .tt-item { cursor: pointer; color: inherit; font-weight: 300; transition: opacity .15s ease; }
+  .tt-item:hover { opacity: .75; }
   .tt-item:active { opacity: .6; }
   .tt-item.done { text-decoration: line-through; color: var(--muted); }
   .tt-item.part { color: var(--muted); }
@@ -417,62 +435,146 @@
 
 
 
+  /* 扁平化视觉：降低层级对比，收敛标题、圆角与阴影 */
+  :root { --bg:#f7f7f5; --text:#30343b; --muted:#858b94; --primary:#6677d8; }
+  body { background:#f7f7f5; }
+  .sidebar { width:200px; flex-basis:200px; border-right:1px solid #ececea; padding:12px 9px; }
+  .side-link { border-radius:7px; padding:11px 12px; font-size:14px; color:#555b64; }
+  .side-link.active,.side-link:hover { background:#efeff8; color:#6269ae; }
+  .main-content { padding:20px 30px 36px; }
+  .topbar { padding:0 0 12px; gap:8px; }
+  .topbar h1 { font-size:14px; font-weight:500; color:#858b94; letter-spacing:.01em; }
+  .cal-head .cal-title { font-size:15px; font-weight:500; color:#858b94; letter-spacing:.01em; }
+  #week .back-btn,#day .back-btn { display:none; }
+  .back-btn { width:32px; height:32px; border-radius:7px; border-color:transparent; background:transparent; color:#707780; }
+  .view-tabs { background:#efefed; border-radius:7px; gap:2px; padding:2px; }
+  .vt-btn { border-radius:5px; font-size:13px; font-weight:500; color:#737982; }
+  .vt-btn.active { box-shadow:none; background:#fff; color:#414750; }
+  .board,.tt-list { border-radius:9px; box-shadow:none; border-color:#e6e7e5; }
+  .board.pressing,.tt-list.pressing { box-shadow:inset 0 0 0 2px var(--primary); }
+  .cal-item,.pwd-item,.mine-profile,.stat-box,.note-item,.bill-card { box-shadow:none; border-radius:8px; border-color:#e8e9e7; }
+  .cal-item { padding:10px 12px; }
+  .pwd-item { padding:12px; }
+  .mine-profile { padding:16px; }
+  .stat-box { padding:13px 8px; }
+  .dialog { border-radius:12px; box-shadow:0 8px 24px rgba(16,24,40,.14); }
+  .menu-pop { border-radius:10px; box-shadow:0 8px 24px rgba(16,24,40,.16); }
+  .menu-item { border-radius:6px; }
+  @media(max-width:700px) { .sidebar { width:58px; flex-basis:58px; } .main-content { padding:16px 10px 28px; } }
+  /* 我的页：开放式资料、统计与操作列表 */
+  .mine-wrap { padding-top:4px; }
+  .mine-profile { background:transparent; border:0; border-radius:0; box-shadow:none; padding:12px 4px 18px; border-bottom:1px solid #e8e9e7; }
+  .mine-avatar { width:46px; height:46px; background:transparent; font-size:24px; }
+  .mine-name { font-size:15px; font-weight:500; color:#515761; }
+  .mine-sub { color:#969ba3; }
+  .mine-stats { gap:0; margin-top:0; padding:18px 0; border-bottom:1px solid #e8e9e7; }
+  .stat-box { background:transparent; border:0; border-radius:0; box-shadow:none; padding:4px 8px; }
+  .stat-box + .stat-box { border-left:1px solid #e8e9e7; }
+  .stat-num { font-size:21px; font-weight:500; color:#737fbd; }
+  .stat-label { color:#8d929a; font-size:12px; }
+  .mine-actions { gap:0; margin-top:4px; }
+  .mine-btn { background:transparent; border:0; border-bottom:1px solid #e8e9e7; border-radius:0; padding:15px 8px; text-align:left; font-size:14px; font-weight:400; color:#626872; }
+  .mine-btn:hover { background:#f1f1ef; }
+  .mine-btn.danger { color:#c96b70; }
+  .bill-month-head { justify-content:flex-start; gap:10px; }
+  .bill-month-label { color:var(--muted); font-size:13px; }
+  .bill-editor { margin-top:14px; padding:12px 0; border-top:1px solid #e8e9e7; }
+  .bill-editor-title { color:#707780; font-size:13px; margin-bottom:8px; }
+  .bill-editor-fields { display:grid; grid-template-columns:minmax(0,1fr) 120px; gap:8px; }
+  .bill-editor-fields input { min-width:0; border:0; border-bottom:1px solid #dfe1e4; border-radius:0; padding:9px 3px; background:transparent; font:inherit; font-size:14px; outline:none; }
+  .bill-editor-fields input:focus { border-color:var(--primary); }
+  .bill-editor-actions { display:flex; justify-content:flex-end; gap:8px; margin-top:10px; }
+  .bill-editor-actions button { border:0; background:transparent; padding:7px 10px; font:inherit; font-size:13px; color:#747b84; cursor:pointer; }
+  .bill-editor-actions .bill-editor-save { color:var(--primary); font-weight:500; }
+  .bill-row.month-row { cursor:pointer; }
+  .bill-row.month-row:hover { background:#f7f7f5; }
+  .bill-row.month-row::after { content:"⌄"; margin-left:10px; color:#a0a5ad; font-size:13px; }
+  .bill-row.month-row.expanded::after { content:"⌃"; }
+  .bill-row.bill-editable { cursor:pointer; }
+  .bill-row.bill-editable:hover { background:#f7f7f5; }
+  .bill-month-head { display:none; }
+  #billMonthView .bill-row .br-amt { color:#30343b; }
+  #billFixedRows .br-name,#billMonthRows .br-name { font-size:12px; font-weight:400; }
+  #billFixedRows .br-amt,#billMonthRows .br-amt { font-size:12px; font-weight:400; }
+  #billFixedRows .br-name .br-sub,#billMonthRows .br-name .br-sub { font-size:10px; font-weight:400; }
+  #billFixedRows .bill-total-row .br-name,#billFixedRows .bill-total-row .br-amt { font-size:11px; font-weight:400; }
+  @media(max-width:480px) { .bill-editor-fields { grid-template-columns:minmax(0,1fr) 96px; } }
+  .inline-editor { margin:8px 0 12px; padding:12px 14px; background:#f4f5f3; border-left:2px solid #c9cde5; }
+  .inline-editor-title { margin-bottom:8px; color:#777e87; font-size:13px; font-weight:500; }
+  .inline-editor-field { display:block; margin:7px 0; }
+  .inline-editor-field.time-part { display:inline-block; width:calc(50% - 5px); vertical-align:top; }
+  .inline-editor-field.time-part + .inline-editor-field.time-part { margin-left:6px; }
+  .inline-editor-field > span { display:block; margin-bottom:4px; color:#8b9098; font-size:12px; }
+  .inline-editor-field input { width:100%; border:0; border-bottom:1px solid #dfe1e4; border-radius:0; padding:8px 2px; background:transparent; color:var(--text); font:inherit; font-size:14px; outline:none; }
+  .inline-editor-field textarea { display:block; width:100%; min-height:82px; border:1px solid #dfe1e4; border-radius:7px; padding:9px 10px; background:#fff; color:var(--text); font:inherit; font-size:14px; line-height:1.5; outline:none; resize:vertical; }
+  .inline-editor-field input:focus,.inline-editor-field textarea:focus { border-color:var(--primary); }
+  .inline-editor-actions { display:flex; justify-content:flex-end; gap:8px; margin-top:8px; }
+  .inline-editor-actions button { border:0; border-radius:5px; padding:7px 11px; background:transparent; color:#767c85; font:inherit; font-size:13px; cursor:pointer; }
+  .inline-editor-actions button.save { color:var(--primary); font-weight:500; }
+  .inline-editor-actions button.delete { margin-right:auto; color:#e5484d; }
+  .inline-choice { display:flex; flex-wrap:wrap; gap:7px; }
+  .inline-choice-btn { min-width:34px; padding:5px 8px; border:1px solid #e2e4e8; border-radius:8px; background:#fff; color:#646b75; font-family:inherit; font-size:12px; font-weight:400; line-height:1.35; cursor:pointer; }
+  .inline-choice-btn.active { border-color:var(--primary); background:var(--primary); color:#fff; }
+  .checkin-add-btn { display:block; width:min(100%,420px); margin:12px auto; padding:10px 14px; border:0; border-radius:10px; background:#f1f2f7; color:var(--primary); font:inherit; cursor:pointer; }
+  .cal-add,.bill-add,.pwd-add,.checkin-add-btn { display:block; width:100%; max-width:460px; margin:12px auto; padding:12px; border:1px dashed #c4c8d0; border-radius:12px; background:#fafbfc; color:var(--muted); font-family:inherit; font-size:14px; font-weight:600; line-height:1.5; text-align:center; cursor:pointer; }
+  .cal-add:hover,.bill-add:hover,.pwd-add:hover,.checkin-add-btn:hover { background:#f0f1f4; color:var(--text); }
+  .inline-editable { cursor:pointer; }
+  @media(max-width:700px) {
+    .sidebar {
+      position:fixed; z-index:20; left:0; right:0; bottom:0; width:100%; height:auto; min-height:0;
+      flex:none; display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); grid-template-rows:repeat(2,52px);
+      gap:2px; padding:6px 8px calc(6px + env(safe-area-inset-bottom));
+      background:rgba(255,255,255,.97); border-right:0; border-top:1px solid #e8e9e7;
+    }
+    .side-nav { display:contents; }
+    .side-spacer { display:none; }
+    .side-link {
+      min-width:0; min-height:0; flex-direction:column; justify-content:center; gap:2px;
+      padding:3px 2px; border-radius:8px; font-size:10px; line-height:1.2; text-align:center;
+    }
+    .side-link .icon { width:22px; height:22px; }
+    .side-link .icon svg { width:18px; height:18px; }
+    .side-label { display:block; overflow:hidden; max-width:100%; white-space:nowrap; text-overflow:ellipsis; }
+    .main-content { width:100%; padding:16px 10px calc(128px + env(safe-area-inset-bottom)); }
+  }
 </style>
 </head>
 <body>
 <div class="app">
-  <div id="home">
-    <div class="home-title">我的应用</div>
-    <div class="menu">
-      <div class="menu-card" onclick="goPage('calendar')">
-        <div class="icon">🗓️</div><h2>日历待办</h2><div class="arrow">›</div>
-      </div>
-      <div class="menu-card" onclick="goPage('week')">
-        <div class="icon">📅</div><h2>周打卡</h2><div class="arrow">›</div>
-      </div>
-      <div class="menu-card" onclick="goPage('day')">
-        <div class="icon">☀️</div><h2>日打卡</h2><div class="arrow">›</div>
-      </div>
-      <div class="menu-card" onclick="goPage('bill')">
-        <div class="icon">💰</div><h2>记账</h2><div class="arrow">›</div>
-      </div>
-      <div class="menu-card" onclick="goPage('pwd')">
-        <div class="icon">🔐</div><h2>密码记录</h2><div class="arrow">›</div>
-      </div>
-      <div class="menu-card" onclick="goPage('note')">
-        <div class="icon">📝</div><h2>小纸条</h2><div class="arrow">›</div>
-      </div>
-      <div class="menu-card" onclick="goPage('mine')">
-        <div class="icon">👤</div><h2>我的</h2><div class="arrow">›</div>
-      </div>
-    </div>
-  </div>
-
+  <aside class="sidebar"><nav class="side-nav">
+    <button class="side-link active" data-page="checkin" onclick="goPage('checkin')"><span class="icon"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="4" y="4" width="16" height="16" rx="4"/><path d="m8 12 2.5 2.5L16 9"/></svg></span><span class="side-label">打卡</span></button>
+    <button class="side-link" data-page="calendar" onclick="goPage('calendar')"><span class="icon"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3.5" y="5" width="17" height="16" rx="3"/><path d="M7.5 3.5v3M16.5 3.5v3M4 9h16M8 12h.01M12 12h.01M16 12h.01M8 16h.01M12 16h.01"/></svg></span><span class="side-label">日历待办</span></button>
+    <button class="side-link" data-page="bill" onclick="goPage('bill')"><span class="icon"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="6" width="18" height="14" rx="3"/><path d="M3 10h18M16 15h2"/><path d="M7 6V4h11"/></svg></span><span class="side-label">记账</span></button>
+    <button class="side-link" data-page="pwd" onclick="goPage('pwd')"><span class="icon"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="4" y="10" width="16" height="11" rx="3"/><path d="M8 10V7a4 4 0 0 1 8 0v3M12 14v3"/></svg></span><span class="side-label">密码记录</span></button>
+    <button class="side-link" data-page="note" onclick="goPage('note')"><span class="icon"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M14 3H6a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V9z"/><path d="M14 3v6h6M8 13h8M8 17h6"/></svg></span><span class="side-label">小纸条</span></button>
+  </nav><div class="side-spacer"></div><button class="side-link" data-page="mine" onclick="goPage('mine')"><span class="icon"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="8" r="3.3"/><path d="M5 20a7 7 0 0 1 14 0"/></svg></span><span class="side-label">我的</span></button></aside>
+  <main class="main-content">
   <div id="week" class="hidden">
+    <div class="view-tabs checkin-tabs"><button class="vt-btn active" data-checkin="week" onclick="switchCheckinTab('week')">周打卡</button><button class="vt-btn" data-checkin="day" onclick="switchCheckinTab('day')">日打卡</button><button class="vt-btn" data-checkin="list" onclick="switchCheckinTab('list')">列表</button></div>
     <div class="topbar">
-      <button class="back-btn" onclick="goPage('home')">‹</button>
+      <button class="back-btn" onclick="goPage('checkin')">‹</button>
       <h1>周打卡</h1>
       <div class="spacer"></div>
-      <div class="view-tabs" id="weekTabs">
-        <button class="vt-btn active" data-view="board" onclick="switchWeekView('board')">MMO</button>
-        <button class="vt-btn" data-view="timetable" onclick="switchWeekView('timetable')">列表</button>
-      </div>
-    </div>
+</div>
     <div class="board-wrap" id="weekBoardWrap"><div class="board" id="weekBoard"></div></div>
+    <button class="checkin-add-btn" id="weekAddBtn" onclick="openDialog('week')">＋ 添加任务</button>
     <div class="tt-wrap hidden" id="weekTableWrap"></div>
+    <button class="checkin-add-btn hidden" id="listAddBtn" onclick="openTTDialog()">＋ 添加任务</button>
   </div>
 
   <div id="day" class="hidden">
+    <div class="view-tabs checkin-tabs"><button class="vt-btn active" data-checkin="week" onclick="switchCheckinTab('week')">周打卡</button><button class="vt-btn" data-checkin="day" onclick="switchCheckinTab('day')">日打卡</button><button class="vt-btn" data-checkin="list" onclick="switchCheckinTab('list')">列表</button></div>
     <div class="topbar">
-      <button class="back-btn" onclick="goPage('home')">‹</button>
+      <button class="back-btn" onclick="goPage('checkin')">‹</button>
       <h1>日打卡</h1>
     </div>
     <div class="board-wrap"><div class="board" id="dayBoard"></div></div>
+    <button class="checkin-add-btn" id="dayAddBtn" onclick="openDialog('day')">＋ 添加任务</button>
   </div>
 
   <div id="calendar" class="hidden">
     <div class="topbar">
-      <button class="back-btn" onclick="goPage('home')">‹</button>
+      <button class="back-btn" onclick="goPage('checkin')">‹</button>
       <h1>日历待办</h1>
     </div>
     <div class="cal-wrap">
@@ -495,7 +597,7 @@
 
   <div id="bill" class="hidden">
     <div class="topbar">
-      <button class="back-btn" onclick="goPage('home')">‹</button>
+      <button class="back-btn" onclick="goPage('checkin')">‹</button>
       <h1>记账</h1>
       <div class="spacer"></div>
       <div class="view-tabs">
@@ -518,21 +620,34 @@
           <button class="cal-nav" onclick="billShiftYear(1)">›</button>
           <div class="bill-head-sum" id="billYearSummary"></div>
         </div>
+        
         <div class="bill-card">
           <div class="bill-rows" id="billYearRows"></div>
         </div>
+        <div id="billMonthPlaceholder"></div>
       </div>
 
-      <!-- 月度明细模块（从年账单点某月进入） -->
+      <!-- 月度明细、页内编辑与账目明细 -->
       <div id="billMonthView" class="hidden">
-        <div class="bill-head">
+        <div class="bill-head bill-month-head">
           <div class="cal-title" id="billMonthTitle"></div>
           <div class="bill-head-sum" id="billMonthSummary"></div>
+        </div>
+        <div class="bill-editor" id="billEditor">
+          <div class="bill-editor-title" id="billEditorTitle">添加账目</div>
+          <div class="bill-editor-fields">
+            <input id="billEditorText" type="text" placeholder="项目内容">
+            <input id="billEditorAmount" type="number" inputmode="decimal" min="0" step="0.01" placeholder="金额">
+          </div>
+          <div class="bill-editor-actions">
+            <button class="bill-editor-cancel hidden" id="billEditorCancel" onclick="billCancelEdit()">取消编辑</button>
+            <button class="bill-editor-save" id="billEditorSave" onclick="billSaveEditor()">添加</button>
+          </div>
         </div>
         <div class="bill-card">
           <div class="bill-rows" id="billMonthRows"></div>
         </div>
-        <button class="bill-add" id="billAddBtn" onclick="billAdd()">＋ 记一笔</button>
+
       </div>
 
       <!-- 固定模块（固定支出 / 固定收入 跟随收支切换） -->
@@ -548,7 +663,7 @@
 
   <div id="pwd" class="hidden">
     <div class="topbar">
-      <button class="back-btn" onclick="goPage('home')">‹</button>
+      <button class="back-btn" onclick="goPage('checkin')">‹</button>
       <h1>密码记录</h1>
     </div>
     <div class="pwd-wrap">
@@ -560,7 +675,7 @@
 
   <div id="note" class="hidden">
     <div class="topbar">
-      <button class="back-btn" onclick="goPage('home')">‹</button>
+      <button class="back-btn" onclick="goPage('checkin')">‹</button>
       <h1>小纸条</h1>
     </div>
     <div class="pwd-wrap">
@@ -572,7 +687,7 @@
 
   <div id="mine" class="hidden">
     <div class="topbar">
-      <button class="back-btn" onclick="goPage('home')">‹</button>
+      <button class="back-btn" onclick="goPage('checkin')">‹</button>
       <h1>我的</h1>
     </div>
     <div class="mine-wrap">
@@ -604,12 +719,13 @@
       </div>
     </div>
   </div>
+  </main>
 </div>
 
 <div class="overlay" id="overlay">
   <div class="dialog">
     <h3 id="dialogTitle">添加任务</h3>
-    <textarea id="dialogInput" placeholder="写下要做的事…（Enter 换行）" autocomplete="off" rows="2"></textarea>
+    <textarea id="dialogInput" autocomplete="off" rows="2"></textarea>
     <div class="time-toggle-row" id="timeToggleRow">
       <span class="dur-label" style="margin:0;">时间戳</span>
       <div class="menu-switch" id="timeToggle"></div>
@@ -636,7 +752,7 @@
 
 <div class="menu-pop" id="tileMenu"></div>
 
-<!-- 轻量输入弹窗（日历待办/重命名用，替代被沙箱禁用的 prompt） -->
+<!-- 轻量输入弹窗（仅用于新增纸条） -->
 <div class="overlay" id="promptOverlay">
   <div class="dialog">
     <h3 id="promptTitle">输入</h3>
@@ -648,7 +764,7 @@
   </div>
 </div>
 
-<!-- 多字段表单弹窗（记账/密码记录 添加与修改用） -->
+<!-- 多字段表单弹窗（仅用于新增待办、固定账目和密码记录） -->
 <div class="overlay" id="formOverlay">
   <div class="dialog">
     <h3 id="formTitle">填写</h3>
@@ -661,6 +777,46 @@
 </div>
 
 <script>
+// 同一浏览器只保留一个可操作实例；第二个标签页显示提示并停用交互。
+const APP_INSTANCE_ID = (Date.now() + Math.random()).toString(36);
+let APP_DUPLICATE_INSTANCE = false;
+function showDuplicateInstanceNotice() {
+  if (APP_DUPLICATE_INSTANCE) return;
+  APP_DUPLICATE_INSTANCE = true;
+  const lock = document.createElement('div');
+  lock.style.cssText = 'position:fixed;inset:0;z-index:9999;background:rgba(247,246,243,.97);display:flex;align-items:center;justify-content:center;padding:24px;text-align:center;font:16px sans-serif;color:#1f2329;';
+  lock.textContent = '打卡工具已在另一个页面打开，请切换到已打开的页面继续使用。';
+  document.body.appendChild(lock);
+}
+// localStorage 可用时做第二层实例锁，覆盖不支持 BroadcastChannel 的本地预览。
+const APP_LOCK_KEY = 'checkin_app_instance_lock_v1';
+try {
+  const oldLock = JSON.parse(localStorage.getItem(APP_LOCK_KEY) || 'null');
+  if (oldLock && oldLock.id !== APP_INSTANCE_ID && Date.now() - oldLock.time < 10000) showDuplicateInstanceNotice();
+  else localStorage.setItem(APP_LOCK_KEY, JSON.stringify({ id:APP_INSTANCE_ID, time:Date.now() }));
+  setInterval(() => {
+    const currentLock = JSON.parse(localStorage.getItem(APP_LOCK_KEY) || 'null');
+    if (currentLock && currentLock.id !== APP_INSTANCE_ID && Date.now() - currentLock.time < 10000) showDuplicateInstanceNotice();
+    else if (!APP_DUPLICATE_INSTANCE) localStorage.setItem(APP_LOCK_KEY, JSON.stringify({ id:APP_INSTANCE_ID, time:Date.now() }));
+  }, 3000);
+  window.addEventListener('beforeunload', () => {
+    const currentLock = JSON.parse(localStorage.getItem(APP_LOCK_KEY) || 'null');
+    if (currentLock && currentLock.id === APP_INSTANCE_ID) localStorage.removeItem(APP_LOCK_KEY);
+  });
+} catch(e) { /* local file storage may be disabled */ }
+if ('BroadcastChannel' in window) {
+ try {
+  const appChannel = new BroadcastChannel('checkin-app-single-instance');
+  appChannel.onmessage = e => {
+    if (e.data && e.data.type === 'hello' && !APP_DUPLICATE_INSTANCE) {
+      if (APP_INSTANCE_ID < e.data.id) appChannel.postMessage({ type:'active', id:e.data.id });
+      else showDuplicateInstanceNotice();
+    }
+    if (e.data && e.data.type === 'active' && e.data.id === APP_INSTANCE_ID) showDuplicateInstanceNotice();
+  };
+  setTimeout(() => appChannel.postMessage({ type:'hello', id:APP_INSTANCE_ID }), 80);
+ } catch (e) { /* 某些本地文件预览会限制跨标签通信 */ }
+}
 const COLORS = 8;
 const KEY_WEEK = 'checkin_weeks_v6';
 const KEY_DAY  = 'checkin_days_v6';
@@ -702,7 +858,109 @@ function save(k, d) {
   try { localStorage.setItem(k, s); } catch(e) { memStore[k] = s; }
 }
 
+// 通用页内编辑栏：直接插入到被编辑记录之后，不弹出模态窗口。
+let activeInlineEditor = null;
+let activeInlineAnchor = null;
+let activeInlineAnchorHTML = null;
+function dismissInlineEditor() {
+  if (activeInlineEditor) activeInlineEditor.remove();
+  if (activeInlineAnchor && activeInlineAnchorHTML !== null && activeInlineAnchor.matches('.cal-add,.bill-add,.pwd-add,.checkin-add-btn')) activeInlineAnchor.innerHTML = activeInlineAnchorHTML;
+  activeInlineEditor = null; activeInlineAnchor = null; activeInlineAnchorHTML = null;
+}
+function showInlineEditor(anchor, title, fields, onSave, onCancel, onDelete) {
+  if (activeInlineEditor && !activeInlineEditor.isConnected) {
+    activeInlineEditor = null; activeInlineAnchor = null; activeInlineAnchorHTML = null;
+  }
+  if (activeInlineEditor && activeInlineAnchor === anchor) { dismissInlineEditor(); return null; }
+  dismissInlineEditor();
+  document.querySelectorAll('.inline-editor').forEach(x => x.remove());
+  const editor = document.createElement('div');
+  editor.className = 'inline-editor';
+  const heading = document.createElement('div');
+  heading.className = 'inline-editor-title'; heading.textContent = title;
+  editor.appendChild(heading);
+  const controls = [];
+  fields.forEach(f => {
+    const field = document.createElement('label');
+    field.className = 'inline-editor-field';
+    if (f.className) field.classList.add(f.className);
+    const label = document.createElement('span');
+    label.textContent = f.label;
+    const input = f.type === 'textarea' ? document.createElement('textarea') : f.type === 'select' ? document.createElement('select') : f.type === 'choice' ? document.createElement('div') : document.createElement('input');
+    if (f.type !== 'textarea' && f.type !== 'select' && f.type !== 'choice') input.type = f.type || 'text';
+    if (f.type === 'select') (f.options || []).forEach(option => {
+      const opt = document.createElement('option');
+      opt.value = String(option.value); opt.textContent = option.label; input.appendChild(opt);
+    });
+    if (f.type === 'choice') {
+      input.className = 'inline-choice'; input.value = String(f.value ?? '');
+      (f.options || []).forEach(option => {
+        const button = document.createElement('button');
+        button.type = 'button'; button.className = 'inline-choice-btn'; button.textContent = option.label;
+        button.classList.toggle('active', String(option.value) === input.value);
+        button.addEventListener('click', () => {
+          input.value = String(option.value);
+          input.querySelectorAll('button').forEach(b => b.classList.toggle('active', b === button));
+        });
+        input.appendChild(button);
+      });
+    }
+    if (f.min != null) input.min = f.min;
+    if (f.max != null) input.max = f.max;
+    if (f.step != null) input.step = f.step;
+    if (f.inputmode) input.inputMode = f.inputmode;
+    if (f.type === 'textarea') input.rows = 3;
+    input.placeholder = f.placeholder || '';
+    input.value = f.value == null ? '' : f.value;
+    field.appendChild(label); field.appendChild(input); editor.appendChild(field); controls.push(input);
+  });
+  const actions = document.createElement('div');
+  actions.className = 'inline-editor-actions';
+  if (onDelete) {
+    const del = document.createElement('button'); del.type = 'button'; del.className = 'delete'; del.textContent = '删除';
+    del.addEventListener('click', () => { onDelete(); dismissInlineEditor(); });
+    actions.appendChild(del);
+  }
+  const cancel = document.createElement('button'); cancel.type = 'button'; cancel.textContent = '取消';
+  const save = document.createElement('button'); save.type = 'button'; save.className = 'save'; save.textContent = '保存';
+  actions.appendChild(cancel); actions.appendChild(save); editor.appendChild(actions);
+  editor.addEventListener('click', e => e.stopPropagation());
+  activeInlineEditor = editor; activeInlineAnchor = anchor;
+  if (anchor && anchor.matches('.cal-add,.bill-add,.pwd-add,.checkin-add-btn')) {
+    activeInlineAnchorHTML = anchor.innerHTML;
+    anchor.textContent = '− 收起';
+  }
+  cancel.addEventListener('click', () => { dismissInlineEditor(); if (onCancel) onCancel(); });
+  save.addEventListener('click', () => {
+    const values = controls.map(x => x.value); const result = onSave(values);
+    if (result !== false) dismissInlineEditor();
+  });
+  if (anchor && anchor.parentNode) anchor.after(editor);
+  else document.querySelector('.main-content').appendChild(editor);
+  if (controls[0] && controls[0].focus) controls[0].focus();
+  return editor;
+}
 function pad(n) { return n < 10 ? '0' + n : '' + n; }
+function splitTimeFields(value) {
+  const match = String(value || '').match(/^(\d{1,2}):(\d{2})$/);
+  return match ? [match[1], match[2]] : ['', ''];
+}
+function makeTimeFields(value) {
+  const [hour, minute] = splitTimeFields(value);
+  return [
+    { label:'小时', type:'number', className:'time-part', min:'0', max:'23', step:'1', inputmode:'numeric', value:hour },
+    { label:'分钟', type:'number', className:'time-part', min:'0', max:'59', step:'1', inputmode:'numeric', value:minute }
+  ];
+}
+function readTimeFields(values, index) {
+  const rawHour = String(values[index] || '').trim();
+  const rawMinute = String(values[index + 1] || '').trim();
+  if (!rawHour && !rawMinute) return '';
+  const hour = rawHour ? Number(rawHour) : 0;
+  const minute = rawMinute ? Number(rawMinute) : 0;
+  if (!Number.isInteger(hour) || hour < 0 || hour > 23 || !Number.isInteger(minute) || minute < 0 || minute > 59) return null;
+  return pad(hour) + ':' + pad(minute);
+}
 function dateKey(d) { return d.getFullYear() + '-' + pad(d.getMonth()+1) + '-' + pad(d.getDate()); }
 function getMonday(d) {
   const x = new Date(d); const day = x.getDay();
@@ -710,7 +968,7 @@ function getMonday(d) {
 }
 function weekKey(d) { return dateKey(getMonday(d)); }
 
-let currentPage = 'home';
+let currentPage = 'checkin';
 let currentWeekStart = getMonday(new Date());
 let currentDayDate = new Date();
 let dialogScope = null;
@@ -723,18 +981,31 @@ let calSelKey = dateKey(new Date());
 // 周打卡视图状态：board=面板, timetable=课程表
 let weekView = 'board';
 
+let checkinTab = 'week';
+function switchCheckinTab(tab) {
+  checkinTab = tab;
+  const showDay = tab === 'day';
+  const title = document.querySelector('#' + (showDay ? 'day' : 'week') + ' .topbar h1');
+  if (title) { title.textContent = ''; title.style.display = 'none'; }
+  document.getElementById('week').classList.toggle('hidden', showDay);
+  document.getElementById('day').classList.toggle('hidden', !showDay);
+  document.querySelectorAll('.checkin-tabs .vt-btn').forEach(b => b.classList.toggle('active', b.dataset.checkin === tab));
+  if (showDay) render('day');
+  else if (tab === 'list') switchWeekView('timetable');
+  else switchWeekView('board');
+}
 function goPage(page) {
+  if (page === 'week' || page === 'day') { checkinTab = page; page = 'checkin'; }
   currentPage = page;
-  document.getElementById('home').classList.toggle('hidden', page !== 'home');
-  document.getElementById('week').classList.toggle('hidden', page !== 'week');
-  document.getElementById('day').classList.toggle('hidden', page !== 'day');
+  document.getElementById('week').classList.toggle('hidden', page !== 'checkin' || checkinTab === 'day');
+  document.getElementById('day').classList.toggle('hidden', page !== 'checkin' || checkinTab !== 'day');
   document.getElementById('calendar').classList.toggle('hidden', page !== 'calendar');
   document.getElementById('bill').classList.toggle('hidden', page !== 'bill');
   document.getElementById('pwd').classList.toggle('hidden', page !== 'pwd');
   document.getElementById('note').classList.toggle('hidden', page !== 'note');
   document.getElementById('mine').classList.toggle('hidden', page !== 'mine');
-  if (page === 'week') { switchWeekView(weekView); }
-  if (page === 'day') render('day');
+  document.querySelectorAll('.side-link').forEach(b => b.classList.toggle('active', b.dataset.page === page));
+  if (page === 'checkin') switchCheckinTab(checkinTab);
   if (page === 'calendar') renderCalendar();
   if (page === 'bill') { billType = 'expense'; billTab = 'year'; billYear = new Date().getFullYear(); billMonth = new Date().getMonth(); switchBillType('expense'); }
   if (page === 'pwd') renderPwd();
@@ -811,7 +1082,7 @@ function render(scope) {
   board.innerHTML = '';
   const hint = document.createElement('div');
   hint.className = 'board-hint';
-  hint.textContent = tasks.length ? '' : '长按这里\n添加第一个任务';
+  hint.textContent = '';
   board.appendChild(hint);
 
   const bw = board.clientWidth || board.offsetWidth || 400;
@@ -1183,23 +1454,27 @@ function toggleTile(scope, id) {
   render(scope);  // 重新渲染，物理会让它飞向新区域
 }
 
-// ===== 添加弹窗 =====
+// ===== 新增任务（均在当前模块内展开） =====
 let selectedHours = 4;
-// 时间滚轮状态（24 小时制）
-let tpHour = 9, tpMinute = 0; // 默认 9:00
-let timeStampOn = false; // 时间戳开关，默认关闭
-let editTimeTarget = null; // 编辑时间戳的任务 { scope, t }（MMO）
-let editTTTimeTarget = null; // 编辑时间戳的任务（列表模式）
+// 保留添加弹窗旧状态的默认值，不参与页内添加表单。
+let tpHour = 9, tpMinute = 0;
+let timeStampOn = false;
 function openDialog(scope, px, py) {
-  dialogScope = scope;
-  ttDialogTarget = null; // 清空课程表目标
-  const h3 = document.querySelector('#overlay .dialog h3');
-  if (h3) h3.textContent = '添加任务';
-  document.getElementById('overlay').classList.add('show');
-  document.getElementById('dialogInput').value = '';
-  setSelectedHours(4);
-  setTimeStamp(false); // 默认关闭时间戳
-  setTimeout(() => document.getElementById('dialogInput').focus(), 50);
+  const anchor = document.getElementById(scope === 'week' ? 'weekAddBtn' : 'dayAddBtn');
+  showInlineEditor(anchor, '添加任务', [
+    { label:'任务内容', type:'textarea' },
+    ...makeTimeFields(''),
+    { label:'难度', type:'choice', value:'4', options:[1,2,4,8,16].map(n => ({ value:n, label:n + 'X' })) }
+  ], values => {
+    const text = values[0].trim();
+    const start = readTimeFields(values, 1);
+    const hours = Number(values[3]);
+    if (!text) { alert('请填写任务内容'); return false; }
+    if (start === null) { alert('小时范围为 0–23，分钟范围为 0–59'); return false; }
+    const { tasks } = getData(scope);
+    tasks.push({ id:Date.now() + Math.random(), text, hours, start, done:false, color:tasks.length % COLORS });
+    setData(scope, tasks); render(scope);
+  });
 }
 function setTimeStamp(on) {
   timeStampOn = on;
@@ -1233,8 +1508,6 @@ function closeDialog() {
 }
 // 恢复弹窗为默认「添加任务」状态（显示输入框/时间戳开关/难度，隐藏时间滚轮）
 function resetDialog() {
-  editTimeTarget = null;
-  editTTTimeTarget = null;
   const title = document.getElementById('dialogTitle');
   if (title) title.textContent = '添加任务';
   document.getElementById('dialogInput').style.display = '';
@@ -1256,32 +1529,6 @@ function getPickedTime() {
   return hh + ':' + mm;
 }
 function confirmAdd() {
-  // 编辑时间戳模式（MMO）
-  if (editTimeTarget) {
-    const { scope, t } = editTimeTarget;
-    editTimeTarget = null;
-    const start = getPickedTime();
-    const { tasks } = getData(scope);
-    const obj = tasks.find(x => x.id === t.id);
-    if (obj) { obj.start = start; setData(scope, tasks); }
-    resetDialog();
-    document.getElementById('overlay').classList.remove('show');
-    render(scope);
-    return;
-  }
-  // 编辑时间戳模式（列表）
-  if (editTTTimeTarget) {
-    const t = editTTTimeTarget;
-    editTTTimeTarget = null;
-    const start = getPickedTime();
-    const { tasks } = ttGetWeekTasks();
-    const obj = tasks.find(x => x.id === t.id);
-    if (obj) { obj.start = start; ttSetWeekTasks(tasks); }
-    resetDialog();
-    document.getElementById('overlay').classList.remove('show');
-    renderTimetable();
-    return;
-  }
   // 课程表添加分支
   if (ttDialogTarget) {
     const text = document.getElementById('dialogInput').value.trim();
@@ -1317,55 +1564,22 @@ function confirmAdd() {
 // ===== 长按块菜单 =====
 const LEVELS = [1, 2, 4, 8, 16];
 function openTileMenu(scope, t, el) {
-  menuTile = t; menuScope = scope;
-  const menu = document.getElementById('tileMenu');
-  const cur = t.hours != null ? t.hours : 4;
-  const hasTime = !!t.start;
-  menu.innerHTML = `
-    <div class="menu-row">
-      <span class="mr-label">难度</span>
-      <div class="menu-levels">
-        ${LEVELS.map(l => `<button class="menu-level${l === cur ? ' active' : ''}" data-l="${l}">${l}X</button>`).join('')}
-      </div>
-    </div>
-    <div class="menu-row">
-      <span class="mr-label">时间戳</span>
-      <div class="menu-switch${hasTime ? ' on' : ''}" id="miTimeToggle"></div>
-    </div>
-    <button class="menu-item" id="miRename"><span class="mi">✏️</span> 编辑名称</button>
-    <button class="menu-item danger" id="miDelete"><span class="mi">🗑️</span> 删除</button>`;
-  menu.classList.add('show');
-  const r = el.getBoundingClientRect();
-  let mx = r.left, my = r.bottom + 6;
-  if (mx + 180 > window.innerWidth) mx = window.innerWidth - 190;
-  if (my + 300 > window.innerHeight) my = r.top - 290;
-  menu.style.left = mx + 'px';
-  menu.style.top = my + 'px';
-
-  // 难度档位选择
-  menu.querySelectorAll('.menu-level').forEach(b => {
-    b.onclick = () => {
-      const l = parseInt(b.dataset.l, 10);
-      const s = menuScope, t0 = menuTile;
-      closeTileMenu();
-      setHoursOf(s, t0, l);
-    };
-  });
-  // 时间戳开关：切换打开→弹时间编辑；切换关闭→清空
-  document.getElementById('miTimeToggle').onclick = () => {
-    const s = menuScope, t0 = menuTile;
-    if (t0.start) {
-      // 已开启 → 关闭：清空时间戳
-      closeTileMenu();
-      clearTimeOf(s, t0);
-    } else {
-      // 已关闭 → 打开：弹时间编辑
-      closeTileMenu();
-      openTimeEdit(s, t0);
-    }
-  };
-  document.getElementById('miRename').onclick = () => { const s = menuScope, t0 = menuTile; closeTileMenu(); renameTile(s, t0); };
-  document.getElementById('miDelete').onclick = () => { const s = menuScope, t0 = menuTile; closeTileMenu(); deleteTile(s, t0); };
+  const { tasks } = getData(scope);
+  const obj = tasks.find(x => x.id === t.id);
+  if (!obj) return;
+  const anchor = document.getElementById(scope === 'week' ? 'weekAddBtn' : 'dayAddBtn');
+  showInlineEditor(anchor, '编辑任务', [
+    { label:'任务名称', value:obj.text || '' },
+    { label:'难度', type:'choice', value:String(obj.hours != null ? obj.hours : 4), options:LEVELS.map(n => ({ value:n, label:n + 'X' })) },
+    ...makeTimeFields(obj.start)
+  ], values => {
+    const name = values[0].trim();
+    const start = readTimeFields(values, 2);
+    if (!name) { alert('请填写任务名称'); return false; }
+    if (start === null) { alert('小时范围为 0–23，分钟范围为 0–59'); return false; }
+    obj.text = name; obj.hours = Number(values[1]); obj.start = start;
+    setData(scope, tasks); render(scope);
+  }, null, () => deleteTile(scope, obj));
 }
 function setHoursOf(scope, t, hours) {
   if (!t || !scope) return;
@@ -1379,26 +1593,16 @@ function clearTimeOf(scope, t) {
   const obj = tasks.find(x => x.id === t.id);
   if (obj) { obj.start = ''; setData(scope, tasks); render(scope); }
 }
-// 打开「编辑时间戳」弹窗（复用主 dialog，只显示时间滚轮）
+// 时间戳在打卡模块下方直接编辑
 function openTimeEdit(scope, t) {
-  editTimeTarget = { scope, t };
-  const title = document.getElementById('dialogTitle');
-  if (title) title.textContent = '设置时间戳';
-  // 隐藏输入框、时间戳开关行、难度
-  document.getElementById('dialogInput').style.display = 'none';
-  document.getElementById('timeToggleRow').style.display = 'none';
-  document.getElementById('durLabel').style.display = 'none';
-  document.getElementById('durRow').style.display = 'none';
-  // 显示时间输入框
-  document.getElementById('timePicker').classList.remove('hidden');
-  // 若已有时间戳，回填当前时间
-  if (t.start) {
-    const m = String(t.start).match(/(\d{1,2}):(\d{2})/);
-    if (m) { tpHour = parseInt(m[1], 10); tpMinute = parseInt(m[2], 10); }
-  }
-  syncTimeInputs();
-  document.getElementById('overlay').classList.add('show');
-  document.getElementById('btnOk').textContent = '确定';
+  const anchor = document.getElementById(scope + 'Board')?.parentElement;
+  showInlineEditor(anchor, '设置时间', makeTimeFields(t.start), values => {
+    const start = readTimeFields(values, 0);
+    if (start === null) { alert('小时范围为 0–23，分钟范围为 0–59'); return false; }
+    const { tasks } = getData(scope);
+    const obj = tasks.find(x => x.id === t.id);
+    if (obj) { obj.start = start; setData(scope, tasks); render(scope); }
+  });
 }
 function closeTileMenu() {
   document.getElementById('tileMenu').classList.remove('show');
@@ -1409,8 +1613,11 @@ function renameTile(scope, t) {
   const { tasks } = getData(scope);
   const obj = tasks.find(x => x.id === t.id);
   if (!obj) return;
-  askInput('修改任务名称', '任务名称', obj.text).then(name => {
-    if (name != null && name.trim()) { obj.text = name.trim(); setData(scope, tasks); render(scope); }
+  const anchor = document.getElementById(scope + 'Board')?.parentElement;
+  showInlineEditor(anchor, '编辑任务', [{ label:'任务名称', type:'text', value:obj.text || '' }], values => {
+    const name = values[0].trim();
+    if (!name) return false;
+    obj.text = name; setData(scope, tasks); render(scope);
   });
 }
 function deleteTile(scope, t) {
@@ -1426,7 +1633,8 @@ document.getElementById('dialogInput').addEventListener('keydown', (e) => { if (
 document.getElementById('btnOk').addEventListener('click', confirmAdd);
 document.getElementById('btnCancel').addEventListener('click', closeDialog);
 document.getElementById('timeToggle').addEventListener('click', () => setTimeStamp(!timeStampOn));
-document.getElementById('overlay').addEventListener('click', (e) => { if (e.target === e.currentTarget) closeDialog(); });
+['overlay','promptOverlay','formOverlay'].forEach(id => { const el = document.getElementById(id); el.addEventListener('click', e => { if (e.target === el) { e.preventDefault(); e.stopPropagation(); } }); });
+['overlay','promptOverlay','formOverlay'].forEach(id => document.querySelector('#' + id + ' .dialog').addEventListener('click', e => e.stopPropagation()));
 // 时长选择按钮（仅 durRow 内的 .dur-btn）
 document.querySelectorAll('#durRow .dur-btn').forEach(b => {
   b.addEventListener('click', () => setSelectedHours(parseFloat(b.dataset.d)));
@@ -1576,6 +1784,43 @@ function calShift(delta) {
 function calDateKey(y, m, d) {
   return y + '-' + pad(m + 1) + '-' + pad(d);
 }
+const CN_LUNAR = new Intl.DateTimeFormat('zh-CN-u-ca-chinese', { month: 'long', day: 'numeric' });
+const CN_SOLAR_TERMS = ['小寒','大寒','立春','雨水','惊蛰','春分','清明','谷雨','立夏','小满','芒种','夏至','小暑','大暑','立秋','处暑','白露','秋分','寒露','霜降','立冬','小雪','大雪','冬至'];
+const CN_SOLAR_TERM_MINUTES = [0,21208,42467,63836,85337,107014,128867,150921,173149,195551,218072,240693,263343,285989,308563,331033,353350,375494,397447,419210,440795,462224,483532,504758];
+function calSolarTerm(y, m, d) {
+  for (let i = 0; i < CN_SOLAR_TERMS.length; i++) {
+    const utc = Date.UTC(1900, 0, 6, 2, 5) + 31556925974.7 * (y - 1900) + CN_SOLAR_TERM_MINUTES[i] * 60000;
+    const dt = new Date(utc);
+    if (dt.getFullYear() === y && dt.getMonth() === m && dt.getDate() === d) return CN_SOLAR_TERMS[i];
+  }
+  return '';
+}
+function calDayNote(y, m, d) {
+  const date = new Date(y, m, d, 12);
+  const parts = CN_LUNAR.formatToParts(date);
+  const lunarMonth = (parts.find(x => x.type === 'month') || {}).value || '';
+  const lunarDay = (parts.find(x => x.type === 'day') || {}).value || '';
+  const chineseNumber = value => {
+    const chars = {零:0,〇:0,一:1,二:2,三:3,四:4,五:5,六:6,七:7,八:8,九:9};
+    const s = String(value).replace(/[初十廿卅]/g, ch => ({初:'',十:'十',廿:'二十',卅:'三十'}[ch]));
+    if (/^\d+$/.test(s)) return Number(s);
+    if (s === '十') return 10;
+    let total = 0, digit = 0;
+    for (const ch of s) { if (ch === '十') { total += (digit || 1) * 10; digit = 0; } else if (chars[ch] !== undefined) digit = chars[ch]; }
+    return total + digit;
+  };
+  const lunarNum = chineseNumber(lunarDay);
+  const solarTerm = calSolarTerm(y, m, d);
+  const solarFestivals = { '1-1':'元旦', '2-14':'情人节', '3-8':'妇女节', '4-1':'愚人节', '5-1':'劳动节', '6-1':'儿童节', '7-1':'建党节', '8-1':'建军节', '9-10':'教师节', '10-1':'国庆节', '12-24':'平安夜', '12-25':'圣诞节' };
+  const lunarFestivals = { '1-1':'春节', '1-15':'元宵', '5-5':'端午', '7-7':'七夕', '7-15':'中元', '8-15':'中秋', '9-9':'重阳', '12-8':'腊八', '12-23':'小年' };
+  const lunarMonthNum = chineseNumber(lunarMonth.replace(/^闰/, '').replace(/月$/, ''));
+  const tomorrowParts = CN_LUNAR.formatToParts(new Date(y, m, d + 1, 12));
+  const tomorrowMonth = (tomorrowParts.find(x => x.type === 'month') || {}).value || '';
+  const tomorrowDay = (tomorrowParts.find(x => x.type === 'day') || {}).value || '';
+  const isLunarEve = lunarMonthNum === 12 && chineseNumber(tomorrowMonth.replace(/^闰/, '').replace(/月$/, '')) === 1 && chineseNumber(tomorrowDay) === 1;
+  const special = solarTerm || solarFestivals[(m + 1) + '-' + d] || lunarFestivals[lunarMonthNum + '-' + lunarNum] || (isLunarEve ? '除夕' : '');
+  return { text: special || lunarDay || lunarMonth, special: !!special };
+}
 function renderCalendar() {
   document.getElementById('calTitle').textContent = calYear + ' 年 ' + (calMonth + 1) + ' 月';
   const grid = document.getElementById('calGrid');
@@ -1603,7 +1848,14 @@ function renderCalendar() {
       const allDone = tasks.every(x => x.done);
       c.classList.add(allDone ? 'all-done' : 'has-task');
     }
-    c.textContent = d;
+    const dayNumber = document.createElement('span');
+    dayNumber.className = 'cal-day-number';
+    dayNumber.textContent = d;
+    const note = document.createElement('span');
+    const dayInfo = calDayNote(calYear, calMonth, d);
+    note.className = 'cal-day-note' + (dayInfo.special ? ' special' : '');
+    note.textContent = dayInfo.text;
+    c.append(dayNumber, note);
     c.addEventListener('click', () => { calSelKey = key; renderCalendar(); });
     grid.appendChild(c);
   }
@@ -1631,46 +1883,49 @@ function renderCalendar() {
     tm.className = 'ci-time'; tm.textContent = t.start || '';
     const del = document.createElement('button');
     del.className = 'ci-del'; del.textContent = '×';
-    del.addEventListener('click', () => {
+    del.addEventListener('click', (e) => {
+      e.stopPropagation();
       calSetTasks(calSelKey, selTasks.filter(x => x.id !== t.id)); renderCalendar();
     });
     row.appendChild(ck); row.appendChild(tx); row.appendChild(tm); row.appendChild(del);
-    // 长按待办条目 → 修改内容与时间
-    bindLongPress(row, () => calEdit(t, calSelKey));
+    tx.classList.add('inline-editable');
+    tx.addEventListener('click', () => calEdit(t, calSelKey, row));
     items.appendChild(row);
   });
 }
 function calAdd() {
-  (async () => {
-    const text = await askInput('添加待办', '待办内容…');
-    if (text == null || !text.trim()) return;
-    const start = await askInput('开始时间（可选）', '如 14:30，留空跳过');
+  const addButton = document.querySelector('#calendar .cal-add');
+  showInlineEditor(addButton, '添加待办', [
+    { label:'待办内容', type:'textarea' },
+    ...makeTimeFields('')
+  ], values => {
+    const text = values[0].trim();
+    const start = readTimeFields(values, 1);
+    if (!text) { alert('请填写待办内容'); return false; }
+    if (start === null) { alert('小时范围为 0–23，分钟范围为 0–59'); return false; }
     const tasks = calGetTasks(calSelKey);
-    tasks.push({ id: Date.now() + Math.random(), text: text.trim(), start: start && start.trim() ? start.trim() : '', hours: 4, done: false, color: tasks.length % COLORS });
+    tasks.push({ id: Date.now() + Math.random(), text, start, hours: 4, done: false, color: tasks.length % COLORS });
     calSetTasks(calSelKey, tasks);
     renderCalendar();
-  })();
+  });
 }
-// 长按修改待办：内容 + 开始时间（一页同时展示）
-async function calEdit(t, key) {
+// 待办内容与时间在当前行下方直接编辑
+function calEdit(t, key, anchor) {
   const tasks = calGetTasks(key);
   const obj = tasks.find(x => x.id === t.id);
   if (!obj) return;
-  const vals = await openForm('修改待办', [
-    { label: '待办内容', type: 'textarea', placeholder: '待办内容…', value: obj.text },
-    { label: '开始时间（可选）', type: 'text', placeholder: '如 14:30，留空表示无时间', value: obj.start || '' },
-  ], '保存');
-  if (!vals) return;
-  const text = vals[0].trim();
-  if (!text) return;
-  obj.text = text;
-  obj.start = vals[1].trim();
-  calSetTasks(key, tasks);
-  renderCalendar();
+  showInlineEditor(anchor, '编辑待办', [
+    { label:'待办内容', type:'textarea', value:obj.text || '' },
+    ...makeTimeFields(obj.start)
+  ], values => {
+    const text = values[0].trim();
+    const start = readTimeFields(values, 1);
+    if (!text) { alert('请填写待办内容'); return false; }
+    if (start === null) { alert('小时范围为 0–23，分钟范围为 0–59'); return false; }
+    obj.text = text; obj.start = start;
+    calSetTasks(key, tasks); renderCalendar();
+  });
 }
-
-// ===== 通用长按（用于记账/密码记录的条目修改） =====
-let lpFired = false; // 全局长按标记，长按后抑制紧随的 click 误触
 function bindLongPress(el, onLongPress) {
   el.oncontextmenu = (e) => e.preventDefault();
   let timer = null;
@@ -1707,13 +1962,18 @@ let billType = 'expense';                    // 'expense' | 'income'
 let billTab = 'year';                        // 'year' | 'fixed' | 'month'(月度明细内部态)
 let billYear = new Date().getFullYear();
 let billMonth = new Date().getMonth();       // 0-11
-let billUnknownMode = false;                 // 月度明细是否显示「未知月份」记录
+let billUnknownMode = false;                 // 是否查看未知日期记录
+let billExpandedKey = null;
+let billMonthPanel = null;
+let billEditingId = null;
 function billGetAll() { return load(KEY_BILL, []); }
 function billSaveAll(list) { save(KEY_BILL, list); }
 function fmtMoney(n) {
   return '¥' + (Math.round(n * 100) / 100).toFixed(2).replace(/\B(?=(\d{3})+(?!\d))/g, ',');
 }
 function switchBillType(type) {
+  billEditingId = null;
+  if (document.getElementById('billEditorText')) billClearEditor();
   billType = type;
   document.getElementById('billTabExpense').classList.toggle('active', type === 'expense');
   document.getElementById('billTabIncome').classList.toggle('active', type === 'income');
@@ -1724,11 +1984,11 @@ function switchBillType(type) {
 function switchBillTab(tab) {
   billTab = tab;
   // 切到年账单/固定时，退出未知模式
-  if (tab !== 'month') billUnknownMode = false;
+  if (tab !== 'month') billUnknownMode = billExpandedKey === 'unknown';
   document.getElementById('billTabYear').classList.toggle('active', tab === 'year');
   document.getElementById('billTabFixed').classList.toggle('active', tab === 'fixed');
   document.getElementById('billYearView').classList.toggle('hidden', tab !== 'year');
-  document.getElementById('billMonthView').classList.toggle('hidden', tab !== 'month');
+  document.getElementById('billMonthView').classList.toggle('hidden', tab !== 'year' || billExpandedKey === null);
   document.getElementById('billFixedView').classList.toggle('hidden', tab !== 'fixed');
   // 固定模块文案与按钮跟随收支
   const isExpense = billType === 'expense';
@@ -1738,27 +1998,19 @@ function switchBillTab(tab) {
   document.getElementById('billFixedAddBtn').textContent = isExpense ? '＋ 添加固定支出' : '＋ 添加固定收入';
   renderBill();
 }
-// 从年账单点某月进入月度明细
-function billOpenMonth(m) {
-  billMonth = m;
-  billUnknownMode = false;
-  billTab = 'month';
-  document.getElementById('billTabYear').classList.remove('active');
-  document.getElementById('billTabFixed').classList.remove('active');
-  document.getElementById('billYearView').classList.add('hidden');
-  document.getElementById('billFixedView').classList.add('hidden');
-  document.getElementById('billMonthView').classList.remove('hidden');
-  renderBill();
-}
-// 从年账单点「未知」进入无日期记录明细
-function billOpenUnknown() {
-  billUnknownMode = true;
-  billTab = 'month';
-  document.getElementById('billTabYear').classList.remove('active');
-  document.getElementById('billTabFixed').classList.remove('active');
-  document.getElementById('billYearView').classList.add('hidden');
-  document.getElementById('billFixedView').classList.add('hidden');
-  document.getElementById('billMonthView').classList.remove('hidden');
+function billToggleMonth(key) {
+  if (billExpandedKey === key) {
+    billExpandedKey = null;
+    billUnknownMode = false;
+    billEditingId = null;
+    billClearEditor();
+  } else {
+    billExpandedKey = key;
+    billUnknownMode = key === 'unknown';
+    if (!billUnknownMode) billMonth = key;
+    billEditingId = null;
+    billClearEditor();
+  }
   renderBill();
 }
 function billShiftYear(delta) { billYear += delta; renderBill(); }
@@ -1771,6 +2023,7 @@ function billFixedInSaveAll(list) { save(KEY_FIXED_IN, list); }
 function currentFixedList() { return billType === 'expense' ? billFixedGetAll() : billFixedInGetAll(); }
 
 function renderBill() {
+  if (!billMonthPanel) billMonthPanel = document.getElementById('billMonthView');
   const list = billGetAll();
   const fixedOut = billFixedGetAll();
   const fixedIn = billFixedInGetAll();
@@ -1784,7 +2037,7 @@ function renderBill() {
   if (billUnknownMode) {
     // 未知月份：dateKey 为空的记录
     monthList = list.filter(b => (!b.dateKey) && b.type === TYPE);
-    document.getElementById('billMonthTitle').textContent = '未知月份';
+    document.getElementById('billMonthTitle').textContent = '未知日期';
   } else {
     const monthPrefix = billYear + '-' + pad(billMonth + 1);
     monthList = list.filter(b => b.dateKey && b.dateKey.startsWith(monthPrefix) && b.type === TYPE);
@@ -1805,7 +2058,7 @@ function renderBill() {
     e.className = 'bill-empty';
     e.textContent = billUnknownMode
       ? (isExpense ? '还没有无日期的支出记录' : '还没有无日期的收入记录')
-      : (isExpense ? '本月还没有支出，点下方「记一笔」开始' : '本月还没有收入，点下方「记一笔」开始');
+      : (isExpense ? '本月还没有支出，可在上方添加' : '本月还没有收入，可在上方添加');
     mRows.appendChild(e);
   } else {
     if (!billUnknownMode && curFixed.length) {
@@ -1839,11 +2092,13 @@ function renderBill() {
       amt.textContent = (b.type === 'income' ? '+' : '-') + fmtMoney(b.amount);
       const del = document.createElement('button');
       del.className = 'br-del'; del.textContent = '×';
-      del.addEventListener('click', () => {
+      del.addEventListener('click', (e) => {
+        e.stopPropagation();
         billSaveAll(billGetAll().filter(x => x.id !== b.id)); renderBill();
       });
       row.appendChild(name); row.appendChild(amt); row.appendChild(del);
-      bindLongPress(row, () => billEdit(b));
+      row.classList.add('bill-editable');
+      row.addEventListener('click', () => billStartEdit(b, row));
       mRows.appendChild(row);
     });
   }
@@ -1862,10 +2117,11 @@ function renderBill() {
     '<span class="hs-sub">' + (yearList.length + unknownList.length) + ' 笔</span>';
   const yRows = document.getElementById('billYearRows');
   yRows.innerHTML = '';
-  // 未知月份行（置顶，在 1月 前）
+  // 未知日期行
+  let expandedRow = null;
   {
     const row = document.createElement('div');
-    row.className = 'bill-row month-row';
+    row.className = 'bill-row month-row' + (billExpandedKey === 'unknown' ? ' expanded' : '');
     const name = document.createElement('div');
     name.className = 'br-name'; name.textContent = '未知';
     if (unknownTotal > 0) {
@@ -1877,10 +2133,11 @@ function renderBill() {
     amt.className = 'br-amt ' + TYPE;
     amt.textContent = unknownTotal > 0 ? fmtMoney(unknownTotal) : '—';
     row.appendChild(name); row.appendChild(amt);
-    row.addEventListener('click', () => { billOpenUnknown(); });
+    row.addEventListener('click', () => billToggleMonth('unknown'));
+    if (billExpandedKey === 'unknown') expandedRow = row;
     yRows.appendChild(row);
   }
-  // 每月合计：1月~12月，点某月跳到月度明细
+  // 每月合计：1月~12月
   const byMonth = Array.from({ length: 12 }, () => 0);
   yearList.forEach(b => {
     const m = parseInt(String(b.dateKey).slice(5, 7), 10) - 1;
@@ -1890,7 +2147,7 @@ function renderBill() {
   for (let m = 0; m < 12; m++) {
     const total = byMonth[m] + monthFixedEach;
     const row = document.createElement('div');
-    row.className = 'bill-row month-row';
+    row.className = 'bill-row month-row' + (billExpandedKey === m ? ' expanded' : '');
     const name = document.createElement('div');
     name.className = 'br-name'; name.textContent = (m + 1) + '月';
     if (total > 0) {
@@ -1903,59 +2160,65 @@ function renderBill() {
     amt.className = 'br-amt ' + TYPE;
     amt.textContent = total > 0 ? fmtMoney(total) : '—';
     row.appendChild(name); row.appendChild(amt);
-    row.addEventListener('click', () => { billOpenMonth(m); });
+    row.addEventListener('click', () => billToggleMonth(m));
+    if (billExpandedKey === m) expandedRow = row;
     yRows.appendChild(row);
+  }
+
+  const monthView = billMonthPanel;
+  const monthPlaceholder = document.getElementById('billMonthPlaceholder');
+  if (billTab === 'year' && expandedRow) {
+    expandedRow.after(monthView);
+    monthView.classList.remove('hidden');
+  } else {
+    monthPlaceholder.appendChild(monthView);
+    monthView.classList.add('hidden');
   }
 
   // ===== 固定（支出/收入跟随） =====
   renderBillFixed(curFixed);
 }
 
-async function billAdd() {
-  const isExpense = billType === 'expense';
-  const vals = await openForm(isExpense ? '记支出' : '记收入', [
-    { label: '项目内容', placeholder: isExpense ? '如：车险' : '如：工资', value: '' },
-    { label: '金额', placeholder: '如 36.5', value: '' }
-  ], '添加');
-  if (vals == null) return;
-  const text = (vals[0] || '').trim();
-  if (!text) return;
-  const amount = parseFloat(vals[1]);
-  if (isNaN(amount) || amount <= 0) { alert('金额无效'); return; }
-  // 日期：从哪个月点进来就记到哪个月（未知模式则记为无日期）
-  let dateKeyStr = '';
-  if (billUnknownMode) {
-    dateKeyStr = '';   // 未知
-  } else {
-    dateKeyStr = billYear + '-' + pad(billMonth + 1) + '-01';
-  }
-  const list = billGetAll();
-  list.push({
-    id: Date.now() + Math.random(),
-    type: billType,
-    amount, text: text || (isExpense ? '支出' : '收入'),
-    note: '',
-    cat: 'other',
-    dateKey: dateKeyStr
-  });
-  billSaveAll(list);
-  renderBill();
+function billClearEditor() {
+  document.getElementById('billEditorText').value = '';
+  document.getElementById('billEditorAmount').value = '';
+  document.getElementById('billEditorTitle').textContent = '添加账目';
+  document.getElementById('billEditorSave').textContent = '添加';
+  document.getElementById('billEditorCancel').classList.add('hidden');
 }
-// 长按修改账目：内容 + 金额
-async function billEdit(b) {
-  const isExpense = b.type === 'expense';
-  const vals = await openForm('修改账目', [
-    { label: '项目内容', placeholder: '', value: b.text || '' },
-    { label: '金额', placeholder: '', value: String(b.amount) }
-  ], '保存');
-  if (vals == null) return;
-  const text = (vals[0] || '').trim();
-  const amount = parseFloat(vals[1]);
-  if (isNaN(amount) || amount <= 0) { alert('金额无效'); return; }
+function billStartEdit(b, anchor) {
+  showInlineEditor(anchor, '编辑账目', [
+    { label:'项目内容', type:'text', value:b.text || '' },
+    { label:'金额', type:'number', value:String(b.amount || '') }
+  ], values => {
+    const text = values[0].trim();
+    const amount = parseFloat(values[1]);
+    if (!text) { alert('请填写项目内容'); return false; }
+    if (isNaN(amount) || amount <= 0) { alert('金额无效'); return false; }
+    const list = billGetAll();
+    const item = list.find(x => x.id === b.id);
+    if (item) { item.text = text; item.amount = amount; }
+    billSaveAll(list); renderBill();
+  });
+}
+function billCancelEdit() { billEditingId = null; billClearEditor(); }
+function billAdd() { billCancelEdit(); document.getElementById('billEditorText').focus(); }
+function billSaveEditor() {
+  const text = document.getElementById('billEditorText').value.trim();
+  const amount = parseFloat(document.getElementById('billEditorAmount').value);
+  if (!text) { alert('请填写项目内容'); return; }
+  if (isNaN(amount) || amount <= 0) { alert('金额无效'); return false; }
   const list = billGetAll();
-  const item = list.find(x => x.id === b.id);
-  if (item) { item.text = text || b.text; item.amount = amount; }
+  if (billEditingId != null) {
+    const item = list.find(x => x.id === billEditingId);
+    if (item) { item.text = text; item.amount = amount; }
+  } else {
+    const dateKeyStr = billUnknownMode ? '' : billYear + '-' + pad(billMonth + 1) + '-01';
+    list.push({ id:Date.now() + Math.random(), type:billType, amount, text, note:'', cat:'other', dateKey:dateKeyStr });
+  }
   billSaveAll(list);
+  billEditingId = null;
+  billClearEditor();
   renderBill();
 }
 
@@ -1968,7 +2231,7 @@ function renderBillFixed(fixed) {
   if (!fixed.length) {
     const e = document.createElement('div');
     e.className = 'bill-empty';
-    e.textContent = isExpense ? '还没有固定支出，点下方「添加固定支出」设置每月扣费' : '还没有固定收入，点下方「添加固定收入」设置每月进账';
+    e.textContent = isExpense ? '还没有固定支出' : '还没有固定收入';
     container.appendChild(e);
     return;
   }
@@ -1987,19 +2250,21 @@ function renderBillFixed(fixed) {
     amt.textContent = (isExpense ? '-' : '+') + fmtMoney(f.amount || 0);
     const del = document.createElement('button');
     del.className = 'br-del'; del.textContent = '×';
-    del.addEventListener('click', () => {
+    del.addEventListener('click', (e) => {
+      e.stopPropagation();
       if (!confirm('删除固定' + (isExpense ? '支出' : '收入') + '「' + (f.name || '') + '」？')) return;
       const saveFn = isExpense ? billFixedSaveAll : billFixedInSaveAll;
       const getFn = isExpense ? billFixedGetAll : billFixedInGetAll;
       saveFn(getFn().filter(x => x.id !== f.id)); renderBill();
     });
     row.appendChild(name); row.appendChild(amt); row.appendChild(del);
-    bindLongPress(row, () => billFixedEdit(f));
+    row.classList.add('inline-editable');
+    row.addEventListener('click', () => billFixedEdit(f, row));
     container.appendChild(row);
   });
   // 底部合计行
   const tRow = document.createElement('div');
-  tRow.className = 'bill-row';
+  tRow.className = 'bill-row bill-total-row';
   tRow.style.borderTop = '1px solid #e8eaed';
   tRow.style.fontWeight = '600';
   const tName = document.createElement('div');
@@ -2010,45 +2275,44 @@ function renderBillFixed(fixed) {
   tRow.appendChild(tName); tRow.appendChild(tAmt);
   container.appendChild(tRow);
 }
-async function billFixedAdd() {
+function billFixedAdd() {
   const isExpense = billType === 'expense';
-  const vals = await openForm(isExpense ? '添加固定支出' : '添加固定收入', [
-    { label: '名称', placeholder: isExpense ? '如：手机话费 / 视频会员' : '如：工资 / 零花钱', value: '' },
-    { label: '每月金额', placeholder: isExpense ? '如 58' : '如 8000', value: '' }
-  ], '添加');
-  if (vals == null) return;
-  const name = (vals[0] || '').trim();
-  if (!name) return;
-  const amount = parseFloat(vals[1]);
-  if (isNaN(amount) || amount <= 0) { alert('金额无效'); return; }
+  const anchor = document.getElementById('billFixedAddBtn');
+  showInlineEditor(anchor, isExpense ? '添加固定支出' : '添加固定收入', [
+    { label:'名称' },
+    { label:'每月金额', type:'number', min:'0', step:'0.01', inputmode:'decimal' }
+  ], values => {
+    const name = values[0].trim();
+    const amount = parseFloat(values[1]);
+    if (!name) { alert('请填写名称'); return false; }
+    if (isNaN(amount) || amount <= 0) { alert('金额无效'); return false; }
   const getFn = isExpense ? billFixedGetAll : billFixedInGetAll;
   const saveFn = isExpense ? billFixedSaveAll : billFixedInSaveAll;
   const list = getFn();
   list.push({ id: Date.now() + Math.random(), name, amount });
   saveFn(list);
   renderBill();
+  });
 }
-// 长按修改固定项：名称 + 金额
-async function billFixedEdit(f) {
+// 固定账目直接在列表行下方编辑
+function billFixedEdit(f, anchor) {
   const isExpense = billType === 'expense';
-  const vals = await openForm('修改固定项', [
-    { label: '名称', placeholder: '', value: f.name || '' },
-    { label: '每月金额', placeholder: '', value: String(f.amount) }
-  ], '保存');
-  if (vals == null) return;
-  const name = (vals[0] || '').trim();
-  const amount = parseFloat(vals[1]);
-  if (isNaN(amount) || amount <= 0) { alert('金额无效'); return; }
   const getFn = isExpense ? billFixedGetAll : billFixedInGetAll;
   const saveFn = isExpense ? billFixedSaveAll : billFixedInSaveAll;
-  const list = getFn();
-  const item = list.find(x => x.id === f.id);
-  if (item) { item.name = name || f.name; item.amount = amount; }
-  saveFn(list);
-  renderBill();
-}
-
-// ===== 密码记录 =====
+  showInlineEditor(anchor, '编辑固定项', [
+    { label:'名称', value:f.name || '' },
+    { label:'每月金额', type:'number', value:String(f.amount || '') }
+  ], values => {
+    const name = values[0].trim();
+    const amount = parseFloat(values[1]);
+    if (!name) { alert('请填写名称'); return false; }
+    if (isNaN(amount) || amount <= 0) { alert('金额无效'); return false; }
+    const list = getFn();
+    const item = list.find(x => x.id === f.id);
+    if (item) { item.name = name; item.amount = amount; }
+    saveFn(list); renderBill();
+  });
+}// ===== 密码记录 =====
 // 记录字段：{ id, name, account, password, note }
 function pwdGetAll() { return load(KEY_PWD, []); }
 function pwdSaveAll(list) { save(KEY_PWD, list); }
@@ -2058,7 +2322,7 @@ function renderPwd() {
   container.innerHTML = '';
   if (!list.length) {
     const e = document.createElement('div');
-    e.className = 'pwd-empty'; e.textContent = '还没有密码记录，点下方「添加记录」开始';
+    e.className = 'pwd-empty'; e.textContent = '还没有密码记录';
     container.appendChild(e);
     return;
   }
@@ -2076,6 +2340,8 @@ function renderPwd() {
     const acc = document.createElement('div');
     acc.className = 'pi-account'; acc.textContent = p.account || '';
     title.appendChild(name);
+    title.classList.add('inline-editable');
+    title.addEventListener('click', () => pwdEdit(p, item));
     if (p.account) title.appendChild(acc);
     const del = document.createElement('button');
     del.className = 'pi-del'; del.textContent = '×';
@@ -2106,53 +2372,44 @@ function renderPwd() {
     });
     pwRow.appendChild(pw); pwRow.appendChild(eye); pwRow.appendChild(copy);
     item.appendChild(pwRow);
-    bindLongPress(item, () => pwdEdit(p));
+
     container.appendChild(item);
   });
 }
-async function pwdAdd() {
-  const vals = await openForm('添加密码记录', [
-    { label: '名称', placeholder: '如：淘宝 / 邮箱 / 银行卡', value: '' },
-    { label: '账号', placeholder: '如：手机号 / 用户名', value: '' },
-    { label: '密码', placeholder: '输入要保存的密码', value: '', type: 'password' },
-    { label: '备注', placeholder: '选填', value: '' }
-  ], '添加');
-  if (vals == null) return;
-  const name = (vals[0] || '').trim();
-  if (!name) return;
-  const list = pwdGetAll();
-  list.push({
-    id: Date.now() + Math.random(),
-    name: name,
-    account: (vals[1] || '').trim(),
-    password: vals[2] || '',
-    note: (vals[3] || '').trim()
+function pwdAdd() {
+  const anchor = document.querySelector('#pwd .pwd-add');
+  showInlineEditor(anchor, '添加密码记录', [
+    { label:'名称' },
+    { label:'账号' },
+    { label:'密码', type:'password' },
+    { label:'备注' }
+  ], values => {
+    const name = values[0].trim();
+    if (!name) { alert('请填写名称'); return false; }
+    const list = pwdGetAll();
+    list.push({ id:Date.now() + Math.random(), name, account:values[1].trim(), password:values[2], note:values[3].trim() });
+    pwdSaveAll(list); renderPwd();
   });
-  pwdSaveAll(list);
-  renderPwd();
 }
-// 长按修改密码记录：名称 / 账号 / 密码 / 备注
-async function pwdEdit(p) {
-  const vals = await openForm('修改密码记录', [
-    { label: '名称', placeholder: '', value: p.name || '' },
-    { label: '账号', placeholder: '', value: p.account || '' },
-    { label: '密码', placeholder: '', value: p.password || '', type: 'password' },
-    { label: '备注', placeholder: '', value: p.note || '' }
-  ], '保存');
-  if (vals == null) return;
-  const name = (vals[0] || '').trim();
-  const list = pwdGetAll();
-  const item = list.find(x => x.id === p.id);
-  if (item) {
-    item.name = name || p.name;
-    item.account = (vals[1] || '').trim();
-    item.password = vals[2] || '';
-    item.note = (vals[3] || '').trim();
-  }
-  pwdSaveAll(list);
-  renderPwd();
+// 密码信息直接在该记录下方编辑
+function pwdEdit(p, anchor) {
+  const fields = [
+    { label:'名称', value:p.name || '' },
+    { label:'账号', value:p.account || '' },
+    { label:'密码', type:'password', value:p.password || '' },
+    { label:'备注', value:p.note || '' }
+  ];
+  showInlineEditor(anchor, '编辑密码记录', fields, values => {
+    const list = pwdGetAll();
+    const item = list.find(x => x.id === p.id);
+    if (!item) return;
+    item.name = values[0].trim() || item.name;
+    item.account = values[1].trim();
+    item.password = values[2];
+    item.note = values[3].trim();
+    pwdSaveAll(list); renderPwd();
+  });
 }
-
 // ===== 小纸条 =====
 // 记录字段：{ id, text, time }
 function noteGetAll() { return load(KEY_NOTE, []); }
@@ -2168,7 +2425,7 @@ function renderNote() {
   container.innerHTML = '';
   if (!list.length) {
     const e = document.createElement('div');
-    e.className = 'pwd-empty'; e.textContent = '还没有纸条，点下方「写一张纸条」开始';
+    e.className = 'pwd-empty'; e.textContent = '还没有纸条';
     container.appendChild(e);
     return;
   }
@@ -2178,7 +2435,8 @@ function renderNote() {
     const item = document.createElement('div');
     item.className = 'note-item';
     const txt = document.createElement('div');
-    txt.className = 'note-text'; txt.textContent = n.text;
+    txt.className = 'note-text inline-editable'; txt.textContent = n.text;
+    txt.addEventListener('click', () => noteEdit(n, item));
     const tm = document.createElement('div');
     tm.className = 'note-time'; tm.textContent = noteFmtTime(n.time);
     const del = document.createElement('button');
@@ -2187,29 +2445,35 @@ function renderNote() {
       noteSaveAll(noteGetAll().filter(x => x.id !== n.id)); renderNote();
     });
     item.appendChild(txt); item.appendChild(tm); item.appendChild(del);
-    bindLongPress(item, () => noteEdit(n));
+
     container.appendChild(item);
   });
 }
-async function noteAdd() {
-  const text = await askInput('写一张纸条', '记点什么…（Enter 换行）');
-  if (text == null || !text.trim()) return;
-  const list = noteGetAll();
-  list.push({ id: Date.now() + Math.random(), text: text.trim(), time: Date.now() });
-  noteSaveAll(list);
-  renderNote();
+function noteAdd() {
+  const anchor = document.querySelector('#note .pwd-add');
+  showInlineEditor(anchor, '写一张纸条', [
+    { label:'内容', type:'textarea' }
+  ], values => {
+    const text = values[0].trim();
+    if (!text) { alert('纸条内容不能为空'); return false; }
+    const list = noteGetAll();
+    list.push({ id:Date.now() + Math.random(), text, time:Date.now() });
+    noteSaveAll(list); renderNote();
+  });
 }
-// 长按修改纸条内容
-async function noteEdit(n) {
-  const text = await askInput('修改纸条', '记点什么…（Enter 换行）', n.text);
-  if (text == null || !text.trim()) return;
-  const list = noteGetAll();
-  const item = list.find(x => x.id === n.id);
-  if (item) { item.text = text.trim(); item.time = Date.now(); }
-  noteSaveAll(list);
-  renderNote();
+// 纸条内容直接在该条下方编辑
+function noteEdit(n, anchor) {
+  showInlineEditor(anchor, '编辑纸条', [
+    { label:'内容', type:'textarea', value:n.text || '' }
+  ], values => {
+    const text = values[0].trim();
+    if (!text) { alert('纸条内容不能为空'); return false; }
+    const list = noteGetAll();
+    const item = list.find(x => x.id === n.id);
+    if (item) { item.text = text; item.time = Date.now(); }
+    noteSaveAll(list); renderNote();
+  });
 }
-
 // ===== 我的 =====
 function renderMine() {
   const weekAll = load(KEY_WEEK, {});
@@ -2328,6 +2592,8 @@ function switchWeekView(view) {
   });
   document.getElementById('weekBoardWrap').classList.toggle('hidden', view !== 'board');
   document.getElementById('weekTableWrap').classList.toggle('hidden', view !== 'timetable');
+  document.getElementById('weekAddBtn').classList.toggle('hidden', view !== 'board');
+  document.getElementById('listAddBtn').classList.toggle('hidden', view !== 'timetable');
   if (view === 'board') render('week');
   else renderTimetable();
 }
@@ -2376,7 +2642,7 @@ function renderTimetable() {
     row.className = 'tt-row';
     const head = document.createElement('span');
     head.className = 'tt-row-day';
-    head.textContent = '- ' + d.label + '：';
+    head.textContent = d.label + '：';
     row.appendChild(head);
 
     groups.forEach((g, gi) => {
@@ -2409,7 +2675,7 @@ function renderTimetable() {
   if (!any) {
     const hint = document.createElement('div');
     hint.className = 'tt-list-hint';
-    hint.textContent = '长按这里添加任务';
+    hint.textContent = '';
     list.appendChild(hint);
   }
   wrap.appendChild(list);
@@ -2467,97 +2733,58 @@ function bindTTListAdd(list) {
 }
 
 function openTTTileMenu(t, el) {
-  const menu = document.getElementById('tileMenu');
-  const hasTime = !!t.start;
-  menu.innerHTML = `
-    <div class="menu-row">
-      <span class="mr-label">时间戳</span>
-      <div class="menu-switch${hasTime ? ' on' : ''}" id="miTimeToggle"></div>
-    </div>
-    <button class="menu-item" id="miRename"><span class="mi">✏️</span> 编辑名称</button>
-    <button class="menu-item danger" id="miDelete"><span class="mi">🗑️</span> 删除</button>`;
-  menu.classList.add('show');
-  const r = el.getBoundingClientRect();
-  let mx = r.left, my = r.bottom + 6;
-  if (mx + 180 > window.innerWidth) mx = window.innerWidth - 190;
-  if (my + 200 > window.innerHeight) my = r.top - 200;
-  menu.style.left = mx + 'px';
-  menu.style.top = my + 'px';
-
-  // 时间戳开关（列表模式）
-  document.getElementById('miTimeToggle').onclick = () => {
-    if (t.start) {
-      // 已开启 → 关闭：清空
-      closeTileMenu();
-      const { tasks } = ttGetWeekTasks();
-      const obj = tasks.find(x => x.id === t.id);
-      if (obj) { obj.start = ''; ttSetWeekTasks(tasks); }
-      renderTimetable();
-    } else {
-      // 已关闭 → 打开：弹时间编辑
-      closeTileMenu();
-      openTTTimeEdit(t);
-    }
-  };
-
-  const apply = (fn) => { closeTileMenu(); fn(); };
-  document.getElementById('miRename').onclick = () => apply(() => {
-    (async () => {
-      const name = await askInput('修改任务名称', '任务名称', t.text);
-      if (name != null && name.trim()) {
-        const { tasks } = ttGetWeekTasks();
-        const obj = tasks.find(x => x.id === t.id);
-        if (obj) { obj.text = name.trim(); ttSetWeekTasks(tasks); renderTimetable(); }
-      }
-    })();
-  });
-  document.getElementById('miDelete').onclick = () => apply(() => {
-    const { tasks } = ttGetWeekTasks();
-    ttSetWeekTasks(tasks.filter(x => x.id !== t.id));
+  const { tasks } = ttGetWeekTasks();
+  const obj = tasks.find(x => x.id === t.id);
+  if (!obj) return;
+  const anchor = el.closest('.tt-row') || el;
+  showInlineEditor(anchor, '编辑任务', [
+    { label:'任务名称', value:obj.text || '' },
+    ...makeTimeFields(obj.start)
+  ], values => {
+    const name = values[0].trim();
+    const start = readTimeFields(values, 1);
+    if (!name) { alert('请填写任务名称'); return false; }
+    if (start === null) { alert('小时范围为 0–23，分钟范围为 0–59'); return false; }
+    obj.text = name; obj.start = start;
+    ttSetWeekTasks(tasks); renderTimetable();
+  }, null, () => {
+    ttSetWeekTasks(tasks.filter(x => x.id !== obj.id));
     renderTimetable();
   });
 }
 
-// 列表模式：编辑时间戳（复用主弹窗时间滚轮）
-function openTTTimeEdit(t) {
-  editTTTimeTarget = t;
-  const title = document.getElementById('dialogTitle');
-  if (title) title.textContent = '设置时间戳';
-  document.getElementById('dialogInput').style.display = 'none';
-  document.getElementById('timeToggleRow').style.display = 'none';
-  document.getElementById('durLabel').style.display = 'none';
-  document.getElementById('durRow').style.display = 'none';
-  document.getElementById('timePicker').classList.remove('hidden');
-  if (t.start) {
-    const m = String(t.start).match(/(\d{1,2}):(\d{2})/);
-    if (m) { tpHour = parseInt(m[1], 10); tpMinute = parseInt(m[2], 10); }
-  }
-  syncTimeInputs();
-  document.getElementById('overlay').classList.add('show');
-  document.getElementById('btnOk').textContent = '确定';
+// 列表模式：时间戳在条目下方直接编辑
+function openTTTimeEdit(t, el) {
+  const anchor = el ? (el.closest('.tt-row') || el) : document.getElementById('weekTableWrap');
+  showInlineEditor(anchor, '设置时间', makeTimeFields(t.start), values => {
+    const start = readTimeFields(values, 0);
+    if (start === null) { alert('小时范围为 0–23，分钟范围为 0–59'); return false; }
+    const { tasks } = ttGetWeekTasks();
+    const obj = tasks.find(x => x.id === t.id);
+    if (obj) { obj.start = start; ttSetWeekTasks(tasks); renderTimetable(); }
+  });
 }
-
-// 课程表添加任务：弹窗选星期（可选），无难度
+// 课程表添加任务：在课程表下方填写
 let ttDialogTarget = null;
 let ttDialogDay = 1;
 function openTTDialog() {
-  ttDialogTarget = {};
   const now = new Date();
   const dow = now.getDay();
   ttDialogDay = dow === 0 ? 7 : dow;
-
-  document.getElementById('overlay').classList.add('show');
-  document.getElementById('dialogInput').value = '';
-  const h3 = document.querySelector('#overlay .dialog h3');
-  if (h3) h3.textContent = '添加课程表任务';
-  setTimeStamp(false); // 默认关闭时间戳
-  // 隐藏难度选择（课程表无难度），显示星期选择
-  const durRow = document.getElementById('durRow');
-  const durLabel = durRow.previousElementSibling;
-  if (durLabel && durLabel.classList.contains('dur-label')) durLabel.style.display = 'none';
-  durRow.style.display = 'none';
-  renderTTSlotPicker();
-  setTimeout(() => document.getElementById('dialogInput').focus(), 50);
+  showInlineEditor(document.getElementById('listAddBtn'), '添加课程表任务', [
+    { label:'任务内容', type:'textarea' },
+    ...makeTimeFields(''),
+    { label:'星期', type:'choice', value:String(ttDialogDay), options:TT_DAYS.map(d => ({ value:d.id, label:d.label })) }
+  ], values => {
+    const text = values[0].trim();
+    const start = readTimeFields(values, 1);
+    const dayId = Number(values[3]);
+    if (!text) { alert('请填写任务内容'); return false; }
+    if (start === null) { alert('小时范围为 0–23，分钟范围为 0–59'); return false; }
+    const { tasks } = ttGetWeekTasks();
+    tasks.push({ id:Date.now() + Math.random(), text, start, dayId, done:false, color:tasks.length % COLORS });
+    ttSetWeekTasks(tasks); renderTimetable();
+  });
 }
 
 // 在弹窗内渲染星期选择（复用 dur-row 样式，动态插入）
@@ -2588,13 +2815,13 @@ function renderTTSlotPicker() {
 }
 
 initTimePicker();
+goPage('checkin');
 </script>
 <script>
-if ('serviceWorker' in navigator) {
-  window.addEventListener('load', () => {
-    navigator.serviceWorker.register('./sw.js').catch(() => {});
-  });
-}
+if ('serviceWorker' in navigator && /^https?:$/.test(location.protocol)) { window.addEventListener('load', () => navigator.serviceWorker.register('./sw.js').catch(() => {})); }
 </script>
 </body>
 </html>
+
+
+
