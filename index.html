@@ -483,6 +483,18 @@
   .bill-month-head { justify-content:flex-start; gap:10px; }
   .bill-month-label { color:var(--muted); font-size:13px; }
   .bill-editor { margin-top:14px; padding:12px 0; border-top:1px solid #e8e9e7; }
+  .inline-add-form { margin-top:14px; padding:14px; border:1px solid #e6e7f1; border-radius:13px; background:linear-gradient(145deg,#fff 0%,#f8f8fc 100%); box-shadow:0 5px 16px rgba(63,69,112,.06); }
+  .inline-add-form .bill-editor-title { color:#50577d; font-weight:600; }
+  .inline-add-form textarea,.pwd-add-fields input { width:100%; min-width:0; padding:9px 10px; border:1px solid #e5e7ef; border-radius:8px; background:#fff; color:var(--text); font:inherit; font-size:12px; outline:none; resize:vertical; user-select:text; -webkit-user-select:text; }
+  .inline-add-form textarea { min-height:56px; line-height:1.5; }
+  .inline-add-form textarea:focus,.pwd-add-fields input:focus,.inline-time-inputs input:focus { border-color:#7779cf; box-shadow:0 0 0 2px rgba(119,121,207,.1); }
+  .inline-time-inputs { display:flex; align-items:center; gap:7px; margin-top:10px; color:#83899a; font-size:12px; }
+  .inline-time-inputs span { margin-right:auto; }
+  .inline-time-inputs input { width:58px; padding:7px 6px; border:1px solid #e5e7ef; border-radius:7px; background:#fff; font:inherit; font-size:12px; text-align:center; outline:none; }
+  .inline-time-inputs b { color:#a1a5b1; font-weight:400; }
+  .pwd-add-fields { display:grid; grid-template-columns:1fr 1fr; gap:8px; }
+  .inline-add-form .bill-editor-actions { margin-top:10px; }
+  .inline-add-form .bill-editor-actions .bill-editor-save { padding:7px 14px; border-radius:8px; background:#6677d8; color:#fff; }
   .bill-editor-title { color:#707780; font-size:13px; margin-bottom:8px; }
   .bill-editor-fields { display:grid; grid-template-columns:minmax(0,1fr) 120px; gap:8px; }
   .bill-editor-fields input { min-width:0; border:0; border-bottom:1px solid #dfe1e4; border-radius:0; padding:9px 3px; background:transparent; font:inherit; font-size:11px !important; outline:none; }
@@ -516,7 +528,7 @@
   .inline-editor-field > span { display:block; margin-bottom:4px; color:#8b9098; font-size:12px; }
   .inline-editor-field input { width:100%; border:0; border-bottom:1px solid #dfe1e4; border-radius:0; padding:8px 2px; background:transparent; color:var(--text); font:inherit; font-size:11px !important; outline:none; }
   .inline-editor.add-editor .inline-editor-field input { border:1px solid #e5e7ef; border-radius:8px; padding:9px 10px; background:#fff; }
-  .inline-editor-field textarea { display:block; width:100%; min-height:82px; border:1px solid #dfe1e4; border-radius:7px; padding:9px 10px; background:#fff; color:var(--text); font:inherit; font-size:11px !important; line-height:1.5; outline:none; resize:vertical; }
+  .inline-editor-field textarea { display:block; width:100%; min-height:82px; border:1px solid #dfe1e4; border-radius:7px; padding:9px 10px; background:#fff; color:var(--text); font:inherit; font-size:11px !important; line-height:1.5; outline:none; resize:vertical; user-select:text; -webkit-user-select:text; }
   .inline-editor.add-editor .inline-editor-field textarea { border-color:#e5e7ef; border-radius:9px; }
   .inline-editor-field input:focus,.inline-editor-field textarea:focus { border-color:var(--primary); }
   .inline-editor-actions { display:flex; justify-content:flex-end; gap:8px; margin-top:8px; }
@@ -595,7 +607,6 @@
 </div>
     <div class="board-wrap" id="weekBoardWrap"><div class="board" id="weekBoard"></div></div>
     <div class="tt-wrap hidden" id="weekTableWrap"></div>
-    <button class="checkin-add-btn hidden" id="listAddBtn" onclick="openTTDialog()">＋ 添加任务</button>
   </div>
 
   <div id="day" class="hidden">
@@ -625,7 +636,12 @@
       <div class="cal-list">
         <div class="cal-list-title" id="calListTitle"></div>
         <div class="cal-items" id="calItems"></div>
-        <button class="cal-add" onclick="calAdd()">＋ 添加待办</button>
+        <div class="bill-editor inline-add-form" id="calAddForm">
+  <div class="bill-editor-title">添加待办</div>
+  <textarea id="calAddText" rows="2" placeholder="待办内容"></textarea>
+  <div class="inline-time-inputs"><span>时间（可选）</span><input id="calAddHour" type="number" inputmode="numeric" min="0" max="23" placeholder="小时"><b>:</b><input id="calAddMinute" type="number" inputmode="numeric" min="0" max="59" placeholder="分钟"></div>
+  <div class="bill-editor-actions"><button class="bill-editor-save" onclick="calAdd()">添加</button></div>
+</div>
       </div>
     </div>
   </div>
@@ -704,7 +720,11 @@
     <div class="pwd-wrap">
       <div class="pwd-hint">本地加密存储的账号密码记录，仅保存在本机</div>
       <div class="pwd-items" id="pwdItems"></div>
-      <button class="pwd-add" onclick="pwdAdd()">＋ 添加记录</button>
+      <div class="bill-editor inline-add-form" id="pwdAddForm">
+  <div class="bill-editor-title">添加记录</div>
+  <div class="pwd-add-fields"><input id="pwdAddName" type="text" placeholder="名称"><input id="pwdAddAccount" type="text" placeholder="账号"><input id="pwdAddPassword" type="password" placeholder="密码"><input id="pwdAddNote" type="text" placeholder="备注"></div>
+  <div class="bill-editor-actions"><button class="bill-editor-save" onclick="pwdAdd()">添加</button></div>
+</div>
     </div>
   </div>
 
@@ -716,7 +736,11 @@
     <div class="pwd-wrap">
       <div class="pwd-hint">记录一些琐事，随手记、随手删</div>
       <div class="note-items" id="noteItems"></div>
-      <button class="pwd-add" onclick="noteAdd()">＋ 写一张纸条</button>
+      <div class="bill-editor inline-add-form" id="noteAddForm">
+  <div class="bill-editor-title">写一张纸条</div>
+  <textarea id="noteAddText" rows="3" placeholder="内容"></textarea>
+  <div class="bill-editor-actions"><button class="bill-editor-save" onclick="noteAdd()">添加</button></div>
+</div>
     </div>
   </div>
 
@@ -1805,20 +1829,24 @@ function renderCalendar() {
   });
 }
 function calAdd() {
-  const addButton = document.querySelector('#calendar .cal-add');
-  showInlineEditor(addButton, '添加待办', [
-    { label:'待办内容', type:'textarea' },
-    ...makeTimeFields('')
-  ], values => {
-    const text = values[0].trim();
-    const start = readTimeFields(values, 1);
-    if (!text) { alert('请填写待办内容'); return false; }
-    if (start === null) { alert('小时范围为 0–23，分钟范围为 0–59'); return false; }
-    const tasks = calGetTasks(calSelKey);
-    tasks.push({ id: Date.now() + Math.random(), text, start, hours: 4, done: false, color: tasks.length % COLORS });
-    calSetTasks(calSelKey, tasks);
-    renderCalendar();
-  });
+  const text = document.getElementById('calAddText').value.trim();
+  const hourText = document.getElementById('calAddHour').value.trim();
+  const minuteText = document.getElementById('calAddMinute').value.trim();
+  if (!text) { alert('请填写待办内容'); return; }
+  if (!!hourText !== !!minuteText) { alert('请同时填写小时和分钟，或都留空'); return; }
+  let start = '';
+  if (hourText && minuteText) {
+    const hour = Number(hourText), minute = Number(minuteText);
+    if (!Number.isInteger(hour) || hour < 0 || hour > 23 || !Number.isInteger(minute) || minute < 0 || minute > 59) { alert('小时范围为 0–23，分钟范围为 0–59'); return; }
+    start = pad(hour) + ':' + pad(minute);
+  }
+  const tasks = calGetTasks(calSelKey);
+  tasks.push({ id:Date.now() + Math.random(), text, start, hours:4, done:false, color:tasks.length % COLORS });
+  calSetTasks(calSelKey, tasks);
+  document.getElementById('calAddText').value = '';
+  document.getElementById('calAddHour').value = '';
+  document.getElementById('calAddMinute').value = '';
+  renderCalendar();
 }
 // 待办内容与时间在当前行下方直接编辑
 function calEdit(t, key, anchor) {
@@ -2288,19 +2316,13 @@ function renderPwd() {
   });
 }
 function pwdAdd() {
-  const anchor = document.querySelector('#pwd .pwd-add');
-  showInlineEditor(anchor, '添加密码记录', [
-    { label:'名称' },
-    { label:'账号' },
-    { label:'密码', type:'password' },
-    { label:'备注' }
-  ], values => {
-    const name = values[0].trim();
-    if (!name) { alert('请填写名称'); return false; }
-    const list = pwdGetAll();
-    list.push({ id:Date.now() + Math.random(), name, account:values[1].trim(), password:values[2], note:values[3].trim() });
-    pwdSaveAll(list); renderPwd();
-  });
+  const name = document.getElementById('pwdAddName').value.trim();
+  if (!name) { alert('请填写名称'); return; }
+  const list = pwdGetAll();
+  list.push({ id:Date.now() + Math.random(), name, account:document.getElementById('pwdAddAccount').value.trim(), password:document.getElementById('pwdAddPassword').value, note:document.getElementById('pwdAddNote').value.trim() });
+  pwdSaveAll(list);
+  ['pwdAddName','pwdAddAccount','pwdAddPassword','pwdAddNote'].forEach(id => { document.getElementById(id).value = ''; });
+  renderPwd();
 }
 // 密码信息直接在该记录下方编辑
 function pwdEdit(p, anchor) {
@@ -2361,16 +2383,13 @@ function renderNote() {
   });
 }
 function noteAdd() {
-  const anchor = document.querySelector('#note .pwd-add');
-  showInlineEditor(anchor, '写一张纸条', [
-    { label:'内容', type:'textarea' }
-  ], values => {
-    const text = values[0].trim();
-    if (!text) { alert('纸条内容不能为空'); return false; }
-    const list = noteGetAll();
-    list.push({ id:Date.now() + Math.random(), text, time:Date.now() });
-    noteSaveAll(list); renderNote();
-  });
+  const text = document.getElementById('noteAddText').value.trim();
+  if (!text) { alert('纸条内容不能为空'); return; }
+  const list = noteGetAll();
+  list.push({ id:Date.now() + Math.random(), text, time:Date.now() });
+  noteSaveAll(list);
+  document.getElementById('noteAddText').value = '';
+  renderNote();
 }
 // 纸条内容直接在该条下方编辑
 function noteEdit(n, anchor) {
@@ -2503,7 +2522,6 @@ function switchWeekView(view) {
   });
   document.getElementById('weekBoardWrap').classList.toggle('hidden', view !== 'board');
   document.getElementById('weekTableWrap').classList.toggle('hidden', view !== 'timetable');
-  document.getElementById('listAddBtn').classList.toggle('hidden', view !== 'timetable');
   if (view === 'board') render('week');
   else renderTimetable();
 }
@@ -2593,7 +2611,7 @@ function renderTimetable() {
   if (!any) {
     const hint = document.createElement('div');
     hint.className = 'tt-list-hint';
-    hint.textContent = '';
+    hint.textContent = '长按空白处添加任务';
     list.appendChild(hint);
   }
   wrap.appendChild(list);
@@ -2682,27 +2700,26 @@ function openTTTimeEdit(t, el) {
     if (obj) { obj.start = start; ttSetWeekTasks(tasks); renderTimetable(); }
   });
 }
-// 课程表添加任务：在课程表下方填写
+// 列表模式长按空白处后，在页面中填写任务
 let ttDialogTarget = null;
 let ttDialogDay = 1;
 function openTTDialog() {
   const now = new Date();
   const dow = now.getDay();
   ttDialogDay = dow === 0 ? 7 : dow;
-  showInlineEditor(document.getElementById('listAddBtn'), '添加课程表任务', [
-    { label:'任务内容', type:'textarea' },
-    ...makeTimeFields(''),
-    { label:'星期', type:'choice', value:String(ttDialogDay), options:TT_DAYS.map(d => ({ value:d.id, label:d.label })) }
-  ], values => {
-    const text = values[0].trim();
-    const start = readTimeFields(values, 1);
-    const dayId = Number(values[3]);
-    if (!text) { alert('请填写任务内容'); return false; }
-    if (start === null) { alert('小时范围为 0–23，分钟范围为 0–59'); return false; }
-    const { tasks } = ttGetWeekTasks();
-    tasks.push({ id:Date.now() + Math.random(), text, start, dayId, done:false, color:tasks.length % COLORS });
-    ttSetWeekTasks(tasks); renderTimetable();
-  });
+  ttDialogTarget = true;
+  dialogScope = null;
+  dismissInlineEditor();
+  resetDialog();
+  document.getElementById('dialogInput').value = '';
+  document.getElementById('dialogTitle').textContent = '添加列表任务';
+  timeStampOn = false;
+  setTimeStamp(false);
+  document.getElementById('durRow').style.display = 'none';
+  document.getElementById('durLabel').style.display = 'none';
+  renderTTSlotPicker();
+  document.getElementById('overlay').classList.add('checkin-form', 'show');
+  requestAnimationFrame(() => document.getElementById('dialogInput').focus());
 }
 
 // 在弹窗内渲染星期选择（复用 dur-row 样式，动态插入）
