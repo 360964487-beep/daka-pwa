@@ -523,11 +523,15 @@
   .inline-editor.add-editor { padding:14px 15px; border:1px solid #e6e7f1; border-left:3px solid #7779cf; border-radius:13px; background:linear-gradient(145deg,#fff 0%,#f7f7fc 100%); box-shadow:0 5px 16px rgba(63,69,112,.07); animation:editorReveal .22s ease-out both; }
   .inline-editor.add-editor .inline-editor-title { color:#50577d; font-weight:600; }
   .inline-editor-field { display:block; margin:7px 0; }
-  .inline-editor-field.time-part { display:inline-block; width:calc(50% - 5px); vertical-align:top; }
-  .inline-editor-field.time-part + .inline-editor-field.time-part { margin-left:6px; }
+  .inline-time-row { display:flex; align-items:center; gap:8px; margin:8px 0; }
+  .inline-editor-field.time-part { display:block; flex:1; min-width:0; width:auto; margin:0; }
+  .inline-time-separator { color:#858b94; font-size:14px; line-height:1; }
+  .inline-editor-field.time-part > span { display:none; }
   .inline-editor-field > span { display:block; margin-bottom:4px; color:#8b9098; font-size:12px; }
   .inline-editor-field input { width:100%; border:0; border-bottom:1px solid #dfe1e4; border-radius:0; padding:8px 2px; background:transparent; color:var(--text); font:inherit; font-size:11px !important; outline:none; }
   .inline-editor.add-editor .inline-editor-field input { border:1px solid #e5e7ef; border-radius:8px; padding:9px 10px; background:#fff; }
+  .inline-editor-field.time-part input { box-sizing:border-box; height:40px; border:1px solid #e2e4eb; border-radius:10px; padding:7px 10px; background:#fff; color:#454b57; font-size:13px !important; text-align:center; }
+  .inline-editor-field.time-part input:focus { border-color:#7779cf; box-shadow:0 0 0 2px rgba(119,121,207,.1); }
   .inline-editor-field textarea { display:block; width:100%; min-height:82px; border:1px solid #dfe1e4; border-radius:7px; padding:9px 10px; background:#fff; color:var(--text); font:inherit; font-size:11px !important; line-height:1.5; outline:none; resize:vertical; user-select:text; -webkit-user-select:text; }
   .inline-editor.add-editor .inline-editor-field textarea { border-color:#e5e7ef; border-radius:9px; }
   .inline-editor-field input:focus,.inline-editor-field textarea:focus { border-color:var(--primary); }
@@ -947,9 +951,14 @@ function dismissInlineEditor() {
   activeInlineEditor = null; activeInlineAnchor = null; activeInlineAnchorHTML = null;
 }
 document.addEventListener('click', e => {
+  const inForm = e.target.closest('.inline-editor,.inline-add-form,.pwd-add-fields');
+  if (!inForm && !activeInlineEditor) document.body.classList.remove('inline-editing');
   if (!activeInlineEditor || activeInlineEditor.contains(e.target)) return;
   if (inlineEditorOpeningAnchor && (e.target === inlineEditorOpeningAnchor || inlineEditorOpeningAnchor.contains(e.target))) return;
   dismissInlineEditor();
+});
+document.addEventListener('focusin', e => {
+  if (e.target.closest('.inline-editor,.inline-add-form,.pwd-add-fields')) document.body.classList.add('inline-editing');
 });
 function showInlineEditor(anchor, title, fields, onSave, onCancel, onDelete, placement) {
   if (activeInlineEditor && !activeInlineEditor.isConnected) {
@@ -967,6 +976,8 @@ function showInlineEditor(anchor, title, fields, onSave, onCancel, onDelete, pla
   heading.className = 'inline-editor-title'; heading.textContent = title;
   editor.appendChild(heading);
   const controls = [];
+  let timeRow = null;
+  let timeFieldCount = 0;
   fields.forEach(f => {
     const field = document.createElement('label');
     field.className = 'inline-editor-field';
@@ -995,11 +1006,19 @@ function showInlineEditor(anchor, title, fields, onSave, onCancel, onDelete, pla
     if (f.min != null) input.min = f.min;
     if (f.max != null) input.max = f.max;
     if (f.step != null) input.step = f.step;
+    if (f.maxLength != null) input.maxLength = f.maxLength;
     if (f.inputmode) input.inputMode = f.inputmode;
     if (f.type === 'textarea') input.rows = 3;
     input.placeholder = f.placeholder || '';
     input.value = f.value == null ? '' : f.value;
-    field.appendChild(label); field.appendChild(input); editor.appendChild(field); controls.push(input);
+    field.appendChild(label); field.appendChild(input);
+    if (f.className === 'time-part') {
+      if (!timeRow) { timeRow = document.createElement('div'); timeRow.className = 'inline-time-row'; editor.appendChild(timeRow); }
+      if (timeFieldCount > 0) { const sep = document.createElement('span'); sep.className = 'inline-time-separator'; sep.textContent = ':'; timeRow.appendChild(sep); }
+      timeRow.appendChild(field); timeFieldCount++;
+      input.addEventListener('input', () => { input.value = input.value.replace(/\D/g, '').slice(0, 2); });
+    } else editor.appendChild(field);
+    controls.push(input);
   });
   const actions = document.createElement('div');
   actions.className = 'inline-editor-actions';
@@ -1061,8 +1080,8 @@ function splitTimeFields(value) {
 function makeTimeFields(value) {
   const [hour, minute] = splitTimeFields(value);
   return [
-    { label:'小时', type:'number', className:'time-part', min:'0', max:'23', step:'1', inputmode:'numeric', value:hour },
-    { label:'分钟', type:'number', className:'time-part', min:'0', max:'59', step:'1', inputmode:'numeric', value:minute }
+    { label:'小时', placeholder:'小时', type:'text', className:'time-part', maxLength:2, inputmode:'numeric', value:hour },
+    { label:'分钟', placeholder:'分钟', type:'text', className:'time-part', maxLength:2, inputmode:'numeric', value:minute }
   ];
 }
 function readTimeFields(values, index) {
@@ -1858,6 +1877,7 @@ function calAdd() {
   document.getElementById('calAddText').value = '';
   document.getElementById('calAddHour').value = '';
   document.getElementById('calAddMinute').value = '';
+  document.body.classList.remove('inline-editing');
   renderCalendar();
 }
 // 待办内容与时间在当前行下方直接编辑
@@ -2334,6 +2354,7 @@ function pwdAdd() {
   list.push({ id:Date.now() + Math.random(), name, account:document.getElementById('pwdAddAccount').value.trim(), password:document.getElementById('pwdAddPassword').value, note:document.getElementById('pwdAddNote').value.trim() });
   pwdSaveAll(list);
   ['pwdAddName','pwdAddAccount','pwdAddPassword','pwdAddNote'].forEach(id => { document.getElementById(id).value = ''; });
+  document.body.classList.remove('inline-editing');
   renderPwd();
 }
 // 密码信息直接在该记录下方编辑
@@ -2401,6 +2422,7 @@ function noteAdd() {
   list.push({ id:Date.now() + Math.random(), text, time:Date.now() });
   noteSaveAll(list);
   document.getElementById('noteAddText').value = '';
+  document.body.classList.remove('inline-editing');
   renderNote();
 }
 // 纸条内容直接在该条下方编辑
