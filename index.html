@@ -1,0 +1,2587 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>打卡</title>
+<style>
+  :root {
+    --bg: #f5f6f8;
+    --text: #1f2329;
+    --muted: #8a8f98;
+    --primary: #4f6ef7;
+    --green: #16a34a;
+    --red: #e5484d;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "PingFang SC", "Microsoft YaHei", sans-serif;
+    background: var(--bg); color: var(--text); min-height: 100vh;
+    -webkit-font-smoothing: antialiased; user-select: none; -webkit-user-select: none;
+    -webkit-tap-highlight-color: transparent; touch-action: manipulation;
+  }
+  .app { max-width: 520px; margin: 0 auto; padding: 24px 16px 40px; }
+
+  .topbar { display: flex; align-items: center; gap: 10px; padding: 4px 0 18px; }
+  .back-btn {
+    width: 38px; height: 38px; border-radius: 12px; border: 1px solid #e8eaed;
+    background: #fff; cursor: pointer; display: flex; align-items: center; justify-content: center;
+    font-size: 18px; color: var(--text);
+  }
+  .topbar h1 { font-size: 18px; font-weight: 700; }
+  .topbar .spacer { flex: 1; }
+
+  .home-title { font-size: 22px; font-weight: 700; padding: 6px 4px 4px; }
+  .menu { display: flex; flex-direction: column; margin-top: 4px; }
+  .menu-card {
+    display: flex; align-items: center; gap: 14px;
+    padding: 15px 6px; cursor: pointer;
+    background: transparent; border: none; border-bottom: 1px solid #eef0f3;
+    transition: .15s; text-align: left;
+  }
+  .menu-card:last-child { border-bottom: none; }
+  .menu-card:active { background: #eceef2; }
+  .menu-card .icon { font-size: 22px; line-height: 1; width: 34px; text-align: center; flex-shrink: 0; }
+  .menu-card h2 { font-size: 16px; font-weight: 600; }
+  .menu-card .arrow { margin-left: auto; color: #c3c7cf; font-size: 18px; }
+  /* 操作说明卡片：不可点击，弱化样式 */
+  .guide-card { cursor: default; }
+  .guide-card:hover { transform: none; box-shadow: none; }
+  .guide-card .guide-text {
+    margin-top: 8px; font-size: 13px; color: var(--muted); line-height: 1.7;
+  }
+
+  .board-wrap { width: 100%; max-width: 420px; margin: 0 auto; }
+  .board {
+    position: relative; width: 100%; aspect-ratio: 8/12; background: #fff;
+    border-radius: 20px; box-shadow: 0 2px 8px rgba(16,24,40,.08); overflow: hidden;
+    border: 1px solid #e8eaed;
+    /* 8列×12行 网格背景 */
+    background-image:
+      linear-gradient(to right, #f0f2f5 1px, transparent 1px),
+      linear-gradient(to bottom, #f0f2f5 1px, transparent 1px);
+    background-size: 25% 16.6667%;
+  }
+  .board.pressing { box-shadow: inset 0 0 0 3px var(--primary), 0 2px 8px rgba(16,24,40,.08); }
+  .board-hint {
+    position: absolute; inset: 0; display: flex; align-items: center; justify-content: center;
+    color: #b7bbc3; font-size: 14px; pointer-events: none; text-align: center; line-height: 2; z-index: 0;
+  }
+
+  .tile {
+    position: absolute; top: 0; left: 0; border-radius: 10px; cursor: pointer;
+    display: flex; flex-direction: column; align-items: stretch; justify-content: flex-start; overflow: hidden;
+    box-shadow: 0 1px 4px rgba(16,24,40,.10);
+    transition: transform .65s cubic-bezier(.34,1.4,.5,1), opacity .3s, filter .3s;
+    will-change: transform;
+    touch-action: none;
+    -webkit-user-select: none; user-select: none;
+  }
+  .tile .tile-text {
+    flex: 1; display: flex; align-items: center; justify-content: center;
+    font-size: 13px; font-weight: 300; text-align: center; line-height: 1.35;
+    padding: 2px 6px 6px; word-break: break-all; pointer-events: none; max-width: 100%;
+  }
+  .tile .tile-check {
+    position: absolute; bottom: 4px; right: 4px; width: 22px; height: 22px; border-radius: 50%;
+    display: none; align-items: center; justify-content: center; font-size: 13px; font-weight: 800;
+    color: #fff; background: var(--green);
+  }
+  .tile.done { opacity: .55; filter: saturate(.6); }
+  .tile.done .tile-check { display: flex; }
+  .tile.balloon { box-shadow: 0 3px 10px rgba(16,24,40,.14); }
+  .tile.settled { transition: none; }
+  .tile.dragging {
+    transition: none !important; z-index: 50; opacity: .9;
+    box-shadow: 0 8px 24px rgba(16,24,40,.3); transform-origin: center;
+  }
+  /* 时间签：块内第一行，占据真实空间，文字排在下方，结构上不重叠 */
+  .tile .tile-time {
+    align-self: flex-end; margin: 4px 6px 0; font-size: 10px; font-weight: 700;
+    color: rgba(255,255,255,.95); background: rgba(0,0,0,.22); padding: 2px 6px;
+    border-radius: 6px; line-height: 1; pointer-events: none; z-index: 2; flex-shrink: 0;
+  }
+
+  .tile.c0 { background: #4f6ef7; color:#fff; } .tile.c1 { background: #7c5cf0; color:#fff; }
+  .tile.c2 { background: #0ea5a4; color:#fff; } .tile.c3 { background: #f59e0b; color:#fff; }
+  .tile.c4 { background: #e5484d; color:#fff; } .tile.c5 { background: #16a34a; color:#fff; }
+  .tile.c6 { background: #d97706; color:#fff; } .tile.c7 { background: #0e7490; color:#fff; }
+
+  .overlay {
+    position: fixed; inset: 0; background: rgba(0,0,0,.4); z-index: 100; padding: 24px;
+    display: flex; align-items: center; justify-content: center;
+    opacity: 0; pointer-events: none; transition: opacity .18s;
+  }
+  .overlay.show { opacity: 1; pointer-events: auto; }
+  .dialog {
+    background: #fff; border-radius: 18px; padding: 22px; width: 100%; max-width: 340px;
+    box-shadow: 0 12px 40px rgba(16,24,40,.25);
+  }
+  .dialog h3 { font-size: 16px; font-weight: 700; margin-bottom: 14px; }
+  .dialog input, .dialog textarea {
+    width: 100%; border: 1px solid #e8eaed; border-radius: 12px; padding: 12px 14px;
+    font-size: 15px; outline: none; background: #fafbfc; font-family: inherit;
+    user-select: text; -webkit-user-select: text;
+  }
+  .dialog input:focus, .dialog textarea:focus { border-color: var(--primary); background: #fff; box-shadow: 0 0 0 3px #eef1fe; }
+  .dialog textarea {
+    resize: vertical; min-height: 76px; max-height: 220px; line-height: 1.5;
+  }
+
+  /* iOS 风格滚轮时间选择器 */
+  .time-toggle-row {
+    display: flex; align-items: center; justify-content: space-between;
+    margin: 14px 0 8px;
+  }
+  .time-picker {
+    display: flex; align-items: center; justify-content: center; gap: 10px;
+    height: 88px; position: relative; user-select: none; -webkit-user-select: none;
+    background: #fafbfc; border-radius: 14px; border: 1px solid #e8eaed;
+    padding: 0 8px; margin-top: 4px;
+  }
+  .tp-inp {
+    width: 88px; height: 56px; text-align: center;
+    font-size: 26px; font-weight: 700; color: var(--text);
+    border: 1px solid #e0e3ea; border-radius: 12px; background: #fff;
+    -webkit-appearance: none; appearance: none; outline: none;
+  }
+  .tp-inp:focus { border-color: var(--primary); box-shadow: 0 0 0 3px rgba(79,110,247,.12); }
+  .tp-inp::placeholder { color: #c4c8d0; font-weight: 400; }
+  .tp-colon {
+    font-size: 28px; font-weight: 700; color: var(--text);
+    display: flex; align-items: center; justify-content: center; height: 56px;
+  }
+
+  .dur-label { font-size: 13px; font-weight: 600; color: var(--muted); margin: 14px 0 8px; }
+  .opt-hint { font-weight: 400; font-size: 12px; color: #b7bbc3; }
+  .dur-row { display: flex; flex-wrap: wrap; gap: 8px; }
+  .dur-btn {
+    padding: 8px 12px; border-radius: 10px; border: 1px solid #e8eaed;
+    background: #fafbfc; color: var(--text); font-size: 13px; font-weight: 600;
+    cursor: pointer; font-family: inherit; transition: .15s;
+  }
+  .dur-btn:hover { background: #f0f1f4; }
+  .dur-btn.active { background: var(--primary); border-color: var(--primary); color: #fff; }
+  .dialog-btns { display: flex; gap: 10px; margin-top: 16px; }
+  .dialog-btns button {
+    flex: 1; padding: 11px; border-radius: 12px; font-size: 15px; font-weight: 600;
+    cursor: pointer; border: none; font-family: inherit;
+  }
+  .btn-cancel { background: #f0f1f4; color: var(--text); }
+  .btn-ok { background: var(--primary); color: #fff; }
+
+  /* 多字段表单弹窗 */
+  .form-field { margin-bottom: 12px; }
+  .form-field:last-of-type { margin-bottom: 0; }
+  .form-label { font-size: 13px; font-weight: 600; color: var(--muted); margin-bottom: 6px; }
+  .form-field input, .form-field textarea {
+    width: 100%; border: 1px solid #e8eaed; border-radius: 12px; padding: 11px 13px;
+    font-size: 15px; outline: none; background: #fafbfc; font-family: inherit;
+    user-select: text; -webkit-user-select: text; box-sizing: border-box;
+  }
+  .form-field input:focus, .form-field textarea:focus { border-color: var(--primary); background: #fff; box-shadow: 0 0 0 3px #eef1fe; }
+
+  .menu-pop {
+    position: fixed; z-index: 200; background: #fff; border-radius: 16px;
+    box-shadow: 0 12px 40px rgba(16,24,40,.28); padding: 6px; min-width: 160px;
+    opacity: 0; pointer-events: none; transition: opacity .15s;
+  }
+  .menu-pop.show { opacity: 1; pointer-events: auto; }
+  .menu-item {
+    display: flex; align-items: center; gap: 10px; width: 100%;
+    padding: 12px 14px; border: none; background: none; cursor: pointer;
+    font-size: 15px; color: var(--text); border-radius: 10px; text-align: left; font-family: inherit;
+  }
+  .menu-item:hover { background: #f0f1f4; }
+  .menu-item.danger { color: var(--red); }
+  .menu-item.danger:hover { background: #feecec; }
+  /* 菜单内的难度档位 + 时序开关 */
+  .menu-row {
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 8px 12px; gap: 8px;
+  }
+  .menu-row .mr-label { font-size: 13px; color: var(--muted); font-weight: 600; white-space: nowrap; }
+  .menu-levels { display: flex; gap: 4px; flex-wrap: wrap; justify-content: flex-end; }
+  .menu-level {
+    padding: 4px 8px; border-radius: 7px; border: 1px solid #e8eaed;
+    background: #fafbfc; color: var(--text); font-size: 12px; font-weight: 600; cursor: pointer; font-family: inherit;
+  }
+  .menu-level.active { background: var(--primary); border-color: var(--primary); color: #fff; }
+  .menu-switch {
+    position: relative; width: 40px; height: 22px; border-radius: 11px;
+    background: #d0d3da; cursor: pointer; transition: .2s; flex-shrink: 0;
+  }
+  .menu-switch.on { background: var(--primary); }
+  .menu-switch::after {
+    content: ''; position: absolute; top: 2px; left: 2px; width: 18px; height: 18px;
+    border-radius: 50%; background: #fff; transition: .2s;
+  }
+  .menu-switch.on::after { left: 20px; }
+  .menu-item .mi { font-size: 17px; }
+
+  .hidden { display: none !important; }
+  /* ===== 日历待办 ===== */
+  .cal-wrap { width: 100%; max-width: 460px; margin: 0 auto; padding: 8px 12px 24px; }
+  .cal-head { display: flex; align-items: center; justify-content: space-between; margin-bottom: 10px; }
+  .cal-title { font-size: 17px; font-weight: 700; }
+  .cal-nav {
+    width: 38px; height: 38px; border-radius: 10px; border: 1px solid #e8eaed;
+    background: #fff; font-size: 20px; cursor: pointer; color: var(--text); line-height: 1;
+  }
+  .cal-nav:hover { background: #f0f1f4; }
+  .cal-weekdays { display: grid; grid-template-columns: repeat(7, 1fr); text-align: center; font-size: 12px; color: var(--muted); margin-bottom: 4px; }
+  .cal-weekdays span { padding: 4px 0; }
+  .cal-grid { display: grid; grid-template-columns: repeat(7, 1fr); gap: 4px; }
+  .cal-cell {
+    aspect-ratio: 1/1; display: flex; flex-direction: column; align-items: center; justify-content: center;
+    border-radius: 10px; cursor: pointer; font-size: 14px; position: relative; color: var(--text);
+  }
+  .cal-cell.other { color: #c4c8d0; }
+  .cal-cell:hover { background: #f0f1f4; }
+  .cal-cell.today { background: #dfe3f3; color: #4a5580; font-weight: 700; }
+  .cal-cell.sel { outline: 2px solid #a8aebf; outline-offset: -2px; }
+  /* 有待办未完成：暖杏色；待办全部完成：抹茶绿；低饱和柔和色调 */
+  .cal-cell.has-task {
+    font-weight: 700; color: #92580f;
+    background: #f7ddb7;
+  }
+  .cal-cell.has-task:hover { background: #f0d0a0; }
+  .cal-cell.all-done {
+    font-weight: 700; color: #43694a;
+    background: #cde9cf;
+  }
+  .cal-cell.all-done:hover { background: #bfe0c2; }
+  .cal-cell.has-task.today { background: #f7ddb7; }
+  .cal-cell.all-done.today { background: #cde9cf; }
+  .cal-list { margin-top: 16px; }
+  .cal-list-title { font-size: 14px; font-weight: 700; color: var(--muted); margin-bottom: 8px; }
+  .cal-items { display: flex; flex-direction: column; gap: 8px; }
+  .cal-item {
+    display: flex; align-items: center; gap: 10px; background: #fff; border-radius: 12px;
+    padding: 12px 14px; box-shadow: 0 1px 4px rgba(16,24,40,.08); border: 1px solid #e8eaed;
+  }
+  .cal-item .ci-check {
+    width: 22px; height: 22px; border-radius: 50%; border: 2px solid #d0d3da;
+    cursor: pointer; flex-shrink: 0; display: flex; align-items: center; justify-content: center;
+    font-size: 13px; font-weight: 800; color: #fff;
+  }
+  .cal-item.done .ci-check { background: var(--green); border-color: var(--green); }
+  .cal-item .ci-text { flex: 1; font-size: 14px; word-break: break-all; }
+  .cal-item.done .ci-text { text-decoration: line-through; color: var(--muted); }
+  .cal-item .ci-time { font-size: 12px; color: var(--muted); }
+  .cal-item .ci-del { border: none; background: none; color: #c4c8d0; font-size: 18px; cursor: pointer; padding: 0 2px; }
+  .cal-item .ci-del:hover { color: #e5484d; }
+  .cal-add {
+    width: 100%; margin-top: 12px; padding: 12px; border-radius: 12px; border: 1px dashed #c4c8d0;
+    background: #fafbfc; color: var(--muted); font-size: 14px; font-weight: 600; cursor: pointer; font-family: inherit;
+  }
+  .cal-add:hover { background: #f0f1f4; color: var(--text); }
+  .cal-empty { text-align: center; color: #c4c8d0; font-size: 13px; padding: 16px 0; }
+
+  /* ===== 我的 ===== */
+  .mine-wrap { width: 100%; max-width: 460px; margin: 0 auto; padding: 8px 12px 24px; }
+  .mine-profile { display: flex; align-items: center; gap: 14px; background: #fff; border-radius: 18px; padding: 20px; border: 1px solid #e8eaed; box-shadow: 0 1px 4px rgba(16,24,40,.06); }
+  .mine-avatar { width: 56px; height: 56px; border-radius: 50%; background: #eef1fe; display: flex; align-items: center; justify-content: center; font-size: 28px; }
+  .mine-name { font-size: 17px; font-weight: 700; }
+  .mine-sub { font-size: 13px; color: var(--muted); margin-top: 4px; }
+  .mine-stats { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; margin-top: 16px; }
+  .stat-box { background: #fff; border-radius: 14px; padding: 16px 8px; text-align: center; border: 1px solid #e8eaed; box-shadow: 0 1px 4px rgba(16,24,40,.06); }
+  .stat-num { font-size: 24px; font-weight: 800; color: var(--primary); }
+  .stat-label { font-size: 12px; color: var(--muted); margin-top: 6px; }
+  .mine-actions { display: flex; flex-direction: column; gap: 10px; margin-top: 16px; }
+  .mine-btn { padding: 14px; border-radius: 14px; border: 1px solid #e8eaed; background: #fff; font-size: 15px; font-weight: 600; cursor: pointer; font-family: inherit; color: var(--text); }
+  .mine-btn:hover { background: #f0f1f4; }
+  .mine-btn.danger { color: var(--red); }
+  .mine-btn.danger:hover { background: #feecec; }
+
+  /* ===== 记账 ===== */
+  .bill-wrap { width: 100%; max-width: 460px; margin: 0 auto; padding: 8px 12px 24px; }
+  /* 年份/月份 + 汇总 合并为一行（扁平） */
+  .bill-head {
+    display: flex; align-items: center; justify-content: center; gap: 8px; margin-bottom: 10px;
+  }
+  .bill-head .cal-nav { width: 26px; height: 26px; border-radius: 8px; font-size: 13px; color: var(--muted); border: none; background: none; padding: 0; }
+  .bill-head .cal-nav:hover { background: #f0f1f4; }
+  .bill-head .cal-title { min-width: 64px; text-align: center; font-size: 14px; font-weight: 600; color: var(--muted); }
+  .bill-head-sum { display: flex; align-items: baseline; gap: 8px; margin-left: 10px; }
+  .bill-head-sum .hs-amt { font-size: 15px; font-weight: 700; }
+  .bill-head-sum .hs-amt.income { color: #16a34a; }
+  .bill-head-sum .hs-amt.expense { color: #e5484d; }
+  .bill-head-sum .hs-sub { font-size: 12px; color: var(--muted); }
+  .bill-card {
+    background: #fff; border-radius: 14px; box-shadow: none; border: 1px solid #f0f1f4;
+    padding: 4px 16px;
+  }
+  /* 行式账目：名称左、金额右（参照截图简洁格式） */
+  .bill-row {
+    display: flex; align-items: center; justify-content: space-between; gap: 12px;
+    padding: 11px 0; border-bottom: 1px solid #f0f1f4; font-size: 15px;
+  }
+  .bill-row:last-child { border-bottom: none; }
+  .bill-row .br-name { flex: 1; min-width: 0; word-break: break-all; color: var(--text); }
+  .bill-row .br-name .br-sub { display: block; font-size: 12px; color: var(--muted); margin-top: 1px; }
+  .bill-row .br-amt { font-size: 15px; white-space: nowrap; color: var(--text); }
+  .bill-row .br-amt.income { color: #16a34a; }
+  .bill-row .br-amt.expense { color: #e5484d; }
+  .bill-row .br-del { border: none; background: none; color: #c4c8d0; font-size: 17px; cursor: pointer; padding: 0 2px; }
+  .bill-row .br-del:hover { color: #e5484d; }
+  .bill-row.month-row { cursor: pointer; }
+  .bill-row.month-row:hover { background: #fafbfc; }
+  .bill-empty { text-align: center; color: #c4c8d0; font-size: 13px; padding: 24px 0; }
+  .bill-add {
+    width: 100%; margin-top: 12px; padding: 12px; border-radius: 12px; border: 1px dashed #c4c8d0;
+    background: #fafbfc; color: var(--muted); font-size: 14px; font-weight: 600; cursor: pointer; font-family: inherit;
+  }
+  .bill-add:hover { background: #f0f1f4; color: var(--text); }
+  .bill-fixed-hint { font-size: 12px; color: var(--muted); margin-bottom: 10px; line-height: 1.5; }
+  .bill-sub-tabs { margin-bottom: 12px; }
+  .bill-sub-tabs .vt-btn { flex: 1; text-align: center; }
+  .bill-empty { text-align: center; color: #c4c8d0; font-size: 13px; padding: 24px 0; }
+
+  /* ===== 密码记录 ===== */
+  .pwd-wrap { width: 100%; max-width: 460px; margin: 0 auto; padding: 8px 12px 24px; }
+  .pwd-hint { font-size: 12px; color: var(--muted); margin-bottom: 12px; line-height: 1.5; }
+  .pwd-items { display: flex; flex-direction: column; gap: 10px; }
+  .pwd-item {
+    background: #fff; border-radius: 14px; padding: 14px; box-shadow: 0 1px 4px rgba(16,24,40,.08);
+    border: 1px solid #e8eaed;
+  }
+  .pwd-item .pi-top { display: flex; align-items: center; gap: 10px; }
+  .pwd-item .pi-icon { width: 38px; height: 38px; border-radius: 10px; display: flex; align-items: center; justify-content: center; font-size: 18px; flex-shrink: 0; background: #eef1fe; }
+  .pwd-item .pi-title { flex: 1; min-width: 0; }
+  .pwd-item .pi-name { font-size: 15px; font-weight: 700; word-break: break-all; }
+  .pwd-item .pi-account { font-size: 12px; color: var(--muted); margin-top: 2px; word-break: break-all; }
+  .pwd-item .pi-del { border: none; background: none; color: #c4c8d0; font-size: 18px; cursor: pointer; padding: 0 2px; }
+  .pwd-item .pi-del:hover { color: #e5484d; }
+  .pwd-item .pi-pw-row { display: flex; align-items: center; gap: 8px; margin-top: 10px; padding-top: 10px; border-top: 1px dashed #e8eaed; }
+  .pwd-item .pi-pw { flex: 1; font-size: 13px; font-family: monospace; color: var(--text); word-break: break-all; }
+  .pwd-item .pi-pw.masked { letter-spacing: 2px; color: var(--muted); }
+  .pwd-item .pi-eye { border: none; background: none; color: var(--muted); font-size: 16px; cursor: pointer; padding: 2px 4px; }
+  .pwd-item .pi-eye:hover { color: var(--primary); }
+  .pwd-item .pi-copy { border: none; background: none; color: var(--muted); font-size: 15px; cursor: pointer; padding: 2px 4px; }
+  .pwd-item .pi-copy:hover { color: var(--primary); }
+  .pwd-add {
+    width: 100%; margin-top: 12px; padding: 12px; border-radius: 12px; border: 1px dashed #c4c8d0;
+    background: #fafbfc; color: var(--muted); font-size: 14px; font-weight: 600; cursor: pointer; font-family: inherit;
+  }
+  .pwd-add:hover { background: #f0f1f4; color: var(--text); }
+  .pwd-empty { text-align: center; color: #c4c8d0; font-size: 13px; padding: 24px 0; }
+
+  /* 小纸条：便利贴风格 */
+  .note-items { display: flex; flex-direction: column; gap: 10px; }
+  .note-item {
+    background: #fffdf2; border: 1px solid #f0e9c8; border-radius: 12px;
+    padding: 12px 14px; box-shadow: 0 1px 4px rgba(16,24,40,.05); position: relative;
+  }
+  .note-item .note-text { font-size: 14px; line-height: 1.6; color: var(--text); word-break: break-all; white-space: pre-wrap; }
+  .note-item .note-time { font-size: 11px; color: #b7ae8a; margin-top: 8px; }
+  .note-item .note-del { position: absolute; top: 6px; right: 8px; border: none; background: none; color: #c9c2a6; font-size: 18px; cursor: pointer; padding: 0 2px; line-height: 1; }
+  .note-item .note-del:hover { color: #e5484d; }
+
+  @media (max-width: 400px) { .menu { gap: 8px; } }
+
+  /* ===== 周打卡视图切换 + 课程表 ===== */
+  .view-tabs { display: flex; gap: 6px; background: #eef0f3; border-radius: 10px; padding: 3px; }
+  .vt-btn {
+    padding: 6px 14px; border: none; background: transparent; border-radius: 8px;
+    font-size: 13px; font-weight: 600; color: var(--muted); cursor: pointer; font-family: inherit;
+    transition: .15s;
+  }
+  .vt-btn.active { background: #fff; color: var(--text); box-shadow: 0 1px 3px rgba(16,24,40,.12); }
+
+  .tt-wrap { width: 100%; max-width: 440px; margin: 0 auto; padding: 4px 10px 24px; }
+  /* 列表模式：按星期分组的纯文字清单 */
+  .tt-list {
+    background: #fff; border-radius: 16px; box-shadow: 0 2px 8px rgba(16,24,40,.08);
+    padding: 16px 14px; min-height: 220px; line-height: 2.1;
+    -webkit-user-select: none; user-select: none;
+  }
+  .tt-list.pressing { box-shadow: inset 0 0 0 3px var(--primary), 0 2px 8px rgba(16,24,40,.08); }
+  .tt-row { font-size: 14px; color: var(--text); }
+  .tt-row-day { font-weight: 600; }
+  .tt-row-sep { color: var(--text); }
+  .tt-item { cursor: pointer; font-weight: 300; }
+  .tt-item:active { opacity: .6; }
+  .tt-item.done { text-decoration: line-through; color: var(--muted); }
+  .tt-item.part { color: var(--muted); }
+  .tt-list-hint {
+    display: flex; align-items: center; justify-content: center;
+    min-height: 200px; font-size: 14px; color: #c4c8d0; pointer-events: none;
+  }
+
+
+
+</style>
+</head>
+<body>
+<div class="app">
+  <div id="home">
+    <div class="home-title">我的应用</div>
+    <div class="menu">
+      <div class="menu-card" onclick="goPage('calendar')">
+        <div class="icon">🗓️</div><h2>日历待办</h2><div class="arrow">›</div>
+      </div>
+      <div class="menu-card" onclick="goPage('week')">
+        <div class="icon">📅</div><h2>周打卡</h2><div class="arrow">›</div>
+      </div>
+      <div class="menu-card" onclick="goPage('day')">
+        <div class="icon">☀️</div><h2>日打卡</h2><div class="arrow">›</div>
+      </div>
+      <div class="menu-card" onclick="goPage('bill')">
+        <div class="icon">💰</div><h2>记账</h2><div class="arrow">›</div>
+      </div>
+      <div class="menu-card" onclick="goPage('pwd')">
+        <div class="icon">🔐</div><h2>密码记录</h2><div class="arrow">›</div>
+      </div>
+      <div class="menu-card" onclick="goPage('note')">
+        <div class="icon">📝</div><h2>小纸条</h2><div class="arrow">›</div>
+      </div>
+      <div class="menu-card" onclick="goPage('mine')">
+        <div class="icon">👤</div><h2>我的</h2><div class="arrow">›</div>
+      </div>
+    </div>
+  </div>
+
+  <div id="week" class="hidden">
+    <div class="topbar">
+      <button class="back-btn" onclick="goPage('home')">‹</button>
+      <h1>周打卡</h1>
+      <div class="spacer"></div>
+      <div class="view-tabs" id="weekTabs">
+        <button class="vt-btn active" data-view="board" onclick="switchWeekView('board')">MMO</button>
+        <button class="vt-btn" data-view="timetable" onclick="switchWeekView('timetable')">列表</button>
+      </div>
+    </div>
+    <div class="board-wrap" id="weekBoardWrap"><div class="board" id="weekBoard"></div></div>
+    <div class="tt-wrap hidden" id="weekTableWrap"></div>
+  </div>
+
+  <div id="day" class="hidden">
+    <div class="topbar">
+      <button class="back-btn" onclick="goPage('home')">‹</button>
+      <h1>日打卡</h1>
+    </div>
+    <div class="board-wrap"><div class="board" id="dayBoard"></div></div>
+  </div>
+
+  <div id="calendar" class="hidden">
+    <div class="topbar">
+      <button class="back-btn" onclick="goPage('home')">‹</button>
+      <h1>日历待办</h1>
+    </div>
+    <div class="cal-wrap">
+      <div class="cal-head">
+        <button class="cal-nav" onclick="calShift(-1)">‹</button>
+        <div class="cal-title" id="calTitle"></div>
+        <button class="cal-nav" onclick="calShift(1)">›</button>
+      </div>
+      <div class="cal-weekdays">
+        <span>日</span><span>一</span><span>二</span><span>三</span><span>四</span><span>五</span><span>六</span>
+      </div>
+      <div class="cal-grid" id="calGrid"></div>
+      <div class="cal-list">
+        <div class="cal-list-title" id="calListTitle"></div>
+        <div class="cal-items" id="calItems"></div>
+        <button class="cal-add" onclick="calAdd()">＋ 添加待办</button>
+      </div>
+    </div>
+  </div>
+
+  <div id="bill" class="hidden">
+    <div class="topbar">
+      <button class="back-btn" onclick="goPage('home')">‹</button>
+      <h1>记账</h1>
+      <div class="spacer"></div>
+      <div class="view-tabs">
+        <button class="vt-btn active" id="billTabExpense" onclick="switchBillType('expense')">支出</button>
+        <button class="vt-btn" id="billTabIncome" onclick="switchBillType('income')">收入</button>
+      </div>
+    </div>
+    <div class="bill-wrap">
+      <!-- 二级切换：年账单 / 固定 -->
+      <div class="view-tabs bill-sub-tabs">
+        <button class="vt-btn active" id="billTabYear" onclick="switchBillTab('year')">年账单</button>
+        <button class="vt-btn" id="billTabFixed" onclick="switchBillTab('fixed')">固定</button>
+      </div>
+
+      <!-- 年账单模块（默认） -->
+      <div id="billYearView">
+        <div class="bill-head">
+          <button class="cal-nav" onclick="billShiftYear(-1)">‹</button>
+          <div class="cal-title" id="billYearTitle"></div>
+          <button class="cal-nav" onclick="billShiftYear(1)">›</button>
+          <div class="bill-head-sum" id="billYearSummary"></div>
+        </div>
+        <div class="bill-card">
+          <div class="bill-rows" id="billYearRows"></div>
+        </div>
+      </div>
+
+      <!-- 月度明细模块（从年账单点某月进入） -->
+      <div id="billMonthView" class="hidden">
+        <div class="bill-head">
+          <div class="cal-title" id="billMonthTitle"></div>
+          <div class="bill-head-sum" id="billMonthSummary"></div>
+        </div>
+        <div class="bill-card">
+          <div class="bill-rows" id="billMonthRows"></div>
+        </div>
+        <button class="bill-add" id="billAddBtn" onclick="billAdd()">＋ 记一笔</button>
+      </div>
+
+      <!-- 固定模块（固定支出 / 固定收入 跟随收支切换） -->
+      <div id="billFixedView" class="hidden">
+        <div class="bill-fixed-hint" id="billFixedHint"></div>
+        <div class="bill-card">
+          <div class="bill-rows" id="billFixedRows"></div>
+        </div>
+        <button class="bill-add" id="billFixedAddBtn" onclick="billFixedAdd()">＋ 添加</button>
+      </div>
+    </div>
+  </div>
+
+  <div id="pwd" class="hidden">
+    <div class="topbar">
+      <button class="back-btn" onclick="goPage('home')">‹</button>
+      <h1>密码记录</h1>
+    </div>
+    <div class="pwd-wrap">
+      <div class="pwd-hint">本地加密存储的账号密码记录，仅保存在本机</div>
+      <div class="pwd-items" id="pwdItems"></div>
+      <button class="pwd-add" onclick="pwdAdd()">＋ 添加记录</button>
+    </div>
+  </div>
+
+  <div id="note" class="hidden">
+    <div class="topbar">
+      <button class="back-btn" onclick="goPage('home')">‹</button>
+      <h1>小纸条</h1>
+    </div>
+    <div class="pwd-wrap">
+      <div class="pwd-hint">记录一些琐事，随手记、随手删</div>
+      <div class="note-items" id="noteItems"></div>
+      <button class="pwd-add" onclick="noteAdd()">＋ 写一张纸条</button>
+    </div>
+  </div>
+
+  <div id="mine" class="hidden">
+    <div class="topbar">
+      <button class="back-btn" onclick="goPage('home')">‹</button>
+      <h1>我的</h1>
+    </div>
+    <div class="mine-wrap">
+      <div class="mine-profile">
+        <div class="mine-avatar">👤</div>
+        <div class="mine-info">
+          <div class="mine-name">我的打卡</div>
+          <div class="mine-sub">坚持记录每一天</div>
+        </div>
+      </div>
+      <div class="mine-stats">
+        <div class="stat-box">
+          <div class="stat-num" id="statDone">0</div>
+          <div class="stat-label">已打卡任务</div>
+        </div>
+        <div class="stat-box">
+          <div class="stat-num" id="statUndone">0</div>
+          <div class="stat-label">未完成任务</div>
+        </div>
+        <div class="stat-box">
+          <div class="stat-num" id="statDays">0</div>
+          <div class="stat-label">记录天数</div>
+        </div>
+      </div>
+      <div class="mine-actions">
+        <button class="mine-btn" onclick="exportData()">📤 导出数据</button>
+        <button class="mine-btn" onclick="importData()">📥 导入数据</button>
+        <button class="mine-btn danger" onclick="clearAllData()">🗑️ 清空数据</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="overlay" id="overlay">
+  <div class="dialog">
+    <h3 id="dialogTitle">添加任务</h3>
+    <textarea id="dialogInput" placeholder="写下要做的事…（Enter 换行）" autocomplete="off" rows="2"></textarea>
+    <div class="time-toggle-row" id="timeToggleRow">
+      <span class="dur-label" style="margin:0;">时间戳</span>
+      <div class="menu-switch" id="timeToggle"></div>
+    </div>
+    <div class="time-picker hidden" id="timePicker">
+      <input class="tp-inp" id="tpHour" type="text" inputmode="numeric" maxlength="2" placeholder="时" autocomplete="off">
+      <span class="tp-colon">:</span>
+      <input class="tp-inp" id="tpMinute" type="text" inputmode="numeric" maxlength="2" placeholder="分" autocomplete="off">
+    </div>
+    <div class="dur-label" id="durLabel">难度</div>
+    <div class="dur-row" id="durRow">
+      <button type="button" class="dur-btn" data-d="1">1X</button>
+      <button type="button" class="dur-btn" data-d="2">2X</button>
+      <button type="button" class="dur-btn active" data-d="4">4X</button>
+      <button type="button" class="dur-btn" data-d="8">8X</button>
+      <button type="button" class="dur-btn" data-d="16">16X</button>
+    </div>
+    <div class="dialog-btns">
+      <button type="button" class="btn-cancel" id="btnCancel">取消</button>
+      <button type="button" class="btn-ok" id="btnOk">添加</button>
+    </div>
+  </div>
+</div>
+
+<div class="menu-pop" id="tileMenu"></div>
+
+<!-- 轻量输入弹窗（日历待办/重命名用，替代被沙箱禁用的 prompt） -->
+<div class="overlay" id="promptOverlay">
+  <div class="dialog">
+    <h3 id="promptTitle">输入</h3>
+    <textarea id="promptInput" placeholder="" autocomplete="off" rows="2"></textarea>
+    <div class="dialog-btns">
+      <button type="button" class="btn-cancel" id="promptCancel">取消</button>
+      <button type="button" class="btn-ok" id="promptOk">确定</button>
+    </div>
+  </div>
+</div>
+
+<!-- 多字段表单弹窗（记账/密码记录 添加与修改用） -->
+<div class="overlay" id="formOverlay">
+  <div class="dialog">
+    <h3 id="formTitle">填写</h3>
+    <div id="formFields"></div>
+    <div class="dialog-btns">
+      <button type="button" class="btn-cancel" id="formCancel">取消</button>
+      <button type="button" class="btn-ok" id="formOk">确定</button>
+    </div>
+  </div>
+</div>
+
+<script>
+const COLORS = 8;
+const KEY_WEEK = 'checkin_weeks_v6';
+const KEY_DAY  = 'checkin_days_v6';
+const KEY_TT   = 'checkin_timetable_v1';
+const KEY_BILL = 'checkin_bills_v1';    // 记账
+const KEY_PWD  = 'checkin_pwds_v1';     // 密码记录
+const KEY_FIXED = 'checkin_fixed_v1';   // 月固定支出
+const KEY_FIXED_IN = 'checkin_fixed_in_v1'; // 月固定收入
+const KEY_NOTE = 'checkin_notes_v1'; // 小纸条
+
+// 将任务文本渲染为 HTML：转义特殊字符 + 把换行符转成 <br>
+function textToHTML(s) {
+  return String(s == null ? '' : s)
+    .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;').replace(/'/g, '&#39;')
+    .replace(/\r\n/g, '\n').replace(/\r/g, '\n')
+    .replace(/\n/g, '<br>');
+}
+
+const memStore = {};
+let storageOK = true;
+try { localStorage.setItem('__t','1'); localStorage.removeItem('__t'); }
+catch(e) { storageOK = false; }
+if (!storageOK) {
+  window.addEventListener('DOMContentLoaded', () => {
+    const tip = document.createElement('div');
+    tip.style.cssText = 'max-width:520px;margin:0 auto 12px;padding:10px 14px;background:#fff7e6;border:1px solid #f5c518;border-radius:12px;font-size:13px;color:#8a6d1a;line-height:1.6;';
+    tip.textContent = '⚠️ 当前预览环境不支持永久保存，数据仅本次有效。请下载后用浏览器直接打开即可长期保存。';
+    document.querySelector('.app').prepend(tip);
+  });
+}
+function load(k, f) {
+  if (!storageOK) { try { return JSON.parse(memStore[k]) || f; } catch(e) { return f; } }
+  try { return JSON.parse(localStorage.getItem(k)) || f; } catch(e) { return f; }
+}
+function save(k, d) {
+  const s = JSON.stringify(d);
+  if (!storageOK) { memStore[k] = s; return; }
+  try { localStorage.setItem(k, s); } catch(e) { memStore[k] = s; }
+}
+
+function pad(n) { return n < 10 ? '0' + n : '' + n; }
+function dateKey(d) { return d.getFullYear() + '-' + pad(d.getMonth()+1) + '-' + pad(d.getDate()); }
+function getMonday(d) {
+  const x = new Date(d); const day = x.getDay();
+  x.setDate(x.getDate() + (day === 0 ? -6 : 1 - day)); x.setHours(0,0,0,0); return x;
+}
+function weekKey(d) { return dateKey(getMonday(d)); }
+
+let currentPage = 'home';
+let currentWeekStart = getMonday(new Date());
+let currentDayDate = new Date();
+let dialogScope = null;
+let menuTile = null;
+let menuScope = null;
+// 日历待办状态
+let calYear = new Date().getFullYear();
+let calMonth = new Date().getMonth();      // 0-11
+let calSelKey = dateKey(new Date());
+// 周打卡视图状态：board=面板, timetable=课程表
+let weekView = 'board';
+
+function goPage(page) {
+  currentPage = page;
+  document.getElementById('home').classList.toggle('hidden', page !== 'home');
+  document.getElementById('week').classList.toggle('hidden', page !== 'week');
+  document.getElementById('day').classList.toggle('hidden', page !== 'day');
+  document.getElementById('calendar').classList.toggle('hidden', page !== 'calendar');
+  document.getElementById('bill').classList.toggle('hidden', page !== 'bill');
+  document.getElementById('pwd').classList.toggle('hidden', page !== 'pwd');
+  document.getElementById('note').classList.toggle('hidden', page !== 'note');
+  document.getElementById('mine').classList.toggle('hidden', page !== 'mine');
+  if (page === 'week') { switchWeekView(weekView); }
+  if (page === 'day') render('day');
+  if (page === 'calendar') renderCalendar();
+  if (page === 'bill') { billType = 'expense'; billTab = 'year'; billYear = new Date().getFullYear(); billMonth = new Date().getMonth(); switchBillType('expense'); }
+  if (page === 'pwd') renderPwd();
+  if (page === 'note') renderNote();
+  if (page === 'mine') renderMine();
+}
+
+function getData(scope) {
+  const dataKey = scope === 'week' ? weekKey(currentWeekStart) : dateKey(currentDayDate);
+  const all = load(scope === 'week' ? KEY_WEEK : KEY_DAY, {});
+  return { dataKey, tasks: all[dataKey] || [] };
+}
+function setData(scope, tasks) {
+  const storeKey = scope === 'week' ? KEY_WEEK : KEY_DAY;
+  const dataKey = scope === 'week' ? weekKey(currentWeekStart) : dateKey(currentDayDate);
+  const all = load(storeKey, {});
+  all[dataKey] = tasks; save(storeKey, all);
+}
+
+// ===== 布局与动画 =====
+// 面板 4 列 × 6 行 = 24 格，代表一天 24 小时
+// 任务块大小由计划时长决定：小时数 → 格子数（尽量排成接近方形的块）
+//   未完成任务 → 从左上角逐格堆放
+//   完成任务   → 从右下角逐格堆放
+// 状态切换时用 CSS transition 平滑移动
+
+const COLS = 8, ROWS = 12;
+// 每个面板中任务块当前占用的网格缓存：tileGridPos[scope][taskId] = {x,y,c,r}
+const tileGridPos = {};
+// 拖拽触发的 render 中，唯一需要播放移动动画的块 id（其余块瞬移）
+let animatedTileId = null;
+
+// 难度级别 = 占用的格子数，尽量排成接近正方形（优先正方形，其次宽扁，浪费最少）
+function hoursToGrid(x) {
+  const cells = Math.max(1, Math.round(x));
+  const cands = [];
+  for (let c = 1; c <= COLS; c++) {
+    const r = Math.ceil(cells / c);
+    if (r <= ROWS) cands.push({ c, r, waste: c * r - cells });
+  }
+  if (!cands.length) return { c: COLS, r: ROWS };
+  // 排序：浪费最少 → 越接近正方形（|c-r| 越小）→ 更宽
+  cands.sort((a, b) => a.waste - b.waste || Math.abs(a.c - a.r) - Math.abs(b.c - b.r) || b.c - a.c);
+  return { c: cands[0].c, r: cands[0].r };
+}
+
+// ===== 排序优先级：时间戳 > 手动顺序 > 自由填充 =====
+// 任务字段：
+//   start: string，开始时间戳（有时间戳的任务按时间排序，优先）
+//   order: number，手动拖拽的相对顺序（越小越靠前）
+function timeVal(t) {
+  if (!t.start) return Infinity;
+  const m = String(t.start).match(/(\d{1,2}):(\d{2})/);
+  if (!m) return Infinity;
+  return parseInt(m[1], 10) * 60 + parseInt(m[2], 10);
+}
+// 比较两个任务：有时间戳的按时间排（优先级高），无时间戳的按手动 order 排
+function cmpSeq(a, b) {
+  const ah = !!a.start, bh = !!b.start;
+  if (ah !== bh) return ah ? -1 : 1;           // 有时间戳的排前面（第一优先级）
+  if (ah) {                                     // 都有时间戳：按时间
+    const d = timeVal(a) - timeVal(b);
+    return d !== 0 ? d : 0;
+  }
+  // 都无时间戳：按手动 order，无 order 的靠后（自由填充兜底）
+  const ao = a.order != null ? a.order : Infinity;
+  const bo = b.order != null ? b.order : Infinity;
+  return ao - bo;
+}
+
+function render(scope) {
+  const board = document.getElementById(scope + 'Board');
+  const { tasks } = getData(scope);
+  board.innerHTML = '';
+  const hint = document.createElement('div');
+  hint.className = 'board-hint';
+  hint.textContent = tasks.length ? '' : '长按这里\n添加第一个任务';
+  board.appendChild(hint);
+
+  const bw = board.clientWidth || board.offsetWidth || 400;
+  const bh = board.clientHeight || board.offsetHeight || 600;
+  const GAP = 6;
+  const cellW = (bw - GAP * (COLS + 1)) / COLS;
+  const cellH = (bh - GAP * (ROWS + 1)) / ROWS;
+
+  // 计算每个块的尺寸（像素）与占格
+  const tiles = tasks.map(t => {
+    const { c, r } = hoursToGrid(t.hours != null ? t.hours : 2);
+    const pw = c * cellW + (c - 1) * GAP;
+    const ph = r * cellH + (r - 1) * GAP;
+    return { t, pw, ph, c, r, tx: 0, ty: 0 };
+  });
+
+  // ===== 放置优先级：拖拽固定位置(pos) > 自动布局（时序/顺序+向正方形生长） =====
+  // tileGridPos[scope] 缓存每个块当前占用的网格，供拖拽碰撞检测
+  const gridPosMap = {};
+  tileGridPos[scope] = gridPosMap;
+  const occ = Array.from({ length: ROWS }, () => Array(COLS).fill(false));
+  function fits(c0, r0, c, r) {
+    if (c0 < 0 || r0 < 0 || c0 + c > COLS || r0 + r > ROWS) return false;
+    for (let rr = r0; rr < r0 + r; rr++)
+      for (let cc = c0; cc < c0 + c; cc++)
+        if (occ[rr][cc]) return false;
+    return true;
+  }
+  function mark(u, c0, r0) {
+    for (let rr = r0; rr < r0 + u.r; rr++)
+      for (let cc = c0; cc < c0 + u.c; cc++) occ[rr][cc] = true;
+    u.gx = c0; u.gy = r0;
+    gridPosMap[u.t.id] = { x: c0, y: r0, c: u.c, r: u.r };
+  }
+  function scanFind(u) {
+    for (let r0 = 0; r0 <= ROWS - u.r; r0++)
+      for (let c0 = 0; c0 <= COLS - u.c; c0++)
+        if (fits(c0, r0, u.c, u.r)) return [c0, r0];
+    return null;
+  }
+
+  const bySeq = (a, b) => cmpSeq(a.t, b.t);
+  const undone = tiles.filter(x => !x.t.done).sort(bySeq);
+  const done = tiles.filter(x => x.t.done).sort(bySeq);
+
+  // 第一优先级：未完成块中，用户拖拽固定过的块直接放保存位置
+  // 完成块不参与拖拽固定，始终沉底（保留浮沉效果）
+  for (const u of undone) {
+    if (!u.t.pos) continue;
+    const px = Math.max(0, Math.min(COLS - u.c, u.t.pos.x));
+    const py = Math.max(0, Math.min(ROWS - u.r, u.t.pos.y));
+    if (fits(px, py, u.c, u.r)) mark(u, px, py);
+    else {
+      const alt = scanFind(u); // 保存的位置被占，就近找空位
+      if (alt) mark(u, alt[0], alt[1]);
+    }
+  }
+
+  // 第二优先级：未拖拽过的未完成块，从左上角逐格扫描放置（去掉宽高比约束）
+  const autoUndone = undone.filter(u => u.gx == null);
+  for (const u of autoUndone) {
+    const pos = scanFind(u);
+    if (pos) mark(u, pos[0], pos[1]);
+  }
+
+  // 完成块：从右下角逐格扫描沉底（镜像：向上向左填）
+  const doneLeft = done.filter(x => x.gx == null);
+  for (const d of doneLeft) {
+    placed2: for (let r0 = ROWS - d.r; r0 >= 0; r0--) {
+      for (let c0 = COLS - d.c; c0 >= 0; c0--) {
+        if (fits(c0, r0, d.c, d.r)) {
+          mark(d, c0, r0);
+          break placed2;
+        }
+      }
+    }
+  }
+
+  for (const u of tiles) {
+    if (u.gx == null) continue;
+    u.tx = GAP + u.gx * (cellW + GAP);
+    u.ty = GAP + u.gy * (cellH + GAP);
+  }
+
+  // 根据块尺寸自动计算字体大小：块越小字越小（描述细体，字号偏小）
+  function fitStyle(pw, ph, hasTime) {
+    const s = Math.min(pw, ph);
+    let fs;                                    // 任务文字字号
+    if (s < 46) fs = 8;
+    else if (s < 62) fs = 9.5;
+    else if (s < 90) fs = 11;
+    else fs = 12;
+    const tfs = s < 46 ? 8 : 9;                // 时间签字号
+    return { fs, tfs };
+  }
+
+  // 创建/更新 DOM
+  tiles.forEach(({ t, pw, ph, tx, ty }) => {
+    let el = board.querySelector('[data-id="' + t.id + '"]');
+    const isNew = !el;
+    const fit = fitStyle(pw, ph, !!t.start);
+    if (isNew) {
+      el = document.createElement('div');
+      el.dataset.id = t.id;
+      el.className = 'tile c' + (t.color % COLORS) + (t.done ? ' done' : ' balloon') + (t.start ? ' has-time' : '');
+      if (t.start) {
+        const tm = document.createElement('div');
+        tm.className = 'tile-time'; tm.textContent = t.start;
+        tm.style.fontSize = fit.tfs + 'px';
+        el.appendChild(tm);
+      }
+      const span = document.createElement('span');
+      span.className = 'tile-text';
+      span.innerHTML = textToHTML(t.text);
+      el.appendChild(span);
+      const check = document.createElement('div');
+      check.className = 'tile-check'; check.textContent = '✓'; el.appendChild(check);
+      // 新块从面板中央出现
+      el.style.width = pw + 'px';
+      el.style.height = ph + 'px';
+      el.style.fontSize = fit.fs + 'px';
+      el.style.transform = 'translate(' + (bw/2 - pw/2) + 'px,' + (bh/2 - ph/2) + 'px)';
+      board.appendChild(el);
+      bindTileEvents(el, scope, t);
+    } else {
+      el.className = 'tile c' + (t.color % COLORS) + (t.done ? ' done' : ' balloon');
+      el.classList.toggle('has-time', !!t.start);
+      el.style.width = pw + 'px';
+      el.style.height = ph + 'px';
+      el.style.fontSize = fit.fs + 'px';
+      const span = el.querySelector('.tile-text');
+      span.innerHTML = textToHTML(t.text);
+      // 时间标签：有则更新/创建，无则移除
+      let tm = el.querySelector('.tile-time');
+      if (t.start) {
+        if (!tm) { tm = document.createElement('div'); tm.className = 'tile-time'; el.insertBefore(tm, el.querySelector('.tile-text')); }
+        tm.textContent = t.start;
+        tm.style.fontSize = fit.tfs + 'px';
+      } else if (tm) { tm.remove(); }
+    }
+    // 只有被拖拽的块播放移动动画，其余块瞬移
+    const isAnimated = String(t.id) === animatedTileId;
+    if (!isNew && !isAnimated) {
+      el.classList.add('settled'); // 禁用 transition
+      el.style.transform = 'translate(' + tx + 'px,' + ty + 'px)';
+      void el.offsetWidth;         // 强制重排，使 transform 立即生效
+      el.classList.remove('settled');
+    } else {
+      requestAnimationFrame(() => {
+        requestAnimationFrame(() => {
+          el.style.transform = 'translate(' + tx + 'px,' + ty + 'px)';
+        });
+      });
+    }
+  });
+
+  // 移除已删除的块
+  board.querySelectorAll('.tile').forEach(el => {
+    if (!tasks.find(t => String(t.id) === el.dataset.id)) el.remove();
+  });
+
+  bindBoardEvents(board, scope);
+  animatedTileId = null; // 清空动画标记
+}
+
+// ===== 交互绑定 =====
+function bindTileEvents(el, scope, t) {
+  el.oncontextmenu = (e) => e.preventDefault();
+  let timer = null, longFired = false;
+  let dragging = false;
+  let startX = 0, startY = 0, origTx = 0, origTy = 0;
+  const MOVE_THRESHOLD = 8;
+
+  function getXY(e) {
+    if (e.touches && e.touches.length) return { x: e.touches[0].clientX, y: e.touches[0].clientY };
+    if (e.changedTouches && e.changedTouches.length) return { x: e.changedTouches[0].clientX, y: e.changedTouches[0].clientY };
+    return { x: e.clientX, y: e.clientY };
+  }
+
+  function start(e) {
+    if (e.button != null && e.button !== 0) return;
+    longFired = false; dragging = false;
+    clearTimeout(timer);
+    const p = getXY(e);
+    startX = p.x; startY = p.y;
+    const tr = el.style.transform.match(/translate\(([-\d.]+)px,\s*([-\d.]+)px\)/);
+    origTx = tr ? parseFloat(tr[1]) : 0;
+    origTy = tr ? parseFloat(tr[2]) : 0;
+    timer = setTimeout(() => { longFired = true; openTileMenu(scope, t, el); }, 400);
+    // 全局监听移动和释放，确保拖拽不因鼠标移出块而中断
+    window.addEventListener('mousemove', move, { passive: false });
+    window.addEventListener('mouseup', end);
+  }
+  function move(e) {
+    const p = getXY(e);
+    if (dragging) {
+      const dx = p.x - startX, dy = p.y - startY;
+      el.style.transform = 'translate(' + (origTx + dx) + 'px,' + (origTy + dy) + 'px)';
+      if (e.cancelable) e.preventDefault();
+      return;
+    }
+    if (longFired) return;
+    if (Math.hypot(p.x - startX, p.y - startY) > MOVE_THRESHOLD) {
+      // 完成块不可拖拽（始终沉底），仅在未完成块上启动拖拽
+      if (t.done) return;
+      clearTimeout(timer);
+      longFired = false;
+      dragging = true;
+      el.classList.add('dragging');
+      const dx = p.x - startX, dy = p.y - startY;
+      el.style.transform = 'translate(' + (origTx + dx) + 'px,' + (origTy + dy) + 'px)';
+      if (e.cancelable) e.preventDefault();
+    }
+  }
+  function end(e) {
+    clearTimeout(timer);
+    window.removeEventListener('mousemove', move);
+    window.removeEventListener('mouseup', end);
+    if (dragging) {
+      dragging = false;
+      el.classList.remove('dragging');
+      const p = getXY(e);
+      finishDrag(scope, t, el, p.x, p.y, origTx + (p.x - startX), origTy + (p.y - startY));
+    }
+  }
+
+  el.addEventListener('touchstart', start, { passive: true });
+  el.addEventListener('touchmove', move, { passive: false });
+  el.addEventListener('touchend', end);
+  el.addEventListener('touchcancel', end);
+  el.addEventListener('mousedown', start);
+  el.addEventListener('click', (e) => {
+    if (longFired || dragging) { e.preventDefault(); e.stopPropagation(); longFired = false; return; }
+    toggleTile(scope, t.id);
+  });
+}
+
+// 拖拽结束：落点吸附到网格，保存为该块的固定位置（第一优先级）
+// tlX/tlY：拖动后块的左上角相对 board 的坐标（已含手指抓取偏移，精确）
+function finishDrag(scope, t, el, cx, cy, tlX, tlY) {
+  const board = document.getElementById(scope + 'Board');
+  const { tasks } = getData(scope);
+  const target = tasks.find(x => x.id === t.id);
+  if (!target) { render(scope); return; }
+
+  const bw = board.clientWidth, bh = board.clientHeight;
+  const GAP = 6;
+  const cellW = (bw - GAP * (COLS + 1)) / COLS;
+  const cellH = (bh - GAP * (ROWS + 1)) / ROWS;
+  const { c, r } = hoursToGrid(target.hours != null ? target.hours : 2);
+
+  // 块的左上角吸附到最近的格子（四舍五入）
+  const gx = Math.round((tlX - GAP) / (cellW + GAP));
+  const gy = Math.round((tlY - GAP) / (cellH + GAP));
+  let px = Math.max(0, Math.min(COLS - c, gx));
+  let py = Math.max(0, Math.min(ROWS - r, gy));
+
+  // 挤占逻辑：目标位置放新块；被挤的块向外寻找最近空位
+  // 用「动态占用表」逐个安置，保证后续被挤块能看到前面已预占的位置，避免重叠
+  const gpos = tileGridPos[scope] || {};
+  // 拖拽前的占用快照（用于碰撞检测的基准）
+  function overlapsAt(c0, r0, cc, rr, p) {
+    return c0 < p.x + p.c && c0 + cc > p.x && r0 < p.y + p.r && r0 + rr > p.y;
+  }
+  // 找出被挤的块（与被拖块目标位置重叠的其它块）
+  const displaced = [];
+  for (const id in gpos) {
+    if (id === String(t.id)) continue;
+    if (overlapsAt(px, py, c, r, gpos[id])) displaced.push(id);
+  }
+  if (displaced.length) {
+    // 构造动态占用表：从当前布局深拷贝，去掉所有被挤块（它们将被重新安置）
+    const occMap = {};
+    for (const id in gpos) occMap[id] = { x: gpos[id].x, y: gpos[id].y, c: gpos[id].c, r: gpos[id].r };
+    const displacedSet = new Set(displaced);
+    for (const id of displacedSet) delete occMap[id];
+    delete occMap[String(t.id)];
+    // 被拖块先占住目标位置
+    occMap[String(t.id)] = { x: px, y: py, c, r };
+
+    // 按「完成块优先沉底、未完成块浮顶」的方向性排序：先安置完成块(向右下)，再未完成块(向左上)
+    const isDone = id => { const o = tasks.find(x => String(x.id) === id); return o && o.done; };
+    const doneDisp = displaced.filter(isDone);
+    const undoneDisp = displaced.filter(id => !isDone(id));
+
+    function tryPlace(id, dir) {
+      const other = tasks.find(x => String(x.id) === id);
+      if (!other) return false;
+      const g = hoursToGrid(other.hours != null ? other.hours : 2);
+      const oc = g.c, or = g.r;
+      const ox = gpos[id] ? gpos[id].x : 0, oy = gpos[id] ? gpos[id].y : 0;
+      // dir: 'br' 向右下挤(完成块), 'tl' 向左上挤(未完成块)
+      function search(directed) {
+        let found = null;
+        outer: for (let dist = 1; dist <= COLS + ROWS && !found; dist++) {
+          for (let dy = -dist; dy <= dist && !found; dy++) {
+            for (let dx = -dist; dx <= dist && !found; dx++) {
+              if (Math.max(Math.abs(dx), Math.abs(dy)) !== dist) continue;
+              if (directed) {
+                if (dir === 'br' && (dx < 0 || dy < 0)) continue;
+                if (dir === 'tl' && (dx > 0 || dy > 0)) continue;
+              }
+              const nx = ox + dx, ny = oy + dy;
+              if (nx < 0 || ny < 0 || nx + oc > COLS || ny + or > ROWS) continue;
+              let ok = true;
+              for (const id2 in occMap) {
+                const p2 = occMap[id2];
+                if (overlapsAt(nx, ny, oc, or, p2)) { ok = false; break; }
+              }
+              if (ok) { found = { nx, ny }; break outer; }
+            }
+          }
+        }
+        return found;
+      }
+      // 先按浮沉方向找，找不到再全向兜底（保证块在边界时也能安置）
+      let found = search(true) || search(false);
+      if (found) {
+        other.pos = { x: found.nx, y: found.ny };
+        occMap[id] = { x: found.nx, y: found.ny, c: oc, r: or }; // 预占，避免后续块重叠
+        return true;
+      }
+      return false;
+    }
+
+    // 完成块先向右下挤，未完成块向左上挤
+    doneDisp.forEach(id => tryPlace(id, 'br'));
+    undoneDisp.forEach(id => tryPlace(id, 'tl'));
+
+    // 重新渲染（只有被拖动的块有动画）
+    target.pos = { x: px, y: py };
+    setData(scope, tasks);
+    animatedTileId = String(t.id);
+    render(scope);
+    return;
+  }
+
+  target.pos = { x: px, y: py };
+  setData(scope, tasks);
+  animatedTileId = String(t.id);
+  render(scope);
+}
+
+function bindBoardEvents(board, scope) {
+  board.oncontextmenu = (e) => e.preventDefault();
+  let boardTimer = null;
+  function boardDown(e) {
+    if (e.target !== board && !e.target.classList.contains('board-hint')) return;
+    const r = board.getBoundingClientRect();
+    const cx = e.touches ? e.touches[0].clientX : e.clientX;
+    const cy = e.touches ? e.touches[0].clientY : e.clientY;
+    board.classList.add('pressing');
+    boardTimer = setTimeout(() => { board.classList.remove('pressing'); openDialog(scope, cx - r.left, cy - r.top); }, 400);
+  }
+  function boardUp() { board.classList.remove('pressing'); clearTimeout(boardTimer); }
+  board.addEventListener('touchstart', boardDown, { passive: true });
+  board.addEventListener('mousedown', boardDown);
+  board.addEventListener('touchend', boardUp);
+  board.addEventListener('touchmove', boardUp, { passive: true });
+  board.addEventListener('mouseup', boardUp);
+  board.addEventListener('mouseleave', boardUp);
+}
+
+function toggleTile(scope, id) {
+  const { tasks } = getData(scope);
+  const t = tasks.find(x => x.id === id);
+  if (t) t.done = !t.done;
+  setData(scope, tasks);
+  render(scope);  // 重新渲染，物理会让它飞向新区域
+}
+
+// ===== 添加弹窗 =====
+let selectedHours = 4;
+// 时间滚轮状态（24 小时制）
+let tpHour = 9, tpMinute = 0; // 默认 9:00
+let timeStampOn = false; // 时间戳开关，默认关闭
+let editTimeTarget = null; // 编辑时间戳的任务 { scope, t }（MMO）
+let editTTTimeTarget = null; // 编辑时间戳的任务（列表模式）
+function openDialog(scope, px, py) {
+  dialogScope = scope;
+  ttDialogTarget = null; // 清空课程表目标
+  const h3 = document.querySelector('#overlay .dialog h3');
+  if (h3) h3.textContent = '添加任务';
+  document.getElementById('overlay').classList.add('show');
+  document.getElementById('dialogInput').value = '';
+  setSelectedHours(4);
+  setTimeStamp(false); // 默认关闭时间戳
+  setTimeout(() => document.getElementById('dialogInput').focus(), 50);
+}
+function setTimeStamp(on) {
+  timeStampOn = on;
+  const sw = document.getElementById('timeToggle');
+  if (sw) sw.classList.toggle('on', on);
+  document.getElementById('timePicker').classList.toggle('hidden', !on);
+  if (on) syncTimeInputs();
+}
+function setSelectedHours(h) {
+  selectedHours = h;
+  document.querySelectorAll('#durRow .dur-btn').forEach(b => {
+    b.classList.toggle('active', parseFloat(b.dataset.d) === h);
+  });
+}
+function closeDialog() {
+  document.getElementById('overlay').classList.remove('show');
+  dialogScope = null;
+  resetDialog();
+  if (ttDialogTarget) {
+    ttDialogTarget = null;
+    const h3 = document.querySelector('#overlay .dialog h3');
+    if (h3) h3.textContent = '添加任务';
+    const sp = document.getElementById('ttSlotPicker');
+    if (sp) sp.remove();
+    // 恢复难度区显示
+    const durRow = document.getElementById('durRow');
+    durRow.style.display = '';
+    const durLabel = durRow.previousElementSibling;
+    if (durLabel && durLabel.classList.contains('dur-label')) durLabel.style.display = '';
+  }
+}
+// 恢复弹窗为默认「添加任务」状态（显示输入框/时间戳开关/难度，隐藏时间滚轮）
+function resetDialog() {
+  editTimeTarget = null;
+  editTTTimeTarget = null;
+  const title = document.getElementById('dialogTitle');
+  if (title) title.textContent = '添加任务';
+  document.getElementById('dialogInput').style.display = '';
+  document.getElementById('timeToggleRow').style.display = '';
+  document.getElementById('durLabel').style.display = '';
+  document.getElementById('durRow').style.display = '';
+  document.getElementById('btnOk').textContent = '添加';
+}
+function getPickedTime() {
+  // 从输入框读取并规范化，兼容用户输入后直接点确定（未触发 blur）
+  let h = parseInt(document.getElementById('tpHour').value, 10);
+  let m = parseInt(document.getElementById('tpMinute').value, 10);
+  if (isNaN(h)) h = tpHour; if (isNaN(m)) m = tpMinute;
+  h = Math.max(0, Math.min(23, h));
+  m = Math.max(0, Math.min(59, m));
+  tpHour = h; tpMinute = m;
+  const hh = String(h).padStart(2, '0');
+  const mm = String(m).padStart(2, '0');
+  return hh + ':' + mm;
+}
+function confirmAdd() {
+  // 编辑时间戳模式（MMO）
+  if (editTimeTarget) {
+    const { scope, t } = editTimeTarget;
+    editTimeTarget = null;
+    const start = getPickedTime();
+    const { tasks } = getData(scope);
+    const obj = tasks.find(x => x.id === t.id);
+    if (obj) { obj.start = start; setData(scope, tasks); }
+    resetDialog();
+    document.getElementById('overlay').classList.remove('show');
+    render(scope);
+    return;
+  }
+  // 编辑时间戳模式（列表）
+  if (editTTTimeTarget) {
+    const t = editTTTimeTarget;
+    editTTTimeTarget = null;
+    const start = getPickedTime();
+    const { tasks } = ttGetWeekTasks();
+    const obj = tasks.find(x => x.id === t.id);
+    if (obj) { obj.start = start; ttSetWeekTasks(tasks); }
+    resetDialog();
+    document.getElementById('overlay').classList.remove('show');
+    renderTimetable();
+    return;
+  }
+  // 课程表添加分支
+  if (ttDialogTarget) {
+    const text = document.getElementById('dialogInput').value.trim();
+    ttDialogTarget = null;
+    const h3 = document.querySelector('#overlay .dialog h3');
+    if (h3) h3.textContent = '添加任务';
+    // 移除 slot picker，恢复难度区显示
+    const sp = document.getElementById('ttSlotPicker');
+    if (sp) sp.remove();
+    const durRow = document.getElementById('durRow');
+    durRow.style.display = '';
+    const durLabel = durRow.previousElementSibling;
+    if (durLabel && durLabel.classList.contains('dur-label')) durLabel.style.display = '';
+    if (!text) { closeDialog(); return; }
+    const start = timeStampOn ? getPickedTime() : '';
+    const { tasks } = ttGetWeekTasks();
+    tasks.push({ id: Date.now() + Math.random(), text, start, dayId: ttDialogDay, done: false, color: tasks.length % COLORS });
+    ttSetWeekTasks(tasks);
+    closeDialog(); renderTimetable();
+    return;
+  }
+  const text = document.getElementById('dialogInput').value.trim();
+  if (!text) { closeDialog(); return; }
+  const scope = dialogScope;
+  if (!scope) { closeDialog(); return; }
+  const start = timeStampOn ? getPickedTime() : '';
+  const { tasks } = getData(scope);
+  tasks.push({ id: Date.now() + Math.random(), text, hours: selectedHours, start, done: false, color: tasks.length % COLORS });
+  setData(scope, tasks);
+  closeDialog(); render(scope);
+}
+
+// ===== 长按块菜单 =====
+const LEVELS = [1, 2, 4, 8, 16];
+function openTileMenu(scope, t, el) {
+  menuTile = t; menuScope = scope;
+  const menu = document.getElementById('tileMenu');
+  const cur = t.hours != null ? t.hours : 4;
+  const hasTime = !!t.start;
+  menu.innerHTML = `
+    <div class="menu-row">
+      <span class="mr-label">难度</span>
+      <div class="menu-levels">
+        ${LEVELS.map(l => `<button class="menu-level${l === cur ? ' active' : ''}" data-l="${l}">${l}X</button>`).join('')}
+      </div>
+    </div>
+    <div class="menu-row">
+      <span class="mr-label">时间戳</span>
+      <div class="menu-switch${hasTime ? ' on' : ''}" id="miTimeToggle"></div>
+    </div>
+    <button class="menu-item" id="miRename"><span class="mi">✏️</span> 编辑名称</button>
+    <button class="menu-item danger" id="miDelete"><span class="mi">🗑️</span> 删除</button>`;
+  menu.classList.add('show');
+  const r = el.getBoundingClientRect();
+  let mx = r.left, my = r.bottom + 6;
+  if (mx + 180 > window.innerWidth) mx = window.innerWidth - 190;
+  if (my + 300 > window.innerHeight) my = r.top - 290;
+  menu.style.left = mx + 'px';
+  menu.style.top = my + 'px';
+
+  // 难度档位选择
+  menu.querySelectorAll('.menu-level').forEach(b => {
+    b.onclick = () => {
+      const l = parseInt(b.dataset.l, 10);
+      const s = menuScope, t0 = menuTile;
+      closeTileMenu();
+      setHoursOf(s, t0, l);
+    };
+  });
+  // 时间戳开关：切换打开→弹时间编辑；切换关闭→清空
+  document.getElementById('miTimeToggle').onclick = () => {
+    const s = menuScope, t0 = menuTile;
+    if (t0.start) {
+      // 已开启 → 关闭：清空时间戳
+      closeTileMenu();
+      clearTimeOf(s, t0);
+    } else {
+      // 已关闭 → 打开：弹时间编辑
+      closeTileMenu();
+      openTimeEdit(s, t0);
+    }
+  };
+  document.getElementById('miRename').onclick = () => { const s = menuScope, t0 = menuTile; closeTileMenu(); renameTile(s, t0); };
+  document.getElementById('miDelete').onclick = () => { const s = menuScope, t0 = menuTile; closeTileMenu(); deleteTile(s, t0); };
+}
+function setHoursOf(scope, t, hours) {
+  if (!t || !scope) return;
+  const { tasks } = getData(scope);
+  const obj = tasks.find(x => x.id === t.id);
+  if (obj) { obj.hours = hours; setData(scope, tasks); render(scope); }
+}
+function clearTimeOf(scope, t) {
+  if (!t || !scope) return;
+  const { tasks } = getData(scope);
+  const obj = tasks.find(x => x.id === t.id);
+  if (obj) { obj.start = ''; setData(scope, tasks); render(scope); }
+}
+// 打开「编辑时间戳」弹窗（复用主 dialog，只显示时间滚轮）
+function openTimeEdit(scope, t) {
+  editTimeTarget = { scope, t };
+  const title = document.getElementById('dialogTitle');
+  if (title) title.textContent = '设置时间戳';
+  // 隐藏输入框、时间戳开关行、难度
+  document.getElementById('dialogInput').style.display = 'none';
+  document.getElementById('timeToggleRow').style.display = 'none';
+  document.getElementById('durLabel').style.display = 'none';
+  document.getElementById('durRow').style.display = 'none';
+  // 显示时间输入框
+  document.getElementById('timePicker').classList.remove('hidden');
+  // 若已有时间戳，回填当前时间
+  if (t.start) {
+    const m = String(t.start).match(/(\d{1,2}):(\d{2})/);
+    if (m) { tpHour = parseInt(m[1], 10); tpMinute = parseInt(m[2], 10); }
+  }
+  syncTimeInputs();
+  document.getElementById('overlay').classList.add('show');
+  document.getElementById('btnOk').textContent = '确定';
+}
+function closeTileMenu() {
+  document.getElementById('tileMenu').classList.remove('show');
+  menuTile = null; menuScope = null;
+}
+function renameTile(scope, t) {
+  if (!t || !scope) return;
+  const { tasks } = getData(scope);
+  const obj = tasks.find(x => x.id === t.id);
+  if (!obj) return;
+  askInput('修改任务名称', '任务名称', obj.text).then(name => {
+    if (name != null && name.trim()) { obj.text = name.trim(); setData(scope, tasks); render(scope); }
+  });
+}
+function deleteTile(scope, t) {
+  if (!t || !scope) return;
+  setData(scope, getData(scope).tasks.filter(x => x.id !== t.id));
+  render(scope);
+}
+
+document.addEventListener('click', (e) => {
+  if (!e.target.closest('#tileMenu')) closeTileMenu();
+});
+document.getElementById('dialogInput').addEventListener('keydown', (e) => { if (e.key === 'Enter' && (e.ctrlKey || e.metaKey)) { e.preventDefault(); confirmAdd(); } });
+document.getElementById('btnOk').addEventListener('click', confirmAdd);
+document.getElementById('btnCancel').addEventListener('click', closeDialog);
+document.getElementById('timeToggle').addEventListener('click', () => setTimeStamp(!timeStampOn));
+document.getElementById('overlay').addEventListener('click', (e) => { if (e.target === e.currentTarget) closeDialog(); });
+// 时长选择按钮（仅 durRow 内的 .dur-btn）
+document.querySelectorAll('#durRow .dur-btn').forEach(b => {
+  b.addEventListener('click', () => setSelectedHours(parseFloat(b.dataset.d)));
+});
+
+// ===== 时间输入框（手动输入，仅数字，固定冒号） =====
+// 仅允许输入数字，限制小时 0-23、分钟 0-59；失焦自动补零
+function bindTimeInputs() {
+  const hourEl = document.getElementById('tpHour');
+  const minEl = document.getElementById('tpMinute');
+  function numericOnly(el, max, onValid) {
+    el.addEventListener('input', () => {
+      // 去除非数字字符
+      let v = el.value.replace(/\D/g, '');
+      // 小时/分钟都最多 2 位
+      if (v.length > 2) v = v.slice(0, 2);
+      el.value = v;
+    });
+    el.addEventListener('blur', () => {
+      let v = el.value.replace(/\D/g, '');
+      if (v === '') { el.value = ''; onValid(null); return; }
+      let n = parseInt(v, 10);
+      if (n > max) { n = max; }
+      el.value = String(n).padStart(2, '0');
+      onValid(n);
+    });
+    // 阻止非数字按键（保留退格/删除/方向键/Tab）
+    el.addEventListener('keydown', (e) => {
+      const ok = ['Backspace','Delete','ArrowLeft','ArrowRight','Tab','Home','End','Enter'];
+      if (ok.includes(e.key) || e.ctrlKey || e.metaKey) return;
+      if (!/\d/.test(e.key)) e.preventDefault();
+    });
+  }
+  numericOnly(hourEl, 23, (n) => { if (n != null) tpHour = n; });
+  numericOnly(minEl, 59, (n) => { if (n != null) tpMinute = n; });
+}
+function syncTimeInputs() {
+  document.getElementById('tpHour').value = String(tpHour).padStart(2, '0');
+  document.getElementById('tpMinute').value = String(tpMinute).padStart(2, '0');
+}
+function initTimePicker() { bindTimeInputs(); }
+// ===== 通用输入弹窗（替代沙箱禁用的 prompt） =====
+// 支持多行：Enter 换行，Ctrl/Cmd+Enter 提交
+function askInput(title, placeholder, initial) {
+  return new Promise((resolve) => {
+    document.getElementById('promptTitle').textContent = title;
+    const inp = document.getElementById('promptInput');
+    inp.placeholder = placeholder || '';
+    inp.value = initial != null ? initial : '';
+    document.getElementById('promptOverlay').classList.add('show');
+    inp.focus();
+    function done(val) {
+      document.getElementById('promptOverlay').classList.remove('show');
+      cleanup();
+      resolve(val);
+    }
+    function onOk() { done(inp.value); }
+    function onCancel() { done(null); }
+    function onKey(e) {
+      if (e.key === 'Enter') {
+        if (e.ctrlKey || e.metaKey) { e.preventDefault(); onOk(); }
+        // 普通 Enter：多行模式下允许换行，不提交
+      }
+    }
+    function cleanup() {
+      document.getElementById('promptOk').removeEventListener('click', onOk);
+      document.getElementById('promptCancel').removeEventListener('click', onCancel);
+      document.getElementById('promptOverlay').removeEventListener('click', onBackdrop);
+      inp.removeEventListener('keydown', onKey);
+    }
+    function onBackdrop(e) { if (e.target === e.currentTarget) onCancel(); }
+    document.getElementById('promptOk').addEventListener('click', onOk);
+    document.getElementById('promptCancel').addEventListener('click', onCancel);
+    document.getElementById('promptOverlay').addEventListener('click', onBackdrop);
+    inp.addEventListener('keydown', onKey);
+  });
+}
+
+// ===== 多字段表单弹窗 =====
+// fields: [{ label, placeholder, value, type('text'|'password'|'textarea') }]
+// 返回字段值数组；取消返回 null
+function openForm(title, fields, okText) {
+  return new Promise((resolve) => {
+    document.getElementById('formTitle').textContent = title;
+    const wrap = document.getElementById('formFields');
+    wrap.innerHTML = '';
+    const inputs = [];
+    fields.forEach(f => {
+      const box = document.createElement('div');
+      box.className = 'form-field';
+      const lab = document.createElement('div');
+      lab.className = 'form-label'; lab.textContent = f.label;
+      let inp;
+      if (f.type === 'textarea') {
+        inp = document.createElement('textarea');
+        inp.rows = 2;
+      } else {
+        inp = document.createElement('input');
+        inp.type = f.type || 'text';
+      }
+      inp.placeholder = f.placeholder || '';
+      inp.value = f.value != null ? f.value : '';
+      box.appendChild(lab); box.appendChild(inp);
+      wrap.appendChild(box);
+      inputs.push(inp);
+    });
+    const okBtn = document.getElementById('formOk');
+    if (okText) okBtn.textContent = okText; else okBtn.textContent = '确定';
+    document.getElementById('formOverlay').classList.add('show');
+    if (inputs[0]) inputs[0].focus();
+
+    function cleanup() {
+      document.getElementById('formOk').removeEventListener('click', onOk);
+      document.getElementById('formCancel').removeEventListener('click', onCancel);
+      document.getElementById('formOverlay').removeEventListener('click', onBackdrop);
+    }
+    function close(vals) {
+      document.getElementById('formOverlay').classList.remove('show');
+      cleanup();
+      resolve(vals);
+    }
+    function onOk() { close(inputs.map(i => i.value)); }
+    function onCancel() { close(null); }
+    function onBackdrop(e) { if (e.target === e.currentTarget) onCancel(); }
+    document.getElementById('formOk').addEventListener('click', onOk);
+    document.getElementById('formCancel').addEventListener('click', onCancel);
+    document.getElementById('formOverlay').addEventListener('click', onBackdrop);
+  });
+}
+
+// ===== 日历待办 =====
+// 复用 KEY_DAY 存储：按日期 key 存任务数组（与「日打卡」同源，互通）
+function calGetTasks(key) {
+  const all = load(KEY_DAY, {});
+  return all[key] || [];
+}
+function calSetTasks(key, tasks) {
+  const all = load(KEY_DAY, {});
+  all[key] = tasks; save(KEY_DAY, all);
+}
+function calShift(delta) {
+  calMonth += delta;
+  if (calMonth < 0) { calMonth = 11; calYear--; }
+  if (calMonth > 11) { calMonth = 0; calYear++; }
+  renderCalendar();
+}
+function calDateKey(y, m, d) {
+  return y + '-' + pad(m + 1) + '-' + pad(d);
+}
+function renderCalendar() {
+  document.getElementById('calTitle').textContent = calYear + ' 年 ' + (calMonth + 1) + ' 月';
+  const grid = document.getElementById('calGrid');
+  grid.innerHTML = '';
+  const first = new Date(calYear, calMonth, 1);
+  const startDow = first.getDay();          // 0=日
+  const daysInMonth = new Date(calYear, calMonth + 1, 0).getDate();
+  const todayKey = dateKey(new Date());
+
+  // 前导空白（上月）
+  for (let i = 0; i < startDow; i++) {
+    const c = document.createElement('div');
+    c.className = 'cal-cell other';
+    grid.appendChild(c);
+  }
+  // 本月日期
+  for (let d = 1; d <= daysInMonth; d++) {
+    const key = calDateKey(calYear, calMonth, d);
+    const tasks = calGetTasks(key);
+    const c = document.createElement('div');
+    c.className = 'cal-cell';
+    if (key === todayKey) c.classList.add('today');
+    if (key === calSelKey) c.classList.add('sel');
+    if (tasks.length) {
+      const allDone = tasks.every(x => x.done);
+      c.classList.add(allDone ? 'all-done' : 'has-task');
+    }
+    c.textContent = d;
+    c.addEventListener('click', () => { calSelKey = key; renderCalendar(); });
+    grid.appendChild(c);
+  }
+  // 渲染选中日期的待办列表
+  const selTasks = calGetTasks(calSelKey);
+  document.getElementById('calListTitle').textContent = calSelKey + ' 的待办';
+  const items = document.getElementById('calItems');
+  items.innerHTML = '';
+  if (!selTasks.length) {
+    const e = document.createElement('div');
+    e.className = 'cal-empty'; e.textContent = '这一天还没有待办';
+    items.appendChild(e);
+  }
+  selTasks.forEach(t => {
+    const row = document.createElement('div');
+    row.className = 'cal-item' + (t.done ? ' done' : '');
+    const ck = document.createElement('div');
+    ck.className = 'ci-check'; ck.textContent = t.done ? '✓' : '';
+    ck.addEventListener('click', () => {
+      t.done = !t.done; calSetTasks(calSelKey, selTasks); renderCalendar();
+    });
+    const tx = document.createElement('div');
+    tx.className = 'ci-text'; tx.innerHTML = textToHTML(t.text);
+    const tm = document.createElement('div');
+    tm.className = 'ci-time'; tm.textContent = t.start || '';
+    const del = document.createElement('button');
+    del.className = 'ci-del'; del.textContent = '×';
+    del.addEventListener('click', () => {
+      calSetTasks(calSelKey, selTasks.filter(x => x.id !== t.id)); renderCalendar();
+    });
+    row.appendChild(ck); row.appendChild(tx); row.appendChild(tm); row.appendChild(del);
+    // 长按待办条目 → 修改内容与时间
+    bindLongPress(row, () => calEdit(t, calSelKey));
+    items.appendChild(row);
+  });
+}
+function calAdd() {
+  (async () => {
+    const text = await askInput('添加待办', '待办内容…');
+    if (text == null || !text.trim()) return;
+    const start = await askInput('开始时间（可选）', '如 14:30，留空跳过');
+    const tasks = calGetTasks(calSelKey);
+    tasks.push({ id: Date.now() + Math.random(), text: text.trim(), start: start && start.trim() ? start.trim() : '', hours: 4, done: false, color: tasks.length % COLORS });
+    calSetTasks(calSelKey, tasks);
+    renderCalendar();
+  })();
+}
+// 长按修改待办：内容 + 开始时间（一页同时展示）
+async function calEdit(t, key) {
+  const tasks = calGetTasks(key);
+  const obj = tasks.find(x => x.id === t.id);
+  if (!obj) return;
+  const vals = await openForm('修改待办', [
+    { label: '待办内容', type: 'textarea', placeholder: '待办内容…', value: obj.text },
+    { label: '开始时间（可选）', type: 'text', placeholder: '如 14:30，留空表示无时间', value: obj.start || '' },
+  ], '保存');
+  if (!vals) return;
+  const text = vals[0].trim();
+  if (!text) return;
+  obj.text = text;
+  obj.start = vals[1].trim();
+  calSetTasks(key, tasks);
+  renderCalendar();
+}
+
+// ===== 通用长按（用于记账/密码记录的条目修改） =====
+let lpFired = false; // 全局长按标记，长按后抑制紧随的 click 误触
+function bindLongPress(el, onLongPress) {
+  el.oncontextmenu = (e) => e.preventDefault();
+  let timer = null;
+  let sx = 0, sy = 0;
+  function down(e) {
+    if (e.button != null && e.button !== 0) return;
+    lpFired = false;
+    const p = e.touches ? e.touches[0] : e;
+    sx = p.clientX; sy = p.clientY;
+    timer = setTimeout(() => { lpFired = true; onLongPress(); }, 400);
+  }
+  function move(e) {
+    const p = e.touches ? e.touches[0] : e;
+    if (Math.hypot(p.clientX - sx, p.clientY - sy) > 10) { clearTimeout(timer); }
+  }
+  function up() { clearTimeout(timer); }
+  el.addEventListener('touchstart', down, { passive: true });
+  el.addEventListener('touchmove', move, { passive: true });
+  el.addEventListener('touchend', up);
+  el.addEventListener('touchcancel', up);
+  el.addEventListener('mousedown', down);
+  el.addEventListener('mouseup', up);
+  el.addEventListener('mouseleave', up);
+}
+document.addEventListener('click', (e) => {
+  if (lpFired) { e.preventDefault(); e.stopPropagation(); lpFired = false; }
+}, true);
+
+// ===== 记账 =====
+// 记录字段：{ id, type:'income'|'expense', amount:number, text, note, cat, dateKey }
+// 一级切换：支出/收入（billType，默认支出）
+// 二级切换：年账单/固定（billTab）；年账单点某月进入月度明细(billTab='month')
+let billType = 'expense';                    // 'expense' | 'income'
+let billTab = 'year';                        // 'year' | 'fixed' | 'month'(月度明细内部态)
+let billYear = new Date().getFullYear();
+let billMonth = new Date().getMonth();       // 0-11
+let billUnknownMode = false;                 // 月度明细是否显示「未知月份」记录
+function billGetAll() { return load(KEY_BILL, []); }
+function billSaveAll(list) { save(KEY_BILL, list); }
+function fmtMoney(n) {
+  return '¥' + (Math.round(n * 100) / 100).toFixed(2).replace(/\B(?=(\d{3})+(?!\d))/g, ',');
+}
+function switchBillType(type) {
+  billType = type;
+  document.getElementById('billTabExpense').classList.toggle('active', type === 'expense');
+  document.getElementById('billTabIncome').classList.toggle('active', type === 'income');
+  // 切换收支时，保持年账单/固定 的当前 tab，但若在月度明细则回到年账单
+  if (billTab === 'month') billTab = 'year';
+  switchBillTab(billTab);
+}
+function switchBillTab(tab) {
+  billTab = tab;
+  // 切到年账单/固定时，退出未知模式
+  if (tab !== 'month') billUnknownMode = false;
+  document.getElementById('billTabYear').classList.toggle('active', tab === 'year');
+  document.getElementById('billTabFixed').classList.toggle('active', tab === 'fixed');
+  document.getElementById('billYearView').classList.toggle('hidden', tab !== 'year');
+  document.getElementById('billMonthView').classList.toggle('hidden', tab !== 'month');
+  document.getElementById('billFixedView').classList.toggle('hidden', tab !== 'fixed');
+  // 固定模块文案与按钮跟随收支
+  const isExpense = billType === 'expense';
+  document.getElementById('billFixedHint').textContent = isExpense
+    ? '每月自动计入的固定扣费（话费、会员费等），会累加到月度明细与年账单'
+    : '每月自动计入的固定进账（工资、零花钱等），会累加到月度明细与年账单';
+  document.getElementById('billFixedAddBtn').textContent = isExpense ? '＋ 添加固定支出' : '＋ 添加固定收入';
+  renderBill();
+}
+// 从年账单点某月进入月度明细
+function billOpenMonth(m) {
+  billMonth = m;
+  billUnknownMode = false;
+  billTab = 'month';
+  document.getElementById('billTabYear').classList.remove('active');
+  document.getElementById('billTabFixed').classList.remove('active');
+  document.getElementById('billYearView').classList.add('hidden');
+  document.getElementById('billFixedView').classList.add('hidden');
+  document.getElementById('billMonthView').classList.remove('hidden');
+  renderBill();
+}
+// 从年账单点「未知」进入无日期记录明细
+function billOpenUnknown() {
+  billUnknownMode = true;
+  billTab = 'month';
+  document.getElementById('billTabYear').classList.remove('active');
+  document.getElementById('billTabFixed').classList.remove('active');
+  document.getElementById('billYearView').classList.add('hidden');
+  document.getElementById('billFixedView').classList.add('hidden');
+  document.getElementById('billMonthView').classList.remove('hidden');
+  renderBill();
+}
+function billShiftYear(delta) { billYear += delta; renderBill(); }
+
+// 固定项（支出/收入）
+function billFixedGetAll() { return load(KEY_FIXED, []); }
+function billFixedSaveAll(list) { save(KEY_FIXED, list); }
+function billFixedInGetAll() { return load(KEY_FIXED_IN, []); }
+function billFixedInSaveAll(list) { save(KEY_FIXED_IN, list); }
+function currentFixedList() { return billType === 'expense' ? billFixedGetAll() : billFixedInGetAll(); }
+
+function renderBill() {
+  const list = billGetAll();
+  const fixedOut = billFixedGetAll();
+  const fixedIn = billFixedInGetAll();
+  const fixedOutTotal = fixedOut.reduce((s, f) => s + (f.amount || 0), 0);
+  const fixedInTotal = fixedIn.reduce((s, f) => s + (f.amount || 0), 0);
+  const isExpense = billType === 'expense';
+  const TYPE = isExpense ? 'expense' : 'income';
+
+  // ===== 月度明细 =====
+  let monthList;
+  if (billUnknownMode) {
+    // 未知月份：dateKey 为空的记录
+    monthList = list.filter(b => (!b.dateKey) && b.type === TYPE);
+    document.getElementById('billMonthTitle').textContent = '未知月份';
+  } else {
+    const monthPrefix = billYear + '-' + pad(billMonth + 1);
+    monthList = list.filter(b => b.dateKey && b.dateKey.startsWith(monthPrefix) && b.type === TYPE);
+    document.getElementById('billMonthTitle').textContent = billYear + ' 年 ' + (billMonth + 1) + ' 月';
+  }
+  const monthFixed = billUnknownMode ? 0 : (isExpense ? fixedOutTotal : fixedInTotal);
+  const monthTotal = monthList.reduce((s, b) => s + b.amount, 0) + monthFixed;
+  document.getElementById('billMonthSummary').innerHTML =
+    '<span class="hs-amt ' + TYPE + '">' + fmtMoney(monthTotal) + '</span>' +
+    '<span class="hs-sub">' + monthList.length + ' 笔</span>';
+  const mRows = document.getElementById('billMonthRows');
+  mRows.innerHTML = '';
+  // 固定项汇总行（置顶；未知模式无固定）
+  const curFixed = currentFixedList();
+  const hasAnyMonth = monthList.length || (!billUnknownMode && curFixed.length);
+  if (!hasAnyMonth) {
+    const e = document.createElement('div');
+    e.className = 'bill-empty';
+    e.textContent = billUnknownMode
+      ? (isExpense ? '还没有无日期的支出记录' : '还没有无日期的收入记录')
+      : (isExpense ? '本月还没有支出，点下方「记一笔」开始' : '本月还没有收入，点下方「记一笔」开始');
+    mRows.appendChild(e);
+  } else {
+    if (!billUnknownMode && curFixed.length) {
+      const fRow = document.createElement('div');
+      fRow.className = 'bill-row fixed-row';
+      const fName = document.createElement('div');
+      fName.className = 'br-name';
+      fName.textContent = isExpense ? '月固定支出' : '月固定收入';
+      const fSub = document.createElement('span');
+      fSub.className = 'br-sub'; fSub.textContent = curFixed.map(x => x.name).join('、');
+      fName.appendChild(fSub);
+      const fAmt = document.createElement('div');
+      fAmt.className = 'br-amt ' + TYPE; fAmt.textContent = (isExpense ? '-' : '+') + fmtMoney(monthFixed);
+      fRow.appendChild(fName); fRow.appendChild(fAmt);
+      fRow.addEventListener('click', () => switchBillTab('fixed'));
+      mRows.appendChild(fRow);
+    }
+    monthList.slice().sort((a, b) => (b.dateKey || '').localeCompare(a.dateKey || '')).forEach(b => {
+      const row = document.createElement('div');
+      row.className = 'bill-row';
+      const name = document.createElement('div');
+      name.className = 'br-name';
+      name.textContent = b.text || (isExpense ? '支出' : '收入');
+      if (b.note) {
+        const sub = document.createElement('span');
+        sub.className = 'br-sub'; sub.textContent = b.note;
+        name.appendChild(sub);
+      }
+      const amt = document.createElement('div');
+      amt.className = 'br-amt ' + b.type;
+      amt.textContent = (b.type === 'income' ? '+' : '-') + fmtMoney(b.amount);
+      const del = document.createElement('button');
+      del.className = 'br-del'; del.textContent = '×';
+      del.addEventListener('click', () => {
+        billSaveAll(billGetAll().filter(x => x.id !== b.id)); renderBill();
+      });
+      row.appendChild(name); row.appendChild(amt); row.appendChild(del);
+      bindLongPress(row, () => billEdit(b));
+      mRows.appendChild(row);
+    });
+  }
+
+  // ===== 年账单 =====
+  document.getElementById('billYearTitle').textContent = billYear + ' 年';
+  const yearPrefix = String(billYear);
+  const yearList = list.filter(b => b.dateKey && b.dateKey.startsWith(yearPrefix) && b.type === TYPE);
+  // 未知日期记录（dateKey 为空）
+  const unknownList = list.filter(b => (!b.dateKey) && b.type === TYPE);
+  const unknownTotal = unknownList.reduce((s, b) => s + b.amount, 0);
+  const yearFixed = (isExpense ? fixedOutTotal : fixedInTotal) * 12;
+  const yearTotal = yearList.reduce((s, b) => s + b.amount, 0) + unknownTotal + yearFixed;
+  document.getElementById('billYearSummary').innerHTML =
+    '<span class="hs-amt ' + TYPE + '">' + fmtMoney(yearTotal) + '</span>' +
+    '<span class="hs-sub">' + (yearList.length + unknownList.length) + ' 笔</span>';
+  const yRows = document.getElementById('billYearRows');
+  yRows.innerHTML = '';
+  // 未知月份行（置顶，在 1月 前）
+  {
+    const row = document.createElement('div');
+    row.className = 'bill-row month-row';
+    const name = document.createElement('div');
+    name.className = 'br-name'; name.textContent = '未知';
+    if (unknownTotal > 0) {
+      const sub = document.createElement('span');
+      sub.className = 'br-sub'; sub.textContent = fmtMoney(unknownTotal) + '（' + unknownList.length + ' 笔）';
+      name.appendChild(sub);
+    }
+    const amt = document.createElement('div');
+    amt.className = 'br-amt ' + TYPE;
+    amt.textContent = unknownTotal > 0 ? fmtMoney(unknownTotal) : '—';
+    row.appendChild(name); row.appendChild(amt);
+    row.addEventListener('click', () => { billOpenUnknown(); });
+    yRows.appendChild(row);
+  }
+  // 每月合计：1月~12月，点某月跳到月度明细
+  const byMonth = Array.from({ length: 12 }, () => 0);
+  yearList.forEach(b => {
+    const m = parseInt(String(b.dateKey).slice(5, 7), 10) - 1;
+    if (m >= 0 && m < 12) byMonth[m] += b.amount;
+  });
+  const monthFixedEach = isExpense ? fixedOutTotal : fixedInTotal;
+  for (let m = 0; m < 12; m++) {
+    const total = byMonth[m] + monthFixedEach;
+    const row = document.createElement('div');
+    row.className = 'bill-row month-row';
+    const name = document.createElement('div');
+    name.className = 'br-name'; name.textContent = (m + 1) + '月';
+    if (total > 0) {
+      const sub = document.createElement('span');
+      sub.className = 'br-sub';
+      sub.textContent = fmtMoney(total) + (monthFixedEach ? '（含固定 ' + fmtMoney(monthFixedEach) + '）' : '');
+      name.appendChild(sub);
+    }
+    const amt = document.createElement('div');
+    amt.className = 'br-amt ' + TYPE;
+    amt.textContent = total > 0 ? fmtMoney(total) : '—';
+    row.appendChild(name); row.appendChild(amt);
+    row.addEventListener('click', () => { billOpenMonth(m); });
+    yRows.appendChild(row);
+  }
+
+  // ===== 固定（支出/收入跟随） =====
+  renderBillFixed(curFixed);
+}
+
+async function billAdd() {
+  const isExpense = billType === 'expense';
+  const vals = await openForm(isExpense ? '记支出' : '记收入', [
+    { label: '项目内容', placeholder: isExpense ? '如：车险' : '如：工资', value: '' },
+    { label: '金额', placeholder: '如 36.5', value: '' }
+  ], '添加');
+  if (vals == null) return;
+  const text = (vals[0] || '').trim();
+  if (!text) return;
+  const amount = parseFloat(vals[1]);
+  if (isNaN(amount) || amount <= 0) { alert('金额无效'); return; }
+  // 日期：从哪个月点进来就记到哪个月（未知模式则记为无日期）
+  let dateKeyStr = '';
+  if (billUnknownMode) {
+    dateKeyStr = '';   // 未知
+  } else {
+    dateKeyStr = billYear + '-' + pad(billMonth + 1) + '-01';
+  }
+  const list = billGetAll();
+  list.push({
+    id: Date.now() + Math.random(),
+    type: billType,
+    amount, text: text || (isExpense ? '支出' : '收入'),
+    note: '',
+    cat: 'other',
+    dateKey: dateKeyStr
+  });
+  billSaveAll(list);
+  renderBill();
+}
+// 长按修改账目：内容 + 金额
+async function billEdit(b) {
+  const isExpense = b.type === 'expense';
+  const vals = await openForm('修改账目', [
+    { label: '项目内容', placeholder: '', value: b.text || '' },
+    { label: '金额', placeholder: '', value: String(b.amount) }
+  ], '保存');
+  if (vals == null) return;
+  const text = (vals[0] || '').trim();
+  const amount = parseFloat(vals[1]);
+  if (isNaN(amount) || amount <= 0) { alert('金额无效'); return; }
+  const list = billGetAll();
+  const item = list.find(x => x.id === b.id);
+  if (item) { item.text = text || b.text; item.amount = amount; }
+  billSaveAll(list);
+  renderBill();
+}
+
+// ===== 固定（支出/收入）渲染与增删 =====
+// 字段：{ id, name, amount }
+function renderBillFixed(fixed) {
+  const container = document.getElementById('billFixedRows');
+  const isExpense = billType === 'expense';
+  container.innerHTML = '';
+  if (!fixed.length) {
+    const e = document.createElement('div');
+    e.className = 'bill-empty';
+    e.textContent = isExpense ? '还没有固定支出，点下方「添加固定支出」设置每月扣费' : '还没有固定收入，点下方「添加固定收入」设置每月进账';
+    container.appendChild(e);
+    return;
+  }
+  const total = fixed.reduce((s, f) => s + (f.amount || 0), 0);
+  fixed.forEach(f => {
+    const row = document.createElement('div');
+    row.className = 'bill-row';
+    const name = document.createElement('div');
+    name.className = 'br-name';
+    name.textContent = f.name || '未命名';
+    const sub = document.createElement('span');
+    sub.className = 'br-sub'; sub.textContent = '每月固定';
+    name.appendChild(sub);
+    const amt = document.createElement('div');
+    amt.className = 'br-amt ' + (isExpense ? 'expense' : 'income');
+    amt.textContent = (isExpense ? '-' : '+') + fmtMoney(f.amount || 0);
+    const del = document.createElement('button');
+    del.className = 'br-del'; del.textContent = '×';
+    del.addEventListener('click', () => {
+      if (!confirm('删除固定' + (isExpense ? '支出' : '收入') + '「' + (f.name || '') + '」？')) return;
+      const saveFn = isExpense ? billFixedSaveAll : billFixedInSaveAll;
+      const getFn = isExpense ? billFixedGetAll : billFixedInGetAll;
+      saveFn(getFn().filter(x => x.id !== f.id)); renderBill();
+    });
+    row.appendChild(name); row.appendChild(amt); row.appendChild(del);
+    bindLongPress(row, () => billFixedEdit(f));
+    container.appendChild(row);
+  });
+  // 底部合计行
+  const tRow = document.createElement('div');
+  tRow.className = 'bill-row';
+  tRow.style.borderTop = '1px solid #e8eaed';
+  tRow.style.fontWeight = '600';
+  const tName = document.createElement('div');
+  tName.className = 'br-name'; tName.textContent = (isExpense ? '每月固定支出合计' : '每月固定收入合计');
+  const tAmt = document.createElement('div');
+  tAmt.className = 'br-amt ' + (isExpense ? 'expense' : 'income');
+  tAmt.textContent = (isExpense ? '-' : '+') + fmtMoney(total);
+  tRow.appendChild(tName); tRow.appendChild(tAmt);
+  container.appendChild(tRow);
+}
+async function billFixedAdd() {
+  const isExpense = billType === 'expense';
+  const vals = await openForm(isExpense ? '添加固定支出' : '添加固定收入', [
+    { label: '名称', placeholder: isExpense ? '如：手机话费 / 视频会员' : '如：工资 / 零花钱', value: '' },
+    { label: '每月金额', placeholder: isExpense ? '如 58' : '如 8000', value: '' }
+  ], '添加');
+  if (vals == null) return;
+  const name = (vals[0] || '').trim();
+  if (!name) return;
+  const amount = parseFloat(vals[1]);
+  if (isNaN(amount) || amount <= 0) { alert('金额无效'); return; }
+  const getFn = isExpense ? billFixedGetAll : billFixedInGetAll;
+  const saveFn = isExpense ? billFixedSaveAll : billFixedInSaveAll;
+  const list = getFn();
+  list.push({ id: Date.now() + Math.random(), name, amount });
+  saveFn(list);
+  renderBill();
+}
+// 长按修改固定项：名称 + 金额
+async function billFixedEdit(f) {
+  const isExpense = billType === 'expense';
+  const vals = await openForm('修改固定项', [
+    { label: '名称', placeholder: '', value: f.name || '' },
+    { label: '每月金额', placeholder: '', value: String(f.amount) }
+  ], '保存');
+  if (vals == null) return;
+  const name = (vals[0] || '').trim();
+  const amount = parseFloat(vals[1]);
+  if (isNaN(amount) || amount <= 0) { alert('金额无效'); return; }
+  const getFn = isExpense ? billFixedGetAll : billFixedInGetAll;
+  const saveFn = isExpense ? billFixedSaveAll : billFixedInSaveAll;
+  const list = getFn();
+  const item = list.find(x => x.id === f.id);
+  if (item) { item.name = name || f.name; item.amount = amount; }
+  saveFn(list);
+  renderBill();
+}
+
+// ===== 密码记录 =====
+// 记录字段：{ id, name, account, password, note }
+function pwdGetAll() { return load(KEY_PWD, []); }
+function pwdSaveAll(list) { save(KEY_PWD, list); }
+function renderPwd() {
+  const list = pwdGetAll();
+  const container = document.getElementById('pwdItems');
+  container.innerHTML = '';
+  if (!list.length) {
+    const e = document.createElement('div');
+    e.className = 'pwd-empty'; e.textContent = '还没有密码记录，点下方「添加记录」开始';
+    container.appendChild(e);
+    return;
+  }
+  list.forEach(p => {
+    const item = document.createElement('div');
+    item.className = 'pwd-item';
+    const top = document.createElement('div');
+    top.className = 'pi-top';
+    const icon = document.createElement('div');
+    icon.className = 'pi-icon'; icon.textContent = '🔑';
+    const title = document.createElement('div');
+    title.className = 'pi-title';
+    const name = document.createElement('div');
+    name.className = 'pi-name'; name.textContent = p.name;
+    const acc = document.createElement('div');
+    acc.className = 'pi-account'; acc.textContent = p.account || '';
+    title.appendChild(name);
+    if (p.account) title.appendChild(acc);
+    const del = document.createElement('button');
+    del.className = 'pi-del'; del.textContent = '×';
+    del.addEventListener('click', () => {
+      if (!confirm('确定删除「' + p.name + '」这条记录吗？')) return;
+      pwdSaveAll(pwdGetAll().filter(x => x.id !== p.id)); renderPwd();
+    });
+    top.appendChild(icon); top.appendChild(title); top.appendChild(del);
+    item.appendChild(top);
+
+    const pwRow = document.createElement('div');
+    pwRow.className = 'pi-pw-row';
+    const pw = document.createElement('div');
+    pw.className = 'pi-pw masked'; pw.textContent = '••••••••';
+    const eye = document.createElement('button');
+    eye.className = 'pi-eye'; eye.textContent = '👁';
+    eye.addEventListener('click', () => {
+      const masked = pw.classList.toggle('masked');
+      pw.textContent = masked ? '••••••••' : (p.password || '');
+    });
+    const copy = document.createElement('button');
+    copy.className = 'pi-copy'; copy.textContent = '📋';
+    copy.addEventListener('click', () => {
+      const t = p.password || '';
+      if (navigator.clipboard && navigator.clipboard.writeText) {
+        navigator.clipboard.writeText(t).then(() => alert('密码已复制'));
+      } else { alert('复制失败，请手动复制：' + t); }
+    });
+    pwRow.appendChild(pw); pwRow.appendChild(eye); pwRow.appendChild(copy);
+    item.appendChild(pwRow);
+    bindLongPress(item, () => pwdEdit(p));
+    container.appendChild(item);
+  });
+}
+async function pwdAdd() {
+  const vals = await openForm('添加密码记录', [
+    { label: '名称', placeholder: '如：淘宝 / 邮箱 / 银行卡', value: '' },
+    { label: '账号', placeholder: '如：手机号 / 用户名', value: '' },
+    { label: '密码', placeholder: '输入要保存的密码', value: '', type: 'password' },
+    { label: '备注', placeholder: '选填', value: '' }
+  ], '添加');
+  if (vals == null) return;
+  const name = (vals[0] || '').trim();
+  if (!name) return;
+  const list = pwdGetAll();
+  list.push({
+    id: Date.now() + Math.random(),
+    name: name,
+    account: (vals[1] || '').trim(),
+    password: vals[2] || '',
+    note: (vals[3] || '').trim()
+  });
+  pwdSaveAll(list);
+  renderPwd();
+}
+// 长按修改密码记录：名称 / 账号 / 密码 / 备注
+async function pwdEdit(p) {
+  const vals = await openForm('修改密码记录', [
+    { label: '名称', placeholder: '', value: p.name || '' },
+    { label: '账号', placeholder: '', value: p.account || '' },
+    { label: '密码', placeholder: '', value: p.password || '', type: 'password' },
+    { label: '备注', placeholder: '', value: p.note || '' }
+  ], '保存');
+  if (vals == null) return;
+  const name = (vals[0] || '').trim();
+  const list = pwdGetAll();
+  const item = list.find(x => x.id === p.id);
+  if (item) {
+    item.name = name || p.name;
+    item.account = (vals[1] || '').trim();
+    item.password = vals[2] || '';
+    item.note = (vals[3] || '').trim();
+  }
+  pwdSaveAll(list);
+  renderPwd();
+}
+
+// ===== 小纸条 =====
+// 记录字段：{ id, text, time }
+function noteGetAll() { return load(KEY_NOTE, []); }
+function noteSaveAll(list) { save(KEY_NOTE, list); }
+function noteFmtTime(ts) {
+  const d = new Date(ts);
+  const p = n => String(n).padStart(2, '0');
+  return d.getFullYear() + '-' + p(d.getMonth() + 1) + '-' + p(d.getDate()) + ' ' + p(d.getHours()) + ':' + p(d.getMinutes());
+}
+function renderNote() {
+  const list = noteGetAll();
+  const container = document.getElementById('noteItems');
+  container.innerHTML = '';
+  if (!list.length) {
+    const e = document.createElement('div');
+    e.className = 'pwd-empty'; e.textContent = '还没有纸条，点下方「写一张纸条」开始';
+    container.appendChild(e);
+    return;
+  }
+  // 最新在前
+  const sorted = [...list].sort((a, b) => b.time - a.time);
+  sorted.forEach(n => {
+    const item = document.createElement('div');
+    item.className = 'note-item';
+    const txt = document.createElement('div');
+    txt.className = 'note-text'; txt.textContent = n.text;
+    const tm = document.createElement('div');
+    tm.className = 'note-time'; tm.textContent = noteFmtTime(n.time);
+    const del = document.createElement('button');
+    del.className = 'note-del'; del.textContent = '×';
+    del.addEventListener('click', () => {
+      noteSaveAll(noteGetAll().filter(x => x.id !== n.id)); renderNote();
+    });
+    item.appendChild(txt); item.appendChild(tm); item.appendChild(del);
+    bindLongPress(item, () => noteEdit(n));
+    container.appendChild(item);
+  });
+}
+async function noteAdd() {
+  const text = await askInput('写一张纸条', '记点什么…（Enter 换行）');
+  if (text == null || !text.trim()) return;
+  const list = noteGetAll();
+  list.push({ id: Date.now() + Math.random(), text: text.trim(), time: Date.now() });
+  noteSaveAll(list);
+  renderNote();
+}
+// 长按修改纸条内容
+async function noteEdit(n) {
+  const text = await askInput('修改纸条', '记点什么…（Enter 换行）', n.text);
+  if (text == null || !text.trim()) return;
+  const list = noteGetAll();
+  const item = list.find(x => x.id === n.id);
+  if (item) { item.text = text.trim(); item.time = Date.now(); }
+  noteSaveAll(list);
+  renderNote();
+}
+
+// ===== 我的 =====
+function renderMine() {
+  const weekAll = load(KEY_WEEK, {});
+  const dayAll = load(KEY_DAY, {});
+  let done = 0, undone = 0;
+  const dayKeys = new Set();
+  // 周任务
+  for (const k in weekAll) {
+    (weekAll[k] || []).forEach(t => { if (t.done) done++; else undone++; });
+  }
+  // 日任务
+  for (const k in dayAll) {
+    const arr = dayAll[k] || [];
+    if (arr.length) dayKeys.add(k);
+    arr.forEach(t => { if (t.done) done++; else undone++; });
+  }
+  document.getElementById('statDone').textContent = done;
+  document.getElementById('statUndone').textContent = undone;
+  document.getElementById('statDays').textContent = dayKeys.size;
+}
+
+function exportData() {
+  const data = { KEY_WEEK, KEY_DAY, KEY_TT, week: load(KEY_WEEK, {}), day: load(KEY_DAY, {}), tt: load(KEY_TT, {}), bill: load(KEY_BILL, []), pwd: load(KEY_PWD, []), fixed: load(KEY_FIXED, []), fixedIn: load(KEY_FIXED_IN, []), note: load(KEY_NOTE, []) };
+  const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = '打卡数据_' + dateKey(new Date()) + '.json';
+  a.click();
+  URL.revokeObjectURL(url);
+}
+
+function importData() {
+  const inp = document.createElement('input');
+  inp.type = 'file';
+  inp.accept = '.json,application/json';
+  inp.onchange = () => {
+    const f = inp.files && inp.files[0];
+    if (!f) return;
+    const reader = new FileReader();
+    reader.onload = () => {
+      try {
+        const data = JSON.parse(reader.result);
+        const wk = data.week || data[KEY_WEEK] || {};
+        const dy = data.day || data[KEY_DAY] || {};
+        const tt = data.tt || data[KEY_TT] || {};
+        const bi = data.bill || data[KEY_BILL] || [];
+        const pw = data.pwd || data[KEY_PWD] || [];
+        const fx = data.fixed || data[KEY_FIXED] || [];
+        const fxi = data.fixedIn || data[KEY_FIXED_IN] || [];
+        const nt = data.note || data[KEY_NOTE] || [];
+        save(KEY_WEEK, wk);
+        save(KEY_DAY, dy);
+        save(KEY_TT, tt);
+        save(KEY_BILL, bi);
+        save(KEY_PWD, pw);
+        save(KEY_FIXED, fx);
+        save(KEY_FIXED_IN, fxi);
+        save(KEY_NOTE, nt);
+        renderMine();
+      } catch(e) { alert('导入失败：文件格式不正确'); }
+    };
+    reader.readAsText(f);
+  };
+  inp.click();
+}
+
+function clearAllData() {
+  if (!confirm('确定要清空所有打卡数据吗？此操作不可恢复！')) return;
+  save(KEY_WEEK, {});
+  save(KEY_DAY, {});
+  save(KEY_TT, {});
+  save(KEY_BILL, []);
+  save(KEY_PWD, []);
+  save(KEY_FIXED, []);
+  save(KEY_FIXED_IN, []);
+  save(KEY_NOTE, []);
+  renderMine();
+}
+
+// ===== 周打卡·课程表模式 =====
+// 课程表：一个整体大框，背景有纵横时间坐标（横轴 周一~周日，纵轴 上午/下午）作参照
+// 任务块按「难度」决定大小（复用 hoursToGrid），全局布局：
+//   未完成任务 → 浮到整个大框左上角；完成任务 → 沉到整个大框右下角
+// 任务带 dayId(1-7)/partId(am|pm)，块上显示「周X·上午/下午」标签
+// 数据：按周 key 存任务数组，任务对象含 text/hours/start/dayId/partId/done/color
+const TT_DAYS = [
+  { id: 1, label: '周一', short: '一' },
+  { id: 2, label: '周二', short: '二' },
+  { id: 3, label: '周三', short: '三' },
+  { id: 4, label: '周四', short: '四' },
+  { id: 5, label: '周五', short: '五' },
+  { id: 6, label: '周六', short: '六' },
+  { id: 7, label: '周日', short: '日' }
+];
+// 大框网格：7 列(周一~周日) × 18 行；任务块宽=整列宽(1列)，高=1行
+const TT_COLS = 7, TT_ROWS = 18;
+const TT_TILE_COLS = 1, TT_TILE_ROWS = 1; // 每块占 1 列宽 × 1 行高
+
+function ttGetWeekTasks() {
+  const all = load(KEY_TT, {});
+  const wk = weekKey(currentWeekStart);
+  return { wk, tasks: all[wk] || [] };
+}
+function ttSetWeekTasks(tasks) {
+  const all = load(KEY_TT, {});
+  const wk = weekKey(currentWeekStart);
+  all[wk] = tasks;
+  save(KEY_TT, all);
+}
+
+function switchWeekView(view) {
+  weekView = view;
+  document.querySelectorAll('#weekTabs .vt-btn').forEach(b => {
+    b.classList.toggle('active', b.dataset.view === view);
+  });
+  document.getElementById('weekBoardWrap').classList.toggle('hidden', view !== 'board');
+  document.getElementById('weekTableWrap').classList.toggle('hidden', view !== 'timetable');
+  if (view === 'board') render('week');
+  else renderTimetable();
+}
+
+// 时间戳 HH:MM → 「8点」/「9点30」格式
+function ttPoint(start) {
+  const m = String(start || '').match(/(\d{1,2}):(\d{2})/);
+  if (!m) return '';
+  const h = parseInt(m[1], 10), mm = m[2];
+  return h + '点' + (mm !== '00' ? mm : '');
+}
+
+// 列表模式：按星期分组的纯文字清单
+// 格式：- 周一：任务A（8点，11点）；任务B（10点）
+// 同一天同名任务合并，时间点依次列出；无浮沉、无网格
+function renderTimetable() {
+  const wrap = document.getElementById('weekTableWrap');
+  wrap.innerHTML = '';
+
+  const today = new Date();
+  const dow = today.getDay();
+  const todayId = dow === 0 ? 7 : dow;
+  const { tasks } = ttGetWeekTasks();
+
+  const list = document.createElement('div');
+  list.className = 'tt-list';
+
+  let any = false;
+  TT_DAYS.forEach(d => {
+    const dayTasks = tasks.filter(t => (t.dayId || 1) === d.id).sort(cmpSeq);
+    if (!dayTasks.length) return;
+    any = true;
+
+    // 同名任务合并，时间点依次列出
+    const groups = [];
+    const map = {};
+    for (const t of dayTasks) {
+      const k = String(t.text);
+      if (!map[k]) { map[k] = { text: t.text, times: [], members: [] }; groups.push(map[k]); }
+      const pt = ttPoint(t.start);
+      if (pt) map[k].times.push(pt);
+      map[k].members.push(t);
+    }
+
+    const row = document.createElement('div');
+    row.className = 'tt-row';
+    const head = document.createElement('span');
+    head.className = 'tt-row-day';
+    head.textContent = '- ' + d.label + '：';
+    row.appendChild(head);
+
+    groups.forEach((g, gi) => {
+      if (gi) {
+        const sep = document.createElement('span');
+        sep.className = 'tt-row-sep'; sep.textContent = '；';
+        row.appendChild(sep);
+      }
+      const item = document.createElement('span');
+      const allDone = g.members.every(m => m.done);
+      const someDone = g.members.some(m => m.done);
+      item.className = 'tt-item' + (allDone ? ' done' : (someDone ? ' part' : ''));
+      item.textContent = g.text + (g.times.length ? '（' + g.times.join('，') + '）' : '');
+      // 点击：切换该组全部任务的完成状态
+      item.addEventListener('click', () => {
+        const { tasks: ts } = ttGetWeekTasks();
+        const ids = new Set(g.members.map(m => String(m.id)));
+        const objs = ts.filter(x => ids.has(String(x.id)));
+        const wasAllDone = objs.every(o => o.done);
+        objs.forEach(o => { o.done = !wasAllDone; });
+        ttSetWeekTasks(ts);
+        renderTimetable();
+      });
+      bindTTItemEvents(item, g);
+      row.appendChild(item);
+    });
+    list.appendChild(row);
+  });
+
+  if (!any) {
+    const hint = document.createElement('div');
+    hint.className = 'tt-list-hint';
+    hint.textContent = '长按这里添加任务';
+    list.appendChild(hint);
+  }
+  wrap.appendChild(list);
+  bindTTListAdd(list);
+}
+
+// 列表条目：长按弹菜单（编辑名称/时间戳/删除），作用于该组第一个任务
+let ttItemLongFired = false; // 长按标记（全局唯一，长按后抑制紧随的 click 误触）
+function bindTTItemEvents(item, group) {
+  item.oncontextmenu = (e) => e.preventDefault();
+  let timer = null;
+  let sx = 0, sy = 0;
+  const rep = group.members[0];
+  function down(e) {
+    if (e.button != null && e.button !== 0) return;
+    ttItemLongFired = false;
+    const p = e.touches ? e.touches[0] : e;
+    sx = p.clientX; sy = p.clientY;
+    timer = setTimeout(() => { ttItemLongFired = true; openTTTileMenu(rep, item); }, 400);
+  }
+  function move(e) {
+    const p = e.touches ? e.touches[0] : e;
+    if (Math.hypot(p.clientX - sx, p.clientY - sy) > 10) { clearTimeout(timer); }
+  }
+  function up() { clearTimeout(timer); }
+  item.addEventListener('touchstart', down, { passive: true });
+  item.addEventListener('touchmove', move, { passive: true });
+  item.addEventListener('touchend', up);
+  item.addEventListener('touchcancel', up);
+  item.addEventListener('mousedown', down);
+  item.addEventListener('mouseup', up);
+  item.addEventListener('mouseleave', up);
+}
+// 长按菜单打开后，拦截紧随的 click（捕获阶段，只注册一次）
+document.addEventListener('click', (e) => {
+  if (ttItemLongFired) { e.preventDefault(); e.stopPropagation(); ttItemLongFired = false; }
+}, true);
+
+// 列表空白处（或空提示）长按添加任务
+function bindTTListAdd(list) {
+  list.oncontextmenu = (e) => e.preventDefault();
+  let timer = null;
+  function down(e) {
+    if (e.target !== list && !e.target.classList.contains('tt-list-hint') && !e.target.classList.contains('tt-row')) return;
+    list.classList.add('pressing');
+    timer = setTimeout(() => { list.classList.remove('pressing'); openTTDialog(); }, 400);
+  }
+  function up() { list.classList.remove('pressing'); clearTimeout(timer); }
+  list.addEventListener('touchstart', down, { passive: true });
+  list.addEventListener('touchend', up);
+  list.addEventListener('touchmove', up, { passive: true });
+  list.addEventListener('mousedown', down);
+  list.addEventListener('mouseup', up);
+  list.addEventListener('mouseleave', up);
+}
+
+function openTTTileMenu(t, el) {
+  const menu = document.getElementById('tileMenu');
+  const hasTime = !!t.start;
+  menu.innerHTML = `
+    <div class="menu-row">
+      <span class="mr-label">时间戳</span>
+      <div class="menu-switch${hasTime ? ' on' : ''}" id="miTimeToggle"></div>
+    </div>
+    <button class="menu-item" id="miRename"><span class="mi">✏️</span> 编辑名称</button>
+    <button class="menu-item danger" id="miDelete"><span class="mi">🗑️</span> 删除</button>`;
+  menu.classList.add('show');
+  const r = el.getBoundingClientRect();
+  let mx = r.left, my = r.bottom + 6;
+  if (mx + 180 > window.innerWidth) mx = window.innerWidth - 190;
+  if (my + 200 > window.innerHeight) my = r.top - 200;
+  menu.style.left = mx + 'px';
+  menu.style.top = my + 'px';
+
+  // 时间戳开关（列表模式）
+  document.getElementById('miTimeToggle').onclick = () => {
+    if (t.start) {
+      // 已开启 → 关闭：清空
+      closeTileMenu();
+      const { tasks } = ttGetWeekTasks();
+      const obj = tasks.find(x => x.id === t.id);
+      if (obj) { obj.start = ''; ttSetWeekTasks(tasks); }
+      renderTimetable();
+    } else {
+      // 已关闭 → 打开：弹时间编辑
+      closeTileMenu();
+      openTTTimeEdit(t);
+    }
+  };
+
+  const apply = (fn) => { closeTileMenu(); fn(); };
+  document.getElementById('miRename').onclick = () => apply(() => {
+    (async () => {
+      const name = await askInput('修改任务名称', '任务名称', t.text);
+      if (name != null && name.trim()) {
+        const { tasks } = ttGetWeekTasks();
+        const obj = tasks.find(x => x.id === t.id);
+        if (obj) { obj.text = name.trim(); ttSetWeekTasks(tasks); renderTimetable(); }
+      }
+    })();
+  });
+  document.getElementById('miDelete').onclick = () => apply(() => {
+    const { tasks } = ttGetWeekTasks();
+    ttSetWeekTasks(tasks.filter(x => x.id !== t.id));
+    renderTimetable();
+  });
+}
+
+// 列表模式：编辑时间戳（复用主弹窗时间滚轮）
+function openTTTimeEdit(t) {
+  editTTTimeTarget = t;
+  const title = document.getElementById('dialogTitle');
+  if (title) title.textContent = '设置时间戳';
+  document.getElementById('dialogInput').style.display = 'none';
+  document.getElementById('timeToggleRow').style.display = 'none';
+  document.getElementById('durLabel').style.display = 'none';
+  document.getElementById('durRow').style.display = 'none';
+  document.getElementById('timePicker').classList.remove('hidden');
+  if (t.start) {
+    const m = String(t.start).match(/(\d{1,2}):(\d{2})/);
+    if (m) { tpHour = parseInt(m[1], 10); tpMinute = parseInt(m[2], 10); }
+  }
+  syncTimeInputs();
+  document.getElementById('overlay').classList.add('show');
+  document.getElementById('btnOk').textContent = '确定';
+}
+
+// 课程表添加任务：弹窗选星期（可选），无难度
+let ttDialogTarget = null;
+let ttDialogDay = 1;
+function openTTDialog() {
+  ttDialogTarget = {};
+  const now = new Date();
+  const dow = now.getDay();
+  ttDialogDay = dow === 0 ? 7 : dow;
+
+  document.getElementById('overlay').classList.add('show');
+  document.getElementById('dialogInput').value = '';
+  const h3 = document.querySelector('#overlay .dialog h3');
+  if (h3) h3.textContent = '添加课程表任务';
+  setTimeStamp(false); // 默认关闭时间戳
+  // 隐藏难度选择（课程表无难度），显示星期选择
+  const durRow = document.getElementById('durRow');
+  const durLabel = durRow.previousElementSibling;
+  if (durLabel && durLabel.classList.contains('dur-label')) durLabel.style.display = 'none';
+  durRow.style.display = 'none';
+  renderTTSlotPicker();
+  setTimeout(() => document.getElementById('dialogInput').focus(), 50);
+}
+
+// 在弹窗内渲染星期选择（复用 dur-row 样式，动态插入）
+function renderTTSlotPicker() {
+  const old = document.getElementById('ttSlotPicker');
+  if (old) old.remove();
+
+  const wrap = document.createElement('div');
+  wrap.id = 'ttSlotPicker';
+
+  const dl = document.createElement('div');
+  dl.className = 'dur-label'; dl.textContent = '星期';
+  wrap.appendChild(dl);
+  const dayRow = document.createElement('div');
+  dayRow.className = 'dur-row';
+  TT_DAYS.forEach(d => {
+    const b = document.createElement('button');
+    b.type = 'button'; b.className = 'dur-btn' + (d.id === ttDialogDay ? ' active' : '');
+    b.textContent = d.short; b.dataset.day = d.id;
+    b.addEventListener('click', () => { ttDialogDay = d.id; renderTTSlotPicker(); });
+    dayRow.appendChild(b);
+  });
+  wrap.appendChild(dayRow);
+
+  // 插入到难度选择之前（此时难度已隐藏，但位置固定）
+  const durRow = document.getElementById('durRow');
+  durRow.parentNode.insertBefore(wrap, durRow);
+}
+
+initTimePicker();
+</script>
+</body>
+</html>
