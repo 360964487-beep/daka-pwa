@@ -75,11 +75,7 @@
     position: relative; width: 100%; aspect-ratio: 8/12; background: #fff;
     border-radius: 20px; box-shadow: 0 2px 8px rgba(16,24,40,.08); overflow: hidden;
     border: 1px solid #e8eaed;
-    /* 8列×12行 网格背景 */
-    background-image:
-      linear-gradient(to right, #f0f2f5 1px, transparent 1px),
-      linear-gradient(to bottom, #f0f2f5 1px, transparent 1px);
-    background-size: 25% 16.6667%;
+    background-image: none;
   }
   .board.pressing { box-shadow: inset 0 0 0 3px var(--primary), 0 2px 8px rgba(16,24,40,.08); }
   .board-hint {
@@ -479,6 +475,7 @@
   .inline-add-form { margin-top:14px; padding:14px; border:1px solid #e6e7f1; border-radius:13px; background:linear-gradient(145deg,#fff 0%,#f8f8fc 100%); box-shadow:0 5px 16px rgba(63,69,112,.06); }
   .inline-add-form .bill-editor-title { color:#50577d; font-size:13px; font-weight:600; margin-bottom:9px; }
   .inline-add-form textarea,.inline-add-form input,.pwd-add-fields input { width:100%; min-width:0; box-sizing:border-box; padding:9px 10px; border:1px solid #e5e7ef; border-radius:8px; background:#fff; color:var(--text); font:inherit; font-size:12px; outline:none; resize:vertical; user-select:text; -webkit-user-select:text; }
+  .inline-add-form textarea,.inline-add-form input[type="text"],.inline-add-form input[type="password"],#dialogInput,#promptInput,#formFields input[type="text"],#formFields textarea,.inline-editor-field:not(.time-part) input[type="text"],.inline-editor-field:not(.time-part) textarea { font-family:FangSong,"仿宋","仿宋_GB2312",serif !important; font-size:12px !important; }
   .inline-add-form textarea { min-height:56px; line-height:1.5; }
   .inline-add-form textarea:focus,.inline-add-form input:focus,.pwd-add-fields input:focus,.inline-time-inputs input:focus { border-color:#7779cf; box-shadow:0 0 0 2px rgba(119,121,207,.1); }
   .inline-time-inputs { display:flex; align-items:center; gap:7px; margin-top:10px; color:#83899a; font-size:12px; }
@@ -487,7 +484,7 @@
   .inline-time-inputs b { color:#a1a5b1; font-weight:400; }
   .pwd-add-fields { display:grid; grid-template-columns:1fr 1fr; gap:8px; }
   .inline-add-form .bill-editor-actions { margin-top:10px; }
-  .inline-add-form .bill-editor-actions .bill-editor-save { padding:7px 14px; border-radius:8px; background:#6677d8; color:#fff; }
+  .inline-add-form .bill-editor-actions .bill-editor-save { padding:7px 14px; border-radius:8px; background:#eceef5; color:#626fb2; box-shadow:none; }
   .inline-add-form .bill-editor-fields input { padding:8px 9px; border:1px solid #e5e7ef; border-radius:8px; background:#fff; font-size:12px !important; }
   .inline-add-form .bill-editor-fields input,.inline-add-form .pwd-add-fields input { height:40px; resize:none; }
   .bill-editor-title { color:#707780; font-size:13px; margin-bottom:8px; }
@@ -513,14 +510,19 @@
   #billFixedRows .bill-total-row .br-name,#billFixedRows .bill-total-row .br-amt { font-size:11px; font-weight:400; }
   @media(max-width:480px) { .bill-editor-fields { grid-template-columns:minmax(0,1fr) 96px; } }
   .inline-editor { margin:8px 0 12px; padding:12px 14px; background:#f4f5f3; border-left:2px solid #c9cde5; }
-  .inline-editor.tile-editor { position:fixed; z-index:250; width:min(360px,calc(100vw - 24px)); margin:0; overflow:auto; background:#fff; border:1px solid #e6e7e5; border-left:2px solid #c9cde5; border-radius:10px; box-shadow:0 8px 24px rgba(16,24,40,.18); }
+  .inline-editor.tile-editor { position:fixed; z-index:250; width:min(420px,calc(100vw - 24px)); margin:0; padding:16px 14px 14px; overflow:auto; background:linear-gradient(145deg,#fff 0%,#f8f8fc 100%); border:1px solid #e6e7f1; border-radius:13px; box-shadow:0 14px 38px rgba(30,37,72,.18); }
+  .inline-editor.tile-editor .inline-editor-title { margin-bottom:10px; color:#454d73; font-size:15px; font-weight:700; }
+  .inline-editor.tile-editor .inline-editor-field > span { color:#858b94; font-size:12px; }
+  .inline-editor.tile-editor .inline-editor-field textarea { box-sizing:border-box; width:100%; min-height:76px; padding:9px 11px; border:1px solid #e1e4f0; border-radius:10px; background:#fff; color:var(--text); font:inherit; font-size:14px !important; line-height:1.5; }
+  .inline-editor.tile-editor .inline-editor-field textarea:focus { border-color:#7779cf; box-shadow:0 0 0 2px rgba(119,121,207,.1); }
   .inline-editor-title { margin-bottom:8px; color:#777e87; font-size:13px; font-weight:500; }
   .inline-editor.add-editor { padding:14px 15px; border:1px solid #e6e7f1; border-left:3px solid #7779cf; border-radius:13px; background:linear-gradient(145deg,#fff 0%,#f7f7fc 100%); box-shadow:0 5px 16px rgba(63,69,112,.07); animation:editorReveal .22s ease-out both; }
   .inline-editor.add-editor .inline-editor-title { color:#50577d; font-weight:600; }
   .inline-editor-field { display:block; margin:7px 0; }
-  .inline-time-row { display:flex; align-items:center; gap:8px; margin:8px 0; }
-  .inline-editor-field.time-part { display:block; flex:1; min-width:0; width:auto; margin:0; }
-  .inline-time-separator { color:#858b94; font-size:14px; line-height:1; }
+  .inline-time-row { display:flex; align-items:center; gap:7px; margin:9px 0; color:#83899a; }
+  .inline-time-label { margin-right:auto; font-size:12px; white-space:nowrap; }
+  .inline-editor-field.time-part { display:block; flex:0 0 66px; min-width:0; width:66px; margin:0; }
+  .inline-time-separator { color:#a1a5b1; font-size:14px; line-height:1; }
   .inline-editor-field.time-part > span { display:none; }
   .inline-editor-field > span { display:block; margin-bottom:4px; color:#8b9098; font-size:12px; }
   .inline-editor-field input { width:100%; border:0; border-bottom:1px solid #dfe1e4; border-radius:0; padding:8px 2px; background:transparent; color:var(--text); font:inherit; font-size:11px !important; outline:none; }
@@ -534,6 +536,14 @@
   .inline-editor-actions button { border:0; border-radius:5px; padding:7px 11px; background:transparent; color:#767c85; font:inherit; font-size:13px; cursor:pointer; }
   .inline-editor.add-editor .inline-editor-actions button { border-radius:8px; padding:7px 12px; }
   .inline-editor.add-editor .inline-editor-actions button.save { background:#6467c8; color:#fff; }
+  .inline-editor.tile-editor .inline-editor-actions { gap:8px; margin-top:13px; }
+  .inline-editor.tile-editor .inline-editor-actions button { flex:1; min-height:44px; padding:9px 8px; border-radius:11px; font-size:14px; font-weight:600; }
+  .inline-editor.tile-editor .inline-editor-actions button { background:#eceef5; color:#646a7e; }
+  .inline-editor.tile-editor .inline-editor-actions button.delete { color:#9b757b; }
+  .inline-editor.tile-editor .inline-editor-actions button.save { color:#626fb2; }
+  .inline-editor.tile-editor .inline-choice { gap:7px; }
+  .inline-editor.tile-editor .inline-choice-btn { min-width:40px; min-height:39px; padding:7px 10px; border-color:#e1e4f0; border-radius:10px; color:#68708a; font-size:13px; font-weight:600; }
+  .inline-editor.tile-editor .inline-choice-btn.active { border-color:#6677d8; background:#6677d8; color:#fff; }
   .inline-editor-actions button.save { color:var(--primary); font-weight:500; }
   .inline-editor-actions button.delete { margin-right:auto; color:#e5484d; }
   .inline-choice { display:flex; flex-wrap:wrap; gap:7px; }
@@ -564,7 +574,7 @@
   #overlay.checkin-form .dur-btn { border-color:#e1e4f0; background:#fff; color:#68708a; }
   #overlay.checkin-form .dur-btn.active { border-color:#6677d8; background:#6677d8; color:#fff; }
   #overlay.checkin-form .btn-cancel { background:#eceef5; color:#646a7e; }
-  #overlay.checkin-form .btn-ok { background:#6677d8; border-radius:8px; box-shadow:0 3px 8px rgba(102,119,216,.18); }
+  #overlay.checkin-form .btn-ok { background:#eceef5; color:#646a7e; border-radius:11px; box-shadow:none; }
   @keyframes checkinCardIn { from { opacity:0; transform:translateY(10px) scale(.98); } to { opacity:1; transform:translateY(0) scale(1); } }
   @media(prefers-reduced-motion:reduce) { .inline-editor.add-editor,#overlay.checkin-form .dialog { animation:none; } }
   @media(max-width:700px) {
@@ -597,6 +607,9 @@
       .sidebar, .side-link, .main-content { transition:none !important; }
     }
   }
+  /* 用户录入并展示的内容统一使用仿宋小字号；模块标题、金额和密码掩码保持各自样式。 */
+  .tile .tile-text,.cal-item .ci-text,.pwd-item .pi-name,.pwd-item .pi-account,.note-item .note-text,.tt-row,.bill-row.bill-editable .br-name,#billFixedRows .bill-row:not(.bill-total-row) .br-name { font-family:FangSong,"仿宋","STFangsong","仿宋_GB2312","Noto Serif CJK SC",serif !important; font-size:12px !important; font-weight:400 !important; }
+  .bill-row.bill-editable .br-sub,#billFixedRows .br-sub,#billMonthRows .br-sub { font-family:FangSong,"仿宋","STFangsong","仿宋_GB2312","Noto Serif CJK SC",serif !important; font-size:11px !important; font-weight:400 !important; }
 </style>
 </head>
 <body>
@@ -982,7 +995,7 @@ function showInlineEditor(anchor, title, fields, onSave, onCancel, onDelete, pla
     field.className = 'inline-editor-field';
     if (f.className) field.classList.add(f.className);
     const label = document.createElement('span');
-    label.textContent = f.label;
+    label.textContent = f.label || '';
     const input = f.type === 'textarea' ? document.createElement('textarea') : f.type === 'select' ? document.createElement('select') : f.type === 'choice' ? document.createElement('div') : document.createElement('input');
     if (f.type !== 'textarea' && f.type !== 'select' && f.type !== 'choice') input.type = f.type || 'text';
     if (f.type === 'select') (f.options || []).forEach(option => {
@@ -1010,9 +1023,14 @@ function showInlineEditor(anchor, title, fields, onSave, onCancel, onDelete, pla
     if (f.type === 'textarea') input.rows = 3;
     input.placeholder = f.placeholder || '';
     input.value = f.value == null ? '' : f.value;
-    field.appendChild(label); field.appendChild(input);
+    if (!f.hideLabel) field.appendChild(label);
+    field.appendChild(input);
     if (f.className === 'time-part') {
-      if (!timeRow) { timeRow = document.createElement('div'); timeRow.className = 'inline-time-row'; editor.appendChild(timeRow); }
+      if (!timeRow) {
+        timeRow = document.createElement('div'); timeRow.className = 'inline-time-row';
+        const timeLabel = document.createElement('span'); timeLabel.className = 'inline-time-label'; timeLabel.textContent = '时间（可选）';
+        timeRow.appendChild(timeLabel); editor.appendChild(timeRow);
+      }
       if (timeFieldCount > 0) { const sep = document.createElement('span'); sep.className = 'inline-time-separator'; sep.textContent = ':'; timeRow.appendChild(sep); }
       timeRow.appendChild(field); timeFieldCount++;
       input.addEventListener('input', () => { input.value = input.value.replace(/\D/g, '').slice(0, 2); });
@@ -1052,7 +1070,7 @@ function showInlineEditor(anchor, title, fields, onSave, onCancel, onDelete, pla
       const rect = anchor.getBoundingClientRect();
       const vw = document.documentElement.clientWidth || window.innerWidth;
       const mobile = vw <= 700;
-      const width = Math.min(360, vw - 24);
+      const width = Math.min(420, vw - 24);
       const left = Math.max(12, Math.min(vw - width - 12, rect.left + rect.width / 2 - width / 2));
       const top = Math.max(8, rect.bottom + 7);
       const bottomSpace = window.innerHeight - top - (mobile && !document.body.classList.contains('inline-editing') ? 132 : 12);
@@ -1526,15 +1544,15 @@ function openTileMenu(scope, t, el) {
   if (!obj) return;
   const anchor = el;
   showInlineEditor(anchor, '编辑任务', [
-    { label:'任务名称', value:obj.text || '' },
-    { label:'难度', type:'choice', value:String(obj.hours != null ? obj.hours : 4), options:LEVELS.map(n => ({ value:n, label:n + 'X' })) },
-    ...makeTimeFields(obj.start)
+    { label:'', hideLabel:true, type:'textarea', value:obj.text || '' },
+    ...makeTimeFields(obj.start),
+    { label:'难度', type:'choice', value:String(obj.hours != null ? obj.hours : 4), options:LEVELS.map(n => ({ value:n, label:n + 'X' })) }
   ], values => {
     const name = values[0].trim();
-    const start = readTimeFields(values, 2);
+    const start = readTimeFields(values, 1);
     if (!name) { alert('请填写任务名称'); return false; }
     if (start === null) { alert('小时范围为 0–23，分钟范围为 0–59'); return false; }
-    obj.text = name; obj.hours = Number(values[1]); obj.start = start;
+    obj.text = name; obj.start = start; obj.hours = Number(values[3]);
     setData(scope, tasks); render(scope);
   }, null, () => deleteTile(scope, obj), 'below-tile');
 }
