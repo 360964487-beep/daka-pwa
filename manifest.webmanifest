@@ -13,8 +13,8 @@
     "minimal-ui"
   ],
   "orientation": "portrait",
-  "background_color": "#f7f7f5",
-  "theme_color": "#f7f7f5",
+  "background_color": "#faf6ef",
+  "theme_color": "#faf6ef",
   "categories": [
     "productivity",
     "lifestyle"

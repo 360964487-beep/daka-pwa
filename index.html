@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
 <title>打卡</title>
-<meta name="theme-color" content="#f7f7f5">
+<meta name="theme-color" content="#faf6ef">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-title" content="打卡">
 <meta name="apple-mobile-web-app-status-bar-style" content="default">
@@ -608,6 +608,62 @@
   /* 用户录入并展示的内容统一使用仿宋小字号；模块标题、金额和密码掩码保持各自样式。 */
   .tile .tile-text,.cal-item .ci-text,.pwd-item .pi-name,.pwd-item .pi-account,.note-item .note-text,.tt-row,.bill-row.bill-editable .br-name,#billFixedRows .bill-row:not(.bill-total-row) .br-name { font-family:FangSong,"仿宋","STFangsong","仿宋_GB2312","Noto Serif CJK SC",serif !important; font-size:12px !important; font-weight:400 !important; }
   .bill-row.bill-editable .br-sub,#billFixedRows .br-sub,#billMonthRows .br-sub { font-family:FangSong,"仿宋","STFangsong","仿宋_GB2312","Noto Serif CJK SC",serif !important; font-size:11px !important; font-weight:400 !important; }
+
+  /* 暖色温馨主题：奶油白底、焦糖色强调，搭配柔和鼠尾草绿 */
+  :root { --bg:#faf6ef; --text:#423a32; --muted:#938575; --primary:#b8794b; --green:#668b69; --red:#bd7467; }
+  body,.app { background:#faf6ef; color:#423a32; }
+  .sidebar { background:#fffdf9; border-color:#eee4d7; }
+  .side-link { color:#66594c; }
+  .side-link.active,.side-link:hover { background:#f3e8d9; color:#9c6339; }
+  .main-content { background:#faf6ef; }
+  .board,.tt-list,.cal-item,.pwd-item,.note-item,.bill-card,.stat-box,.mine-profile { border-color:#eadfD2; }
+  .board,.tt-list,.cal-item,.pwd-item,.note-item,.bill-card { background:#fffdf9; }
+  .tile.c0,.tile.c1,.tile.c2,.tile.c3,.tile.c4,.tile.c5,.tile.c6,.tile.c7 { background:#fffdf8; color:#352e28; }
+  .tile { border:1px solid #f0e6da; box-shadow:0 2px 7px rgba(99,70,42,.10); }
+  .tile.balloon { box-shadow:0 4px 12px rgba(99,70,42,.13); }
+  .tile .tile-time { color:#795f49; background:#f5eadc; }
+  .board.pressing,.tt-list.pressing { box-shadow:inset 0 0 0 2px #c58a5a; }
+  .view-tabs { background:#f0e8dd; }
+  .vt-btn.active { color:#805638; }
+  .back-btn { color:#765c46; }
+  .cal-cell.selected,.cal-cell.today { background:#f4e3cb; color:#805638; }
+  .cal-cell.has-items { color:#9b6846; }
+  .cal-cell .cal-dot { background:#c58a5a; }
+  .cal-cell.has-task,.cal-cell.has-task.today { background:#f4e3cb; color:#805638; }
+  .cal-cell.has-task:hover { background:#ecd5b7; }
+  .cal-cell.all-done,.cal-cell.all-done.today { background:#e4ecdf; color:#536c52; }
+  .cal-cell.all-done:hover { background:#d8e4d1; }
+  .inline-add-form,.inline-editor.add-editor,.inline-editor.tile-editor,#overlay.checkin-form .dialog { border-color:#ecdfd0; background:linear-gradient(145deg,#fffefa 0%,#faf2e8 100%); box-shadow:0 8px 22px rgba(105,75,48,.10); }
+  .inline-add-form .bill-editor-title,.inline-editor.add-editor .inline-editor-title,#overlay .dialog h3,.inline-editor.tile-editor .inline-editor-title { color:#70543e; }
+  .inline-add-form textarea,.inline-add-form input,.inline-editor-field input,.inline-editor-field textarea,#overlay .dialog textarea { border-color:#e8dccb; background:#fffefb; }
+  .inline-add-form textarea:focus,.inline-add-form input:focus,.inline-editor-field input:focus,.inline-editor-field textarea:focus { border-color:#c58a5a; box-shadow:0 0 0 2px rgba(197,138,90,.12); }
+  .inline-add-form .bill-editor-actions .bill-editor-save,.inline-editor.add-editor .inline-editor-actions button.save { background:#b8794b; color:#fff; }
+  .cal-add,.bill-add,.pwd-add,.checkin-add-btn { border-color:#ddcbb5; background:#fffaf3; color:#876d54; }
+  .cal-add:hover,.bill-add:hover,.pwd-add:hover,.checkin-add-btn:hover { background:#f5eadb; color:#674b34; }
+  .dur-btn.active,.inline-choice-btn.active,.inline-editor.tile-editor .inline-choice-btn.active { border-color:#b8794b; background:#b8794b; color:#fff; }
+  #overlay.checkin-form { background:rgba(77,57,39,.38); }
+  #overlay.checkin-form .dur-btn.active { border-color:#b8794b; background:#b8794b; }
+  #overlay.checkin-form .btn-ok { background:#b8794b; color:#fff; }
+  .bill-editor { border-color:#eadfD2; }
+  .bill-row.month-row:hover,.bill-row.bill-editable:hover,.mine-btn:hover { background:#f7efe4; }
+  .bill-row.month-row::after,.menu-card .arrow { color:#c2ad95; }
+  .bill-row .br-amt.expense,.bill-head-sum .hs-amt.expense { color:#bd7467; }
+  .bill-row .br-amt.income,.bill-head-sum .hs-amt.income { color:#668b69; }
+  .stat-num { color:#a87449; }
+  .mine-btn.danger { color:#ad7167; }
+  .menu-card { border-color:#eee4d7; }
+  .menu-card:active { background:#f4e9dc; }
+  .dialog { background:#fffdf9; }
+  .tp-inp,.inline-time-inputs input,.inline-editor-field.time-part input { border-color:#e8dccb; background:#fffefb; }
+  .tp-inp:focus,.inline-editor-field.time-part input:focus { border-color:#c58a5a; box-shadow:0 0 0 2px rgba(197,138,90,.12); }
+  .dur-btn,.inline-choice-btn { border-color:#e8dccb; color:#755d48; }
+  .btn-cancel,#overlay.checkin-form .btn-cancel { background:#f1eae1; color:#6e6256; }
+  .menu-pop { background:#fffdf9; border-color:#ecdfd0; }
+  .menu-item:hover { background:#f7efe4; }
+  .mine-avatar,.pwd-item .pi-icon { background:#f4e7d6; }
+  .stat-box + .stat-box { border-color:#eadfD2; }
+  .mine-stats,.mine-profile { border-color:#eadfD2; }
+  @media(max-width:700px) { .sidebar { background:rgba(255,253,249,.97); border-color:#eadfD2; } }
 </style>
 </head>
 <body>
