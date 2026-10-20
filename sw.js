@@ -1,5 +1,5 @@
-// Service Worker：打卡应用离线缓存
-const CACHE = 'daka-latest-v5';
+// Service Worker：打卡应用离线缓存，页面优先从线上获取最新版本
+const CACHE = 'daka-latest-v6';
 const ASSETS = [
   './', './index.html', './manifest.webmanifest', './apple-touch-icon.png',
   './icon-192.png', './icon-512.png', './icon-maskable-192.png', './icon-maskable-512.png'
@@ -12,8 +12,17 @@ self.addEventListener('activate', (event) => {
 });
 self.addEventListener('fetch', (event) => {
   if (event.request.method !== 'GET') return;
+  const url = new URL(event.request.url);
+  if (url.origin !== self.location.origin) return;
+  if (event.request.mode === 'navigate') {
+    event.respondWith(fetch(event.request).then((response) => {
+      if (response.ok) caches.open(CACHE).then((cache) => cache.put(event.request, response.clone()));
+      return response;
+    }).catch(() => caches.match(event.request).then((cached) => cached || caches.match('./index.html'))));
+    return;
+  }
   event.respondWith(caches.match(event.request).then((cached) => cached || fetch(event.request).then((response) => {
-    if (response.ok && new URL(event.request.url).origin === self.location.origin) caches.open(CACHE).then((cache) => cache.put(event.request, response.clone()));
+    if (response.ok) caches.open(CACHE).then((cache) => cache.put(event.request, response.clone()));
     return response;
   })));
 });
