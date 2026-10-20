@@ -508,15 +508,21 @@
   .inline-editor { margin:8px 0 12px; padding:12px 14px; background:#f4f5f3; border-left:2px solid #c9cde5; }
   .inline-editor.tile-editor { position:fixed; z-index:250; width:min(360px,calc(100vw - 24px)); margin:0; overflow:auto; background:#fff; border:1px solid #e6e7e5; border-left:2px solid #c9cde5; border-radius:10px; box-shadow:0 8px 24px rgba(16,24,40,.18); }
   .inline-editor-title { margin-bottom:8px; color:#777e87; font-size:13px; font-weight:500; }
+  .inline-editor.add-editor { padding:14px 15px; border:1px solid #e6e7f1; border-left:3px solid #7779cf; border-radius:13px; background:linear-gradient(145deg,#fff 0%,#f7f7fc 100%); box-shadow:0 5px 16px rgba(63,69,112,.07); animation:editorReveal .22s ease-out both; }
+  .inline-editor.add-editor .inline-editor-title { color:#50577d; font-weight:600; }
   .inline-editor-field { display:block; margin:7px 0; }
   .inline-editor-field.time-part { display:inline-block; width:calc(50% - 5px); vertical-align:top; }
   .inline-editor-field.time-part + .inline-editor-field.time-part { margin-left:6px; }
   .inline-editor-field > span { display:block; margin-bottom:4px; color:#8b9098; font-size:12px; }
   .inline-editor-field input { width:100%; border:0; border-bottom:1px solid #dfe1e4; border-radius:0; padding:8px 2px; background:transparent; color:var(--text); font:inherit; font-size:11px !important; outline:none; }
+  .inline-editor.add-editor .inline-editor-field input { border:1px solid #e5e7ef; border-radius:8px; padding:9px 10px; background:#fff; }
   .inline-editor-field textarea { display:block; width:100%; min-height:82px; border:1px solid #dfe1e4; border-radius:7px; padding:9px 10px; background:#fff; color:var(--text); font:inherit; font-size:11px !important; line-height:1.5; outline:none; resize:vertical; }
+  .inline-editor.add-editor .inline-editor-field textarea { border-color:#e5e7ef; border-radius:9px; }
   .inline-editor-field input:focus,.inline-editor-field textarea:focus { border-color:var(--primary); }
   .inline-editor-actions { display:flex; justify-content:flex-end; gap:8px; margin-top:8px; }
   .inline-editor-actions button { border:0; border-radius:5px; padding:7px 11px; background:transparent; color:#767c85; font:inherit; font-size:13px; cursor:pointer; }
+  .inline-editor.add-editor .inline-editor-actions button { border-radius:8px; padding:7px 12px; }
+  .inline-editor.add-editor .inline-editor-actions button.save { background:#6467c8; color:#fff; }
   .inline-editor-actions button.save { color:var(--primary); font-weight:500; }
   .inline-editor-actions button.delete { margin-right:auto; color:#e5484d; }
   .inline-choice { display:flex; flex-wrap:wrap; gap:7px; }
@@ -526,6 +532,18 @@
   .cal-add,.bill-add,.pwd-add,.checkin-add-btn { display:block; width:100%; max-width:460px; margin:12px auto; padding:12px; border:1px dashed #c4c8d0; border-radius:12px; background:#fafbfc; color:var(--muted); font-family:inherit; font-size:14px; font-weight:600; line-height:1.5; text-align:center; cursor:pointer; }
   .cal-add:hover,.bill-add:hover,.pwd-add:hover,.checkin-add-btn:hover { background:#f0f1f4; color:var(--text); }
   .inline-editable { cursor:pointer; }
+  @keyframes editorReveal { from { opacity:0; transform:translateY(-5px); } to { opacity:1; transform:translateY(0); } }
+  #overlay.checkin-form { background:rgba(42,48,77,.42); backdrop-filter:blur(7px); }
+  #overlay.checkin-form .dialog { border:1px solid rgba(255,255,255,.8); border-radius:22px; padding:23px 22px 20px; background:linear-gradient(145deg,#fff 0%,#f7f8ff 100%); box-shadow:0 18px 52px rgba(30,37,72,.28); animation:checkinCardIn .24s cubic-bezier(.2,.7,.25,1) both; }
+  #overlay.checkin-form .dialog h3 { color:#454d73; font-size:17px; margin-bottom:16px; }
+  #overlay.checkin-form .dialog h3::before { content:""; display:block; width:34px; height:4px; margin-bottom:13px; border-radius:8px; background:linear-gradient(90deg,#7378d6,#8ecac2); }
+  #overlay.checkin-form .dialog textarea { border-color:#e1e4f0; background:#fff; }
+  #overlay.checkin-form .dur-btn { border-color:#e1e4f0; background:#fff; color:#68708a; }
+  #overlay.checkin-form .dur-btn.active { border-color:#676bc9; background:#676bc9; color:#fff; }
+  #overlay.checkin-form .btn-cancel { background:#eceef5; color:#646a7e; }
+  #overlay.checkin-form .btn-ok { background:linear-gradient(135deg,#676bc9,#7779d8); box-shadow:0 4px 10px rgba(103,107,201,.22); }
+  @keyframes checkinCardIn { from { opacity:0; transform:translateY(10px) scale(.98); } to { opacity:1; transform:translateY(0) scale(1); } }
+  @media(prefers-reduced-motion:reduce) { .inline-editor.add-editor,#overlay.checkin-form .dialog { animation:none; } }
   @media(max-width:700px) {
     .sidebar {
       position:fixed; z-index:20; left:0; right:0; bottom:0; width:100%; height:auto; min-height:0;
@@ -576,7 +594,6 @@
       <div class="spacer"></div>
 </div>
     <div class="board-wrap" id="weekBoardWrap"><div class="board" id="weekBoard"></div></div>
-    <button class="checkin-add-btn" id="weekAddBtn" onclick="openDialog('week')">＋ 添加任务</button>
     <div class="tt-wrap hidden" id="weekTableWrap"></div>
     <button class="checkin-add-btn hidden" id="listAddBtn" onclick="openTTDialog()">＋ 添加任务</button>
   </div>
@@ -588,7 +605,6 @@
       <h1>日打卡</h1>
     </div>
     <div class="board-wrap"><div class="board" id="dayBoard"></div></div>
-    <button class="checkin-add-btn" id="dayAddBtn" onclick="openDialog('day')">＋ 添加任务</button>
   </div>
 
   <div id="calendar" class="hidden">
@@ -966,6 +982,7 @@ function showInlineEditor(anchor, title, fields, onSave, onCancel, onDelete, pla
   queueMicrotask(() => { inlineEditorOpeningAnchor = null; });
   if (tilePlacement) editor.classList.add('tile-editor');
   if (anchor && anchor.matches('.cal-add,.bill-add,.pwd-add,.checkin-add-btn')) {
+    editor.classList.add('add-editor');
     activeInlineAnchorHTML = anchor.innerHTML;
     anchor.textContent = '− 收起';
   }
@@ -1168,7 +1185,8 @@ function render(scope) {
   const board = document.getElementById(scope + 'Board');
   const { tasks } = getData(scope);
   let hint = board.querySelector('.board-hint');
-  if (!hint) { hint = document.createElement('div'); hint.className = 'board-hint'; hint.textContent = ''; board.appendChild(hint); }
+  if (!hint) { hint = document.createElement('div'); hint.className = 'board-hint'; board.appendChild(hint); }
+  hint.textContent = '长按空白处添加任务';
 
   const bw = board.clientWidth || board.offsetWidth || 400;
   const bh = board.clientHeight || board.offsetHeight || 600;
@@ -1333,11 +1351,8 @@ function bindBoardEvents(board, scope) {
   let boardTimer = null;
   function boardDown(e) {
     if (e.target !== board && !e.target.classList.contains('board-hint')) return;
-    const r = board.getBoundingClientRect();
-    const cx = e.touches ? e.touches[0].clientX : e.clientX;
-    const cy = e.touches ? e.touches[0].clientY : e.clientY;
     board.classList.add('pressing');
-    boardTimer = setTimeout(() => { board.classList.remove('pressing'); openDialog(scope, cx - r.left, cy - r.top); }, 400);
+    boardTimer = setTimeout(() => { board.classList.remove('pressing'); openDialog(scope); }, 400);
   }
   function boardUp() { board.classList.remove('pressing'); clearTimeout(boardTimer); }
   board.addEventListener('touchstart', boardDown, { passive: true });
@@ -1361,22 +1376,16 @@ let selectedHours = 4;
 // 保留添加弹窗旧状态的默认值，不参与页内添加表单。
 let tpHour = 9, tpMinute = 0;
 let timeStampOn = false;
-function openDialog(scope, px, py) {
-  const anchor = document.getElementById(scope === 'week' ? 'weekAddBtn' : 'dayAddBtn');
-  showInlineEditor(anchor, '添加任务', [
-    { label:'任务内容', type:'textarea' },
-    ...makeTimeFields(''),
-    { label:'难度', type:'choice', value:'4', options:[1,2,4,8,16].map(n => ({ value:n, label:n + 'X' })) }
-  ], values => {
-    const text = values[0].trim();
-    const start = readTimeFields(values, 1);
-    const hours = Number(values[3]);
-    if (!text) { alert('请填写任务内容'); return false; }
-    if (start === null) { alert('小时范围为 0–23，分钟范围为 0–59'); return false; }
-    const { tasks } = getData(scope);
-    tasks.push({ id:Date.now() + Math.random(), text, hours, start, done:false, color:tasks.length % COLORS });
-    setData(scope, tasks); render(scope);
-  });
+function openDialog(scope) {
+  dialogScope = scope;
+  ttDialogTarget = null;
+  resetDialog();
+  document.getElementById('dialogInput').value = '';
+  timeStampOn = false;
+  setTimeStamp(false);
+  setSelectedHours(4);
+  document.getElementById('overlay').classList.add('checkin-form', 'show');
+  requestAnimationFrame(() => document.getElementById('dialogInput').focus());
 }
 function setTimeStamp(on) {
   timeStampOn = on;
@@ -1392,7 +1401,7 @@ function setSelectedHours(h) {
   });
 }
 function closeDialog() {
-  document.getElementById('overlay').classList.remove('show');
+  document.getElementById('overlay').classList.remove('show', 'checkin-form');
   dialogScope = null;
   resetDialog();
   if (ttDialogTarget) {
@@ -2494,7 +2503,6 @@ function switchWeekView(view) {
   });
   document.getElementById('weekBoardWrap').classList.toggle('hidden', view !== 'board');
   document.getElementById('weekTableWrap').classList.toggle('hidden', view !== 'timetable');
-  document.getElementById('weekAddBtn').classList.toggle('hidden', view !== 'board');
   document.getElementById('listAddBtn').classList.toggle('hidden', view !== 'timetable');
   if (view === 'board') render('week');
   else renderTimetable();
