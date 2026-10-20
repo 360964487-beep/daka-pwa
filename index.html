@@ -143,11 +143,7 @@
     resize: vertical; min-height: 76px; max-height: 220px; line-height: 1.5;
   }
 
-  /* iOS 风格滚轮时间选择器 */
-  .time-toggle-row {
-    display: flex; align-items: center; justify-content: space-between;
-    margin: 14px 0 8px;
-  }
+  /* 简洁的可选小时/分钟输入 */
   .time-picker {
     display: flex; align-items: center; justify-content: center; gap: 10px;
     height: 88px; position: relative; user-select: none; -webkit-user-select: none;
@@ -801,14 +797,10 @@
   <div class="dialog">
     <h3 id="dialogTitle">添加任务</h3>
     <textarea id="dialogInput" autocomplete="off" rows="2"></textarea>
-    <div class="time-toggle-row" id="timeToggleRow">
-      <span class="dur-label" style="margin:0;">时间戳</span>
-      <div class="menu-switch" id="timeToggle"></div>
-    </div>
-    <div class="time-picker hidden" id="timePicker">
-      <input class="tp-inp" id="tpHour" type="text" inputmode="numeric" maxlength="2" placeholder="时" autocomplete="off">
+    <div class="time-picker" id="timePicker">
+      <input class="tp-inp" id="tpHour" type="text" inputmode="numeric" maxlength="2" placeholder="小时" autocomplete="off" aria-label="小时">
       <span class="tp-colon">:</span>
-      <input class="tp-inp" id="tpMinute" type="text" inputmode="numeric" maxlength="2" placeholder="分" autocomplete="off">
+      <input class="tp-inp" id="tpMinute" type="text" inputmode="numeric" maxlength="2" placeholder="分钟" autocomplete="off" aria-label="分钟">
     </div>
     <div class="dur-label" id="durLabel">难度</div>
     <div class="dur-row" id="durRow">
@@ -1429,25 +1421,16 @@ function toggleTile(scope, id) {
 // ===== 新增任务（均在当前模块内展开） =====
 let selectedHours = 4;
 // 保留添加弹窗旧状态的默认值，不参与页内添加表单。
-let tpHour = 9, tpMinute = 0;
-let timeStampOn = false;
 function openDialog(scope) {
   dialogScope = scope;
   ttDialogTarget = null;
   resetDialog();
   document.getElementById('dialogInput').value = '';
-  timeStampOn = false;
-  setTimeStamp(false);
+  document.getElementById('tpHour').value = '';
+  document.getElementById('tpMinute').value = '';
   setSelectedHours(4);
   document.getElementById('overlay').classList.add('checkin-form', 'show');
   requestAnimationFrame(() => document.getElementById('dialogInput').focus());
-}
-function setTimeStamp(on) {
-  timeStampOn = on;
-  const sw = document.getElementById('timeToggle');
-  if (sw) sw.classList.toggle('on', on);
-  document.getElementById('timePicker').classList.toggle('hidden', !on);
-  if (on) syncTimeInputs();
 }
 function setSelectedHours(h) {
   selectedHours = h;
@@ -1472,32 +1455,33 @@ function closeDialog() {
     if (durLabel && durLabel.classList.contains('dur-label')) durLabel.style.display = '';
   }
 }
-// 恢复弹窗为默认「添加任务」状态（显示输入框/时间戳开关/难度，隐藏时间滚轮）
+// 恢复弹窗为默认添加状态；小时和分钟留空表示不设置时间。
 function resetDialog() {
   const title = document.getElementById('dialogTitle');
   if (title) title.textContent = '添加任务';
   document.getElementById('dialogInput').style.display = '';
-  document.getElementById('timeToggleRow').style.display = '';
+  document.getElementById('timePicker').classList.remove('hidden');
+  document.getElementById('tpHour').value = '';
+  document.getElementById('tpMinute').value = '';
   document.getElementById('durLabel').style.display = '';
   document.getElementById('durRow').style.display = '';
   document.getElementById('btnOk').textContent = '添加';
 }
 function getPickedTime() {
-  // 从输入框读取并规范化，兼容用户输入后直接点确定（未触发 blur）
-  let h = parseInt(document.getElementById('tpHour').value, 10);
-  let m = parseInt(document.getElementById('tpMinute').value, 10);
-  if (isNaN(h)) h = tpHour; if (isNaN(m)) m = tpMinute;
-  h = Math.max(0, Math.min(23, h));
-  m = Math.max(0, Math.min(59, m));
-  tpHour = h; tpMinute = m;
-  const hh = String(h).padStart(2, '0');
-  const mm = String(m).padStart(2, '0');
-  return hh + ':' + mm;
+  const hourText = document.getElementById('tpHour').value.trim();
+  const minuteText = document.getElementById('tpMinute').value.trim();
+  if (!hourText && !minuteText) return '';
+  if (!/^\d{1,2}$/.test(hourText) || !/^\d{1,2}$/.test(minuteText)) return null;
+  const h = Number(hourText), m = Number(minuteText);
+  if (h > 23 || m > 59) return null;
+  return String(h).padStart(2, '0') + ':' + String(m).padStart(2, '0');
 }
 function confirmAdd() {
   // 课程表添加分支
   if (ttDialogTarget) {
     const text = document.getElementById('dialogInput').value.trim();
+    const start = getPickedTime();
+    if (start === null) { alert('请填写有效的小时（0–23）和分钟（0–59），或都留空'); return; }
     ttDialogTarget = null;
     const h3 = document.querySelector('#overlay .dialog h3');
     if (h3) h3.textContent = '添加任务';
@@ -1509,7 +1493,6 @@ function confirmAdd() {
     const durLabel = durRow.previousElementSibling;
     if (durLabel && durLabel.classList.contains('dur-label')) durLabel.style.display = '';
     if (!text) { closeDialog(); return; }
-    const start = timeStampOn ? getPickedTime() : '';
     const { tasks } = ttGetWeekTasks();
     tasks.push({ id: Date.now() + Math.random(), text, start, dayId: ttDialogDay, done: false, color: tasks.length % COLORS });
     ttSetWeekTasks(tasks);
@@ -1520,7 +1503,8 @@ function confirmAdd() {
   if (!text) { closeDialog(); return; }
   const scope = dialogScope;
   if (!scope) { closeDialog(); return; }
-  const start = timeStampOn ? getPickedTime() : '';
+  const start = getPickedTime();
+  if (start === null) { alert('请填写有效的小时（0–23）和分钟（0–59），或都留空'); return; }
   const { tasks } = getData(scope);
   tasks.push({ id: Date.now() + Math.random(), text, hours: selectedHours, start, done: false, color: tasks.length % COLORS });
   setData(scope, tasks);
@@ -1598,7 +1582,6 @@ document.addEventListener('click', (e) => {
 document.getElementById('dialogInput').addEventListener('keydown', (e) => { if (e.key === 'Enter' && (e.ctrlKey || e.metaKey)) { e.preventDefault(); confirmAdd(); } });
 document.getElementById('btnOk').addEventListener('click', confirmAdd);
 document.getElementById('btnCancel').addEventListener('click', closeDialog);
-document.getElementById('timeToggle').addEventListener('click', () => setTimeStamp(!timeStampOn));
 ['overlay','promptOverlay','formOverlay'].forEach(id => { const el = document.getElementById(id); el.addEventListener('click', e => { if (e.target === el) { e.preventDefault(); e.stopPropagation(); } }); });
 ['overlay','promptOverlay','formOverlay'].forEach(id => document.querySelector('#' + id + ' .dialog').addEventListener('click', e => e.stopPropagation()));
 // 时长选择按钮（仅 durRow 内的 .dur-btn）
@@ -1606,12 +1589,11 @@ document.querySelectorAll('#durRow .dur-btn').forEach(b => {
   b.addEventListener('click', () => setSelectedHours(parseFloat(b.dataset.d)));
 });
 
-// ===== 时间输入框（手动输入，仅数字，固定冒号） =====
-// 仅允许输入数字，限制小时 0-23、分钟 0-59；失焦自动补零
+// ===== 时间输入框（手动输入数字，留空表示不设置） =====
 function bindTimeInputs() {
   const hourEl = document.getElementById('tpHour');
   const minEl = document.getElementById('tpMinute');
-  function numericOnly(el, max, onValid) {
+  function numericOnly(el, max) {
     el.addEventListener('input', () => {
       // 去除非数字字符
       let v = el.value.replace(/\D/g, '');
@@ -1621,11 +1603,9 @@ function bindTimeInputs() {
     });
     el.addEventListener('blur', () => {
       let v = el.value.replace(/\D/g, '');
-      if (v === '') { el.value = ''; onValid(null); return; }
+      if (v === '') { el.value = ''; return; }
       let n = parseInt(v, 10);
-      if (n > max) { n = max; }
-      el.value = String(n).padStart(2, '0');
-      onValid(n);
+      if (n <= max) el.value = String(n).padStart(2, '0');
     });
     // 阻止非数字按键（保留退格/删除/方向键/Tab）
     el.addEventListener('keydown', (e) => {
@@ -1634,12 +1614,8 @@ function bindTimeInputs() {
       if (!/\d/.test(e.key)) e.preventDefault();
     });
   }
-  numericOnly(hourEl, 23, (n) => { if (n != null) tpHour = n; });
-  numericOnly(minEl, 59, (n) => { if (n != null) tpMinute = n; });
-}
-function syncTimeInputs() {
-  document.getElementById('tpHour').value = String(tpHour).padStart(2, '0');
-  document.getElementById('tpMinute').value = String(tpMinute).padStart(2, '0');
+  numericOnly(hourEl, 23);
+  numericOnly(minEl, 59);
 }
 function initTimePicker() { bindTimeInputs(); }
 // ===== 通用输入弹窗（替代沙箱禁用的 prompt） =====
@@ -2747,8 +2723,8 @@ function openTTDialog() {
   resetDialog();
   document.getElementById('dialogInput').value = '';
   document.getElementById('dialogTitle').textContent = '添加列表任务';
-  timeStampOn = false;
-  setTimeStamp(false);
+  document.getElementById('tpHour').value = '';
+  document.getElementById('tpMinute').value = '';
   document.getElementById('durRow').style.display = 'none';
   document.getElementById('durLabel').style.display = 'none';
   renderTTSlotPicker();
