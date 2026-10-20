@@ -501,6 +501,7 @@
   #billFixedRows .bill-total-row .br-name,#billFixedRows .bill-total-row .br-amt { font-size:11px; font-weight:400; }
   @media(max-width:480px) { .bill-editor-fields { grid-template-columns:minmax(0,1fr) 96px; } }
   .inline-editor { margin:8px 0 12px; padding:12px 14px; background:#f4f5f3; border-left:2px solid #c9cde5; }
+  .inline-editor.tile-editor { position:fixed; z-index:250; width:min(360px,calc(100vw - 24px)); margin:0; overflow:auto; background:#fff; border:1px solid #e6e7e5; border-left:2px solid #c9cde5; border-radius:10px; box-shadow:0 8px 24px rgba(16,24,40,.18); }
   .inline-editor-title { margin-bottom:8px; color:#777e87; font-size:13px; font-weight:500; }
   .inline-editor-field { display:block; margin:7px 0; }
   .inline-editor-field.time-part { display:inline-block; width:calc(50% - 5px); vertical-align:top; }
@@ -863,18 +864,26 @@ function save(k, d) {
 let activeInlineEditor = null;
 let activeInlineAnchor = null;
 let activeInlineAnchorHTML = null;
+let activeInlineReposition = null;
 function dismissInlineEditor() {
+  if (activeInlineReposition) {
+    window.removeEventListener('scroll', activeInlineReposition, true);
+    window.removeEventListener('resize', activeInlineReposition);
+    activeInlineReposition = null;
+  }
   if (activeInlineEditor) activeInlineEditor.remove();
   if (activeInlineAnchor && activeInlineAnchorHTML !== null && activeInlineAnchor.matches('.cal-add,.bill-add,.pwd-add,.checkin-add-btn')) activeInlineAnchor.innerHTML = activeInlineAnchorHTML;
   activeInlineEditor = null; activeInlineAnchor = null; activeInlineAnchorHTML = null;
 }
-function showInlineEditor(anchor, title, fields, onSave, onCancel, onDelete) {
+function showInlineEditor(anchor, title, fields, onSave, onCancel, onDelete, placement) {
   if (activeInlineEditor && !activeInlineEditor.isConnected) {
     activeInlineEditor = null; activeInlineAnchor = null; activeInlineAnchorHTML = null;
   }
   if (activeInlineEditor && activeInlineAnchor === anchor) { dismissInlineEditor(); return null; }
   dismissInlineEditor();
   document.querySelectorAll('.inline-editor').forEach(x => x.remove());
+  const tilePlacement = placement === 'below-tile' && anchor && anchor.classList.contains('tile');
+  if (tilePlacement) anchor.scrollIntoView({ block:'center', inline:'nearest' });
   const editor = document.createElement('div');
   editor.className = 'inline-editor';
   const heading = document.createElement('div');
@@ -927,6 +936,7 @@ function showInlineEditor(anchor, title, fields, onSave, onCancel, onDelete) {
   actions.appendChild(cancel); actions.appendChild(save); editor.appendChild(actions);
   editor.addEventListener('click', e => e.stopPropagation());
   activeInlineEditor = editor; activeInlineAnchor = anchor;
+  if (tilePlacement) editor.classList.add('tile-editor');
   if (anchor && anchor.matches('.cal-add,.bill-add,.pwd-add,.checkin-add-btn')) {
     activeInlineAnchorHTML = anchor.innerHTML;
     anchor.textContent = '− 收起';
@@ -936,7 +946,28 @@ function showInlineEditor(anchor, title, fields, onSave, onCancel, onDelete) {
     const values = controls.map(x => x.value); const result = onSave(values);
     if (result !== false) dismissInlineEditor();
   });
-  if (anchor && anchor.parentNode) anchor.after(editor);
+  if (tilePlacement) {
+    document.body.appendChild(editor);
+    const placeEditor = () => {
+      if (!anchor.isConnected || !editor.isConnected) return;
+      const rect = anchor.getBoundingClientRect();
+      const vw = document.documentElement.clientWidth || window.innerWidth;
+      const mobile = vw <= 700;
+      const width = Math.min(360, vw - 24);
+      const left = Math.max(12, Math.min(vw - width - 12, rect.left + rect.width / 2 - width / 2));
+      const top = Math.max(8, rect.bottom + 7);
+      const bottomSpace = window.innerHeight - top - (mobile ? 132 : 12);
+      editor.style.left = left + 'px';
+      editor.style.top = top + 'px';
+      editor.style.width = width + 'px';
+      editor.style.maxHeight = Math.max(96, bottomSpace) + 'px';
+    };
+    activeInlineReposition = placeEditor;
+    window.addEventListener('scroll', placeEditor, true);
+    window.addEventListener('resize', placeEditor);
+    placeEditor();
+  }
+  else if (anchor && anchor.parentNode) anchor.after(editor);
   else document.querySelector('.main-content').appendChild(editor);
   if (controls[0] && controls[0].focus) controls[0].focus();
   return editor;
@@ -1568,7 +1599,7 @@ function openTileMenu(scope, t, el) {
   const { tasks } = getData(scope);
   const obj = tasks.find(x => x.id === t.id);
   if (!obj) return;
-  const anchor = document.getElementById(scope === 'week' ? 'weekAddBtn' : 'dayAddBtn');
+  const anchor = el;
   showInlineEditor(anchor, '编辑任务', [
     { label:'任务名称', value:obj.text || '' },
     { label:'难度', type:'choice', value:String(obj.hours != null ? obj.hours : 4), options:LEVELS.map(n => ({ value:n, label:n + 'X' })) },
@@ -1580,7 +1611,7 @@ function openTileMenu(scope, t, el) {
     if (start === null) { alert('小时范围为 0–23，分钟范围为 0–59'); return false; }
     obj.text = name; obj.hours = Number(values[1]); obj.start = start;
     setData(scope, tasks); render(scope);
-  }, null, () => deleteTile(scope, obj));
+  }, null, () => deleteTile(scope, obj), 'below-tile');
 }
 function setHoursOf(scope, t, hours) {
   if (!t || !scope) return;
