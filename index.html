@@ -91,7 +91,7 @@
     position: absolute; top: 0; left: 0; border-radius: 10px; cursor: pointer;
     display: flex; flex-direction: column; align-items: stretch; justify-content: flex-start; overflow: hidden;
     box-shadow: 0 1px 4px rgba(16,24,40,.10);
-    transition: transform .65s cubic-bezier(.34,1.4,.5,1), opacity .3s, filter .3s;
+    transition: width .22s ease, height .22s ease, opacity .24s ease, filter .24s ease, box-shadow .24s ease;
     will-change: transform;
     touch-action: none;
     -webkit-user-select: none; user-select: none;
@@ -103,13 +103,13 @@
   }
   .tile .tile-check {
     position: absolute; bottom: 4px; right: 4px; width: 22px; height: 22px; border-radius: 50%;
-    display: none; align-items: center; justify-content: center; font-size: 13px; font-weight: 800;
+    display: flex; align-items: center; justify-content: center; font-size: 13px; font-weight: 800;
     color: #fff; background: var(--green);
+    opacity:0; transform:scale(.65); transition:opacity .18s ease,transform .22s cubic-bezier(.2,.8,.25,1);
   }
   .tile.done { opacity: .55; filter: saturate(.6); }
-  .tile.done .tile-check { display: flex; }
+  .tile.done .tile-check { opacity:1; transform:scale(1); }
   .tile.balloon { box-shadow: 0 3px 10px rgba(16,24,40,.14); }
-  .tile.settled { transition: none; }
   .tile.dragging {
     transition: none !important; z-index: 50; opacity: .9;
     box-shadow: 0 8px 24px rgba(16,24,40,.3); transform-origin: center;
@@ -328,7 +328,7 @@
   .bill-head .cal-nav:hover { background: #f0f1f4; }
   .bill-head .cal-title { min-width: 64px; text-align: center; font-size: 14px; font-weight: 600; color: var(--muted); }
   .bill-head-sum { display: flex; align-items: baseline; gap: 8px; margin-left: 10px; }
-  .bill-head-sum .hs-amt { font-size: 15px; font-weight: 400; }
+  .bill-head-sum .hs-amt { font-size: 14px; font-weight: 400; }
   .bill-head-sum .hs-amt.income { color: #4f9568; font-weight:400; }
   .bill-head-sum .hs-amt.expense { color: #cf6266; font-weight:400; }
   .bill-head-sum .hs-sub { font-size: 12px; color: var(--muted); }
@@ -344,7 +344,7 @@
   .bill-row:last-child { border-bottom: none; }
   .bill-row .br-name { flex: 1; min-width: 0; word-break: break-all; color: var(--text); }
   .bill-row .br-name .br-sub { display: block; font-size: 12px; color: var(--muted); margin-top: 1px; }
-  .bill-row .br-amt { font-size: 15px; white-space: nowrap; color: var(--text); }
+  .bill-row .br-amt { font-size: 14px; white-space: nowrap; color: var(--text); }
   .bill-row .br-amt.income { color: #16a34a; }
   .bill-row .br-amt.expense { color: #e5484d; }
   .bill-row .br-del { border: none; background: none; color: #c4c8d0; font-size: 17px; cursor: pointer; padding: 0 2px; }
@@ -424,11 +424,18 @@
   .tt-row { font-family: "SimSun", "宋体", serif; font-size: 13px; line-height: 2.05; letter-spacing: 0; color: #596273; font-weight: 300; }
   .tt-row-day { color: inherit; font-size: inherit; font-weight: 300; letter-spacing: 0; }
   .tt-row-sep { padding: 0 2px; color: inherit; }
-  .tt-item { cursor: pointer; color: inherit; font-weight: 300; transition: opacity .15s ease; }
+  .tt-item { display:inline-flex; align-items:center; gap:5px; vertical-align:middle; border:0; padding:0 2px; background:transparent; font:inherit; cursor:pointer; color:inherit; font-weight:300; transition:color .16s ease,opacity .16s ease; touch-action:manipulation; }
   .tt-item:hover { opacity: .75; }
   .tt-item:active { opacity: .6; }
-  .tt-item.done { text-decoration: line-through; color: var(--muted); }
+  .tt-check { display:inline-flex; align-items:center; justify-content:center; flex:0 0 13px; width:13px; height:13px; border:1px solid #b9bec8; border-radius:3px; background:#fff; color:#fff; transition:background .16s ease,border-color .16s ease,transform .16s ease; }
+  .tt-check::after { content:''; font:700 10px/1 Arial,sans-serif; transform:scale(.55); opacity:0; transition:transform .16s ease,opacity .16s ease; }
+  .tt-item.done { color:var(--muted); }
+  .tt-item.done .tt-check { background:var(--primary); border-color:var(--primary); transform:scale(1.04); }
+  .tt-item.done .tt-check::after { content:'✓'; transform:scale(1); opacity:1; }
   .tt-item.part { color: var(--muted); }
+  .tt-item.part .tt-check { border-color:var(--primary); background:#e9edff; }
+  .tt-item.part .tt-check::after { content:'−'; color:var(--primary); transform:scale(1); opacity:1; }
+  @media (prefers-reduced-motion: reduce) { .tile,.tt-check,.tt-check::after { transition-duration:.01ms !important; } }
   .tt-list-hint {
     display: flex; align-items: center; justify-content: center;
     min-height: 200px; font-size: 14px; color: #c4c8d0; pointer-events: none;
@@ -482,12 +489,14 @@
   .bill-editor { margin-top:14px; padding:12px 0; border-top:1px solid #e8e9e7; }
   .bill-editor-title { color:#707780; font-size:13px; margin-bottom:8px; }
   .bill-editor-fields { display:grid; grid-template-columns:minmax(0,1fr) 120px; gap:8px; }
-  .bill-editor-fields input { min-width:0; border:0; border-bottom:1px solid #dfe1e4; border-radius:0; padding:9px 3px; background:transparent; font:inherit; font-size:14px; outline:none; }
+  .bill-editor-fields input { min-width:0; border:0; border-bottom:1px solid #dfe1e4; border-radius:0; padding:9px 3px; background:transparent; font:inherit; font-size:11px !important; outline:none; }
+  .bill-editor-fields input::placeholder { font-size:12px; color:#858b95; opacity:1; }
   .bill-editor-fields input:focus { border-color:var(--primary); }
   .bill-editor-actions { display:flex; justify-content:flex-end; gap:8px; margin-top:10px; }
   .bill-editor-actions button { border:0; background:transparent; padding:7px 10px; font:inherit; font-size:13px; color:#747b84; cursor:pointer; }
   .bill-editor-actions .bill-editor-save { color:var(--primary); font-weight:500; }
   .bill-row.month-row { cursor:pointer; }
+  .bill-row.month-row .br-name { font-size:15px; font-weight:400; }
   .bill-row.month-row:hover { background:#f7f7f5; }
   .bill-row.month-row::after { content:"⌄"; margin-left:10px; color:#a0a5ad; font-size:13px; }
   .bill-row.month-row.expanded::after { content:"⌃"; }
@@ -507,8 +516,8 @@
   .inline-editor-field.time-part { display:inline-block; width:calc(50% - 5px); vertical-align:top; }
   .inline-editor-field.time-part + .inline-editor-field.time-part { margin-left:6px; }
   .inline-editor-field > span { display:block; margin-bottom:4px; color:#8b9098; font-size:12px; }
-  .inline-editor-field input { width:100%; border:0; border-bottom:1px solid #dfe1e4; border-radius:0; padding:8px 2px; background:transparent; color:var(--text); font:inherit; font-size:14px; outline:none; }
-  .inline-editor-field textarea { display:block; width:100%; min-height:82px; border:1px solid #dfe1e4; border-radius:7px; padding:9px 10px; background:#fff; color:var(--text); font:inherit; font-size:14px; line-height:1.5; outline:none; resize:vertical; }
+  .inline-editor-field input { width:100%; border:0; border-bottom:1px solid #dfe1e4; border-radius:0; padding:8px 2px; background:transparent; color:var(--text); font:inherit; font-size:11px !important; outline:none; }
+  .inline-editor-field textarea { display:block; width:100%; min-height:82px; border:1px solid #dfe1e4; border-radius:7px; padding:9px 10px; background:#fff; color:var(--text); font:inherit; font-size:11px !important; line-height:1.5; outline:none; resize:vertical; }
   .inline-editor-field input:focus,.inline-editor-field textarea:focus { border-color:var(--primary); }
   .inline-editor-actions { display:flex; justify-content:flex-end; gap:8px; margin-top:8px; }
   .inline-editor-actions button { border:0; border-radius:5px; padding:7px 11px; background:transparent; color:#767c85; font:inherit; font-size:13px; cursor:pointer; }
@@ -538,6 +547,8 @@
     .side-link .icon svg { width:18px; height:18px; }
     .side-label { display:block; overflow:hidden; max-width:100%; white-space:nowrap; text-overflow:ellipsis; }
     .main-content { width:100%; padding:16px 10px calc(128px + env(safe-area-inset-bottom)); }
+    body.inline-editing .sidebar { display:none; }
+    body.inline-editing .main-content { padding-bottom:calc(16px + env(safe-area-inset-bottom)); }
   }
 </style>
 </head>
@@ -872,12 +883,14 @@ function dismissInlineEditor() {
     activeInlineReposition = null;
   }
   if (activeInlineEditor) activeInlineEditor.remove();
+  document.body.classList.remove('inline-editing');
   if (activeInlineAnchor && activeInlineAnchorHTML !== null && activeInlineAnchor.matches('.cal-add,.bill-add,.pwd-add,.checkin-add-btn')) activeInlineAnchor.innerHTML = activeInlineAnchorHTML;
   activeInlineEditor = null; activeInlineAnchor = null; activeInlineAnchorHTML = null;
 }
 function showInlineEditor(anchor, title, fields, onSave, onCancel, onDelete, placement) {
   if (activeInlineEditor && !activeInlineEditor.isConnected) {
     activeInlineEditor = null; activeInlineAnchor = null; activeInlineAnchorHTML = null;
+    document.body.classList.remove('inline-editing');
   }
   if (activeInlineEditor && activeInlineAnchor === anchor) { dismissInlineEditor(); return null; }
   dismissInlineEditor();
@@ -936,6 +949,7 @@ function showInlineEditor(anchor, title, fields, onSave, onCancel, onDelete, pla
   actions.appendChild(cancel); actions.appendChild(save); editor.appendChild(actions);
   editor.addEventListener('click', e => e.stopPropagation());
   activeInlineEditor = editor; activeInlineAnchor = anchor;
+  document.body.classList.add('inline-editing');
   if (tilePlacement) editor.classList.add('tile-editor');
   if (anchor && anchor.matches('.cal-add,.bill-add,.pwd-add,.checkin-add-btn')) {
     activeInlineAnchorHTML = anchor.innerHTML;
@@ -956,7 +970,7 @@ function showInlineEditor(anchor, title, fields, onSave, onCancel, onDelete, pla
       const width = Math.min(360, vw - 24);
       const left = Math.max(12, Math.min(vw - width - 12, rect.left + rect.width / 2 - width / 2));
       const top = Math.max(8, rect.bottom + 7);
-      const bottomSpace = window.innerHeight - top - (mobile ? 132 : 12);
+      const bottomSpace = window.innerHeight - top - (mobile && !document.body.classList.contains('inline-editing') ? 132 : 12);
       editor.style.left = left + 'px';
       editor.style.top = top + 'px';
       editor.style.width = width + 'px';
@@ -1062,13 +1076,50 @@ function setData(scope, tasks) {
 // 任务块大小由计划时长决定：小时数 → 格子数（尽量排成接近方形的块）
 //   未完成任务 → 从左上角逐格堆放
 //   完成任务   → 从右下角逐格堆放
-// 状态切换时用 CSS transition 平滑移动
+// 状态切换后保留任务块 DOM，并为所有受布局影响的块播放弹性移动。
 
 const COLS = 8, ROWS = 12;
 // 每个面板中任务块当前占用的网格缓存：tileGridPos[scope][taskId] = {x,y,c,r}
 const tileGridPos = {};
-// 拖拽触发的 render 中，唯一需要播放移动动画的块 id（其余块瞬移）
-let animatedTileId = null;
+// 对所有因重新布局而移动的块播放轻微弹性位移动画。
+function tileTransform(tx, ty, scale = 1) {
+  return 'translate(' + tx + 'px,' + ty + 'px) scale(' + scale + ')';
+}
+function tilePosition(transform) {
+  if (!transform || transform === 'none') return { x:0, y:0 };
+  try {
+    const m = new DOMMatrixReadOnly(transform);
+    return { x:m.m41, y:m.m42 };
+  } catch (_) {
+    const m = String(transform).match(/translate\(([-\d.]+)px,\s*([-\d.]+)px\)/);
+    if (m) return { x:parseFloat(m[1]), y:parseFloat(m[2]) };
+    const matrix = String(transform).match(/^matrix\(([^)]+)\)$/);
+    if (matrix) { const values = matrix[1].split(',').map(Number); return { x:values[4] || 0, y:values[5] || 0 }; }
+    return { x:0, y:0 };
+  }
+}
+function animateTilePosition(el, fromTransform, tx, ty, isNew) {
+  const target = tileTransform(tx, ty);
+  const from = tilePosition(fromTransform);
+  const dx = tx - from.x, dy = ty - from.y;
+  const distance = Math.hypot(dx, dy);
+  const reduceMotion = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  const animations = el.getAnimations ? el.getAnimations() : [];
+  animations.forEach(a => a.cancel());
+  if (reduceMotion || distance < 1) { el.style.transform = target; return; }
+
+  const overshoot = Math.min(11, Math.max(2.5, distance * 0.035));
+  const ox = tx + dx / distance * overshoot;
+  const oy = ty + dy / distance * overshoot;
+  const duration = Math.max(380, Math.min(820, 340 + distance * 0.38));
+  el.style.transform = target;
+  if (typeof el.animate !== 'function') return;
+  const frames = isNew
+    ? [{ transform:tileTransform(from.x, from.y, .94), opacity:.72, offset:0 }, { transform:tileTransform(ox, oy, 1.025), opacity:1, offset:.76 }, { transform:target, opacity:1, offset:1 }]
+    : [{ transform:tileTransform(from.x, from.y), offset:0 }, { transform:tileTransform(ox, oy, 1.012), offset:.78 }, { transform:target, offset:1 }];
+  const animation = el.animate(frames, { duration, easing:'cubic-bezier(.2,.72,.25,1)', fill:'both' });
+  animation.onfinish = () => { el.style.transform = target; animation.cancel(); };
+}
 
 // 难度级别 = 占用的格子数，尽量排成接近正方形（优先正方形，其次宽扁，浪费最少）
 function hoursToGrid(x) {
@@ -1111,11 +1162,8 @@ function cmpSeq(a, b) {
 function render(scope) {
   const board = document.getElementById(scope + 'Board');
   const { tasks } = getData(scope);
-  board.innerHTML = '';
-  const hint = document.createElement('div');
-  hint.className = 'board-hint';
-  hint.textContent = '';
-  board.appendChild(hint);
+  let hint = board.querySelector('.board-hint');
+  if (!hint) { hint = document.createElement('div'); hint.className = 'board-hint'; hint.textContent = ''; board.appendChild(hint); }
 
   const bw = board.clientWidth || board.offsetWidth || 400;
   const bh = board.clientHeight || board.offsetHeight || 600;
@@ -1215,6 +1263,7 @@ function render(scope) {
   tiles.forEach(({ t, pw, ph, tx, ty }) => {
     let el = board.querySelector('[data-id="' + t.id + '"]');
     const isNew = !el;
+    const fromTransform = isNew ? '' : getComputedStyle(el).transform;
     const fit = fitStyle(pw, ph, !!t.start);
     if (isNew) {
       el = document.createElement('div');
@@ -1236,7 +1285,7 @@ function render(scope) {
       el.style.width = pw + 'px';
       el.style.height = ph + 'px';
       el.style.fontSize = fit.fs + 'px';
-      el.style.transform = 'translate(' + (bw/2 - pw/2) + 'px,' + (bh/2 - ph/2) + 'px)';
+      el.style.transform = tileTransform(bw/2 - pw/2, bh/2 - ph/2);
       board.appendChild(el);
       bindTileEvents(el, scope, t);
     } else {
@@ -1255,20 +1304,7 @@ function render(scope) {
         tm.style.fontSize = fit.tfs + 'px';
       } else if (tm) { tm.remove(); }
     }
-    // 只有被拖拽的块播放移动动画，其余块瞬移
-    const isAnimated = String(t.id) === animatedTileId;
-    if (!isNew && !isAnimated) {
-      el.classList.add('settled'); // 禁用 transition
-      el.style.transform = 'translate(' + tx + 'px,' + ty + 'px)';
-      void el.offsetWidth;         // 强制重排，使 transform 立即生效
-      el.classList.remove('settled');
-    } else {
-      requestAnimationFrame(() => {
-        requestAnimationFrame(() => {
-          el.style.transform = 'translate(' + tx + 'px,' + ty + 'px)';
-        });
-      });
-    }
+    animateTilePosition(el, isNew ? el.style.transform : fromTransform, tx, ty, isNew);
   });
 
   // 移除已删除的块
@@ -1277,7 +1313,6 @@ function render(scope) {
   });
 
   bindBoardEvents(board, scope);
-  animatedTileId = null; // 清空动画标记
 }
 
 // ===== 交互绑定 =====
@@ -1447,14 +1482,12 @@ function finishDrag(scope, t, el, cx, cy, tlX, tlY) {
     // 重新渲染（只有被拖动的块有动画）
     target.pos = { x: px, y: py };
     setData(scope, tasks);
-    animatedTileId = String(t.id);
     render(scope);
     return;
   }
 
   target.pos = { x: px, y: py };
   setData(scope, tasks);
-  animatedTileId = String(t.id);
   render(scope);
 }
 
@@ -2069,7 +2102,7 @@ function renderBill() {
   if (billUnknownMode) {
     // 未知月份：dateKey 为空的记录
     monthList = list.filter(b => (!b.dateKey) && b.type === TYPE);
-    document.getElementById('billMonthTitle').textContent = '未知日期';
+    document.getElementById('billMonthTitle').textContent = '其他日期';
   } else {
     const monthPrefix = billYear + '-' + pad(billMonth + 1);
     monthList = list.filter(b => b.dateKey && b.dateKey.startsWith(monthPrefix) && b.type === TYPE);
@@ -2089,7 +2122,7 @@ function renderBill() {
     const e = document.createElement('div');
     e.className = 'bill-empty';
     e.textContent = billUnknownMode
-      ? (isExpense ? '还没有无日期的支出记录' : '还没有无日期的收入记录')
+      ? (isExpense ? '还没有其他日期的支出记录' : '还没有其他日期的收入记录')
       : (isExpense ? '本月还没有支出，可在上方添加' : '本月还没有收入，可在上方添加');
     mRows.appendChild(e);
   } else {
@@ -2155,7 +2188,7 @@ function renderBill() {
     const row = document.createElement('div');
     row.className = 'bill-row month-row' + (billExpandedKey === 'unknown' ? ' expanded' : '');
     const name = document.createElement('div');
-    name.className = 'br-name'; name.textContent = '未知';
+    name.className = 'br-name'; name.textContent = '其他';
     if (unknownTotal > 0) {
       const sub = document.createElement('span');
       sub.className = 'br-sub'; sub.textContent = fmtMoney(unknownTotal) + '（' + unknownList.length + ' 笔）';
@@ -2683,11 +2716,19 @@ function renderTimetable() {
         sep.className = 'tt-row-sep'; sep.textContent = '；';
         row.appendChild(sep);
       }
-      const item = document.createElement('span');
+      const item = document.createElement('button');
+      item.type = 'button';
+      item.setAttribute('role', 'checkbox');
       const allDone = g.members.every(m => m.done);
       const someDone = g.members.some(m => m.done);
       item.className = 'tt-item' + (allDone ? ' done' : (someDone ? ' part' : ''));
-      item.textContent = g.text + (g.times.length ? '（' + g.times.join('，') + '）' : '');
+      item.setAttribute('aria-checked', allDone ? 'true' : (someDone ? 'mixed' : 'false'));
+      item.setAttribute('aria-label', g.text + (g.times.length ? '，' + g.times.join('，') : ''));
+      const check = document.createElement('span');
+      check.className = 'tt-check'; check.setAttribute('aria-hidden', 'true');
+      const label = document.createElement('span');
+      label.className = 'tt-label'; label.textContent = g.text + (g.times.length ? '（' + g.times.join('，') + '）' : '');
+      item.append(check, label);
       // 点击：切换该组全部任务的完成状态
       item.addEventListener('click', () => {
         const { tasks: ts } = ttGetWeekTasks();
