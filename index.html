@@ -108,15 +108,12 @@
   .tile.balloon { box-shadow: 0 3px 10px rgba(16,24,40,.14); }
   /* 时间签：块内第一行，占据真实空间，文字排在下方，结构上不重叠 */
   .tile .tile-time {
-    align-self: flex-end; margin: 4px 6px 0; font-size: 10px; font-weight: 700;
-    color: rgba(255,255,255,.95); background: rgba(0,0,0,.22); padding: 2px 6px;
+    align-self: flex-end; margin: 4px 6px 0; font-size: 10px; font-weight: 400;
+    color: #454b55; background: rgba(20,28,45,.06); padding: 2px 6px;
     border-radius: 6px; line-height: 1; pointer-events: none; z-index: 2; flex-shrink: 0;
   }
 
-  .tile.c0 { background: #4f6ef7; color:#fff; } .tile.c1 { background: #7c5cf0; color:#fff; }
-  .tile.c2 { background: #0ea5a4; color:#fff; } .tile.c3 { background: #f59e0b; color:#fff; }
-  .tile.c4 { background: #e5484d; color:#fff; } .tile.c5 { background: #16a34a; color:#fff; }
-  .tile.c6 { background: #d97706; color:#fff; } .tile.c7 { background: #0e7490; color:#fff; }
+  .tile.c0,.tile.c1,.tile.c2,.tile.c3,.tile.c4,.tile.c5,.tile.c6,.tile.c7 { background:#fff; color:#252a32; }
 
   .overlay {
     position: fixed; inset: 0; background: rgba(0,0,0,.4); z-index: 100; padding: 24px;
@@ -473,7 +470,7 @@
   .bill-month-label { color:var(--muted); font-size:13px; }
   .bill-editor { margin-top:14px; padding:12px 0; border-top:1px solid #e8e9e7; }
   .inline-add-form { margin-top:14px; padding:14px; border:1px solid #e6e7f1; border-radius:13px; background:linear-gradient(145deg,#fff 0%,#f8f8fc 100%); box-shadow:0 5px 16px rgba(63,69,112,.06); }
-  .inline-add-form .bill-editor-title { color:#50577d; font-size:13px; font-weight:600; margin-bottom:9px; }
+  .inline-add-form .bill-editor-title { color:#50577d; font-size:13px; font-weight:400; margin-bottom:9px; }
   .inline-add-form textarea,.inline-add-form input,.pwd-add-fields input { width:100%; min-width:0; box-sizing:border-box; padding:9px 10px; border:1px solid #e5e7ef; border-radius:8px; background:#fff; color:var(--text); font:inherit; font-size:12px; outline:none; resize:vertical; user-select:text; -webkit-user-select:text; }
   .inline-add-form textarea,.inline-add-form input[type="text"],.inline-add-form input[type="password"],#dialogInput,#promptInput,#formFields input[type="text"],#formFields textarea,.inline-editor-field:not(.time-part) input[type="text"],.inline-editor-field:not(.time-part) textarea { font-family:FangSong,"仿宋","仿宋_GB2312",serif !important; font-size:12px !important; }
   .inline-add-form textarea { min-height:56px; line-height:1.5; }
@@ -517,7 +514,7 @@
   .inline-editor.tile-editor .inline-editor-field textarea:focus { border-color:#7779cf; box-shadow:0 0 0 2px rgba(119,121,207,.1); }
   .inline-editor-title { margin-bottom:8px; color:#777e87; font-size:13px; font-weight:500; }
   .inline-editor.add-editor { padding:14px 15px; border:1px solid #e6e7f1; border-left:3px solid #7779cf; border-radius:13px; background:linear-gradient(145deg,#fff 0%,#f7f7fc 100%); box-shadow:0 5px 16px rgba(63,69,112,.07); animation:editorReveal .22s ease-out both; }
-  .inline-editor.add-editor .inline-editor-title { color:#50577d; font-weight:600; }
+  .inline-editor.add-editor .inline-editor-title { color:#50577d; font-weight:400; }
   .inline-editor-field { display:block; margin:7px 0; }
   .inline-time-row { display:flex; align-items:center; gap:7px; margin:9px 0; color:#83899a; }
   .inline-time-label { margin-right:auto; font-size:12px; white-space:nowrap; }
@@ -556,7 +553,8 @@
   @keyframes editorReveal { from { opacity:0; transform:translateY(-5px); } to { opacity:1; transform:translateY(0); } }
   #overlay.checkin-form { background:rgba(42,48,77,.42); backdrop-filter:blur(7px); }
   #overlay.checkin-form .dialog { border:1px solid #e6e7f1; border-radius:13px; padding:16px 14px 14px; background:linear-gradient(145deg,#fff 0%,#f8f8fc 100%); box-shadow:0 14px 38px rgba(30,37,72,.18); animation:checkinCardIn .24s cubic-bezier(.2,.7,.25,1) both; }
-  #overlay.checkin-form .dialog h3 { color:#454d73; font-size:15px; margin-bottom:10px; }
+  #overlay.checkin-form .dialog h3 { color:#454d73; font-size:15px; font-weight:400; margin-bottom:10px; }
+  #overlay .dialog h3 { font-weight:400; }
   #overlay.checkin-form .dialog h3::before { content:none; }
   #overlay.checkin-form .dialog textarea { min-height:58px; padding:9px 11px; font-size:14px; border-radius:10px; }
   #overlay.checkin-form .time-toggle-row { margin:9px 0 5px; }
@@ -2126,10 +2124,10 @@ function renderBill() {
     row.className = 'bill-row month-row' + (billExpandedKey === m ? ' expanded' : '');
     const name = document.createElement('div');
     name.className = 'br-name'; name.textContent = (m + 1) + '月';
-    if (total > 0) {
+    if (monthFixedEach > 0) {
       const sub = document.createElement('span');
       sub.className = 'br-sub';
-      sub.textContent = fmtMoney(total) + (monthFixedEach ? '（含固定 ' + fmtMoney(monthFixedEach) + '）' : '');
+      sub.textContent = '（含固定 ' + fmtMoney(monthFixedEach) + '）';
       name.appendChild(sub);
     }
     const amt = document.createElement('div');
@@ -2462,13 +2460,31 @@ function renderMine() {
   document.getElementById('statDays').textContent = dayKeys.size;
 }
 
-function exportData() {
+async function exportData() {
   const data = { KEY_WEEK, KEY_DAY, KEY_TT, week: load(KEY_WEEK, {}), day: load(KEY_DAY, {}), tt: load(KEY_TT, {}), bill: load(KEY_BILL, []), pwd: load(KEY_PWD, []), fixed: load(KEY_FIXED, []), fixedIn: load(KEY_FIXED_IN, []), note: load(KEY_NOTE, []) };
-  const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
+  const contents = JSON.stringify(data, null, 2);
+  const filename = '打卡数据_' + dateKey(new Date()) + '.json';
+  if (window.showSaveFilePicker) {
+    try {
+      const handle = await window.showSaveFilePicker({
+        suggestedName: filename,
+        types: [{ description:'JSON 备份文件', accept:{ 'application/json':['.json'] } }]
+      });
+      const writable = await handle.createWritable();
+      await writable.write(new Blob([contents], { type:'application/json' }));
+      await writable.close();
+      alert('备份已保存。');
+      return;
+    } catch (error) {
+      if (error && error.name === 'AbortError') return;
+      alert('无法打开文件保存窗口，将使用浏览器默认下载位置。');
+    }
+  }
+  const blob = new Blob([contents], { type: 'application/json' });
   const url = URL.createObjectURL(blob);
   const a = document.createElement('a');
   a.href = url;
-  a.download = '打卡数据_' + dateKey(new Date()) + '.json';
+  a.download = filename;
   a.click();
   URL.revokeObjectURL(url);
 }
