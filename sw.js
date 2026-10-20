@@ -1,5 +1,5 @@
 // Service Worker：打卡应用离线缓存，页面优先从线上获取最新版本
-const CACHE = 'daka-latest-v22';
+const CACHE = 'daka-latest-v21';
 const ASSETS = [
   './', './index.html', './manifest.webmanifest', './apple-touch-icon.png',
   './icon-192.png', './icon-512.png', './icon-maskable-192.png', './icon-maskable-512.png'
