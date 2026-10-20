@@ -93,7 +93,7 @@
     box-shadow: 0 1px 4px rgba(16,24,40,.10);
     transition: width .22s ease, height .22s ease, opacity .24s ease, filter .24s ease, box-shadow .24s ease;
     will-change: transform;
-    touch-action: none;
+    touch-action: manipulation;
     -webkit-user-select: none; user-select: none;
   }
   .tile .tile-text {
@@ -110,10 +110,6 @@
   .tile.done { opacity: .55; filter: saturate(.6); }
   .tile.done .tile-check { opacity:1; transform:scale(1); }
   .tile.balloon { box-shadow: 0 3px 10px rgba(16,24,40,.14); }
-  .tile.dragging {
-    transition: none !important; z-index: 50; opacity: .9;
-    box-shadow: 0 8px 24px rgba(16,24,40,.3); transform-origin: center;
-  }
   /* 时间签：块内第一行，占据真实空间，文字排在下方，结构上不重叠 */
   .tile .tile-time {
     align-self: flex-end; margin: 4px 6px 0; font-size: 10px; font-weight: 700;
@@ -1079,8 +1075,6 @@ function setData(scope, tasks) {
 // 状态切换后保留任务块 DOM，并为所有受布局影响的块播放弹性移动。
 
 const COLS = 8, ROWS = 12;
-// 每个面板中任务块当前占用的网格缓存：tileGridPos[scope][taskId] = {x,y,c,r}
-const tileGridPos = {};
 // 对所有因重新布局而移动的块播放轻微弹性位移动画。
 function tileTransform(tx, ty, scale = 1) {
   return 'translate(' + tx + 'px,' + ty + 'px) scale(' + scale + ')';
@@ -1135,28 +1129,21 @@ function hoursToGrid(x) {
   return { c: cands[0].c, r: cands[0].r };
 }
 
-// ===== 排序优先级：时间戳 > 手动顺序 > 自由填充 =====
+// ===== 排序优先级：有时间戳按时间排序；无时间戳按浮沉状态自然布局 =====
 // 任务字段：
 //   start: string，开始时间戳（有时间戳的任务按时间排序，优先）
-//   order: number，手动拖拽的相对顺序（越小越靠前）
 function timeVal(t) {
   if (!t.start) return Infinity;
   const m = String(t.start).match(/(\d{1,2}):(\d{2})/);
   if (!m) return Infinity;
   return parseInt(m[1], 10) * 60 + parseInt(m[2], 10);
 }
-// 比较两个任务：有时间戳的按时间排（优先级高），无时间戳的按手动 order 排
+// 有有效时间的排在同一浮沉分组前面并按时间排序；无时间的保持原顺序，交由浮沉布局排列。
 function cmpSeq(a, b) {
-  const ah = !!a.start, bh = !!b.start;
-  if (ah !== bh) return ah ? -1 : 1;           // 有时间戳的排前面（第一优先级）
-  if (ah) {                                     // 都有时间戳：按时间
-    const d = timeVal(a) - timeVal(b);
-    return d !== 0 ? d : 0;
-  }
-  // 都无时间戳：按手动 order，无 order 的靠后（自由填充兜底）
-  const ao = a.order != null ? a.order : Infinity;
-  const bo = b.order != null ? b.order : Infinity;
-  return ao - bo;
+  const at = timeVal(a), bt = timeVal(b);
+  const ah = Number.isFinite(at), bh = Number.isFinite(bt);
+  if (ah !== bh) return ah ? -1 : 1;
+  return ah ? at - bt : 0;
 }
 
 function render(scope) {
@@ -1179,10 +1166,7 @@ function render(scope) {
     return { t, pw, ph, c, r, tx: 0, ty: 0 };
   });
 
-  // ===== 放置优先级：拖拽固定位置(pos) > 自动布局（时序/顺序+向正方形生长） =====
-  // tileGridPos[scope] 缓存每个块当前占用的网格，供拖拽碰撞检测
-  const gridPosMap = {};
-  tileGridPos[scope] = gridPosMap;
+  // 按浮沉状态与时间顺序自动布局，不保留手动拖拽位置。
   const occ = Array.from({ length: ROWS }, () => Array(COLS).fill(false));
   function fits(c0, r0, c, r) {
     if (c0 < 0 || r0 < 0 || c0 + c > COLS || r0 + r > ROWS) return false;
@@ -1195,7 +1179,6 @@ function render(scope) {
     for (let rr = r0; rr < r0 + u.r; rr++)
       for (let cc = c0; cc < c0 + u.c; cc++) occ[rr][cc] = true;
     u.gx = c0; u.gy = r0;
-    gridPosMap[u.t.id] = { x: c0, y: r0, c: u.c, r: u.r };
   }
   function scanFind(u) {
     for (let r0 = 0; r0 <= ROWS - u.r; r0++)
@@ -1208,22 +1191,8 @@ function render(scope) {
   const undone = tiles.filter(x => !x.t.done).sort(bySeq);
   const done = tiles.filter(x => x.t.done).sort(bySeq);
 
-  // 第一优先级：未完成块中，用户拖拽固定过的块直接放保存位置
-  // 完成块不参与拖拽固定，始终沉底（保留浮沉效果）
+  // 未完成块从左上角向右下浮起。
   for (const u of undone) {
-    if (!u.t.pos) continue;
-    const px = Math.max(0, Math.min(COLS - u.c, u.t.pos.x));
-    const py = Math.max(0, Math.min(ROWS - u.r, u.t.pos.y));
-    if (fits(px, py, u.c, u.r)) mark(u, px, py);
-    else {
-      const alt = scanFind(u); // 保存的位置被占，就近找空位
-      if (alt) mark(u, alt[0], alt[1]);
-    }
-  }
-
-  // 第二优先级：未拖拽过的未完成块，从左上角逐格扫描放置（去掉宽高比约束）
-  const autoUndone = undone.filter(u => u.gx == null);
-  for (const u of autoUndone) {
     const pos = scanFind(u);
     if (pos) mark(u, pos[0], pos[1]);
   }
@@ -1319,176 +1288,26 @@ function render(scope) {
 function bindTileEvents(el, scope, t) {
   el.oncontextmenu = (e) => e.preventDefault();
   let timer = null, longFired = false;
-  let dragging = false;
-  let startX = 0, startY = 0, origTx = 0, origTy = 0;
-  const MOVE_THRESHOLD = 8;
-
-  function getXY(e) {
-    if (e.touches && e.touches.length) return { x: e.touches[0].clientX, y: e.touches[0].clientY };
-    if (e.changedTouches && e.changedTouches.length) return { x: e.changedTouches[0].clientX, y: e.changedTouches[0].clientY };
-    return { x: e.clientX, y: e.clientY };
-  }
-
   function start(e) {
     if (e.button != null && e.button !== 0) return;
-    longFired = false; dragging = false;
+    longFired = false;
     clearTimeout(timer);
-    const p = getXY(e);
-    startX = p.x; startY = p.y;
-    const tr = el.style.transform.match(/translate\(([-\d.]+)px,\s*([-\d.]+)px\)/);
-    origTx = tr ? parseFloat(tr[1]) : 0;
-    origTy = tr ? parseFloat(tr[2]) : 0;
     timer = setTimeout(() => { longFired = true; openTileMenu(scope, t, el); }, 400);
-    // 全局监听移动和释放，确保拖拽不因鼠标移出块而中断
-    window.addEventListener('mousemove', move, { passive: false });
-    window.addEventListener('mouseup', end);
   }
-  function move(e) {
-    const p = getXY(e);
-    if (dragging) {
-      const dx = p.x - startX, dy = p.y - startY;
-      el.style.transform = 'translate(' + (origTx + dx) + 'px,' + (origTy + dy) + 'px)';
-      if (e.cancelable) e.preventDefault();
-      return;
-    }
-    if (longFired) return;
-    if (Math.hypot(p.x - startX, p.y - startY) > MOVE_THRESHOLD) {
-      // 完成块不可拖拽（始终沉底），仅在未完成块上启动拖拽
-      if (t.done) return;
-      clearTimeout(timer);
-      longFired = false;
-      dragging = true;
-      el.classList.add('dragging');
-      const dx = p.x - startX, dy = p.y - startY;
-      el.style.transform = 'translate(' + (origTx + dx) + 'px,' + (origTy + dy) + 'px)';
-      if (e.cancelable) e.preventDefault();
-    }
-  }
-  function end(e) {
+  function end() {
     clearTimeout(timer);
-    window.removeEventListener('mousemove', move);
-    window.removeEventListener('mouseup', end);
-    if (dragging) {
-      dragging = false;
-      el.classList.remove('dragging');
-      const p = getXY(e);
-      finishDrag(scope, t, el, p.x, p.y, origTx + (p.x - startX), origTy + (p.y - startY));
-    }
   }
 
   el.addEventListener('touchstart', start, { passive: true });
-  el.addEventListener('touchmove', move, { passive: false });
   el.addEventListener('touchend', end);
   el.addEventListener('touchcancel', end);
   el.addEventListener('mousedown', start);
+  el.addEventListener('mouseup', end);
+  el.addEventListener('mouseleave', end);
   el.addEventListener('click', (e) => {
-    if (longFired || dragging) { e.preventDefault(); e.stopPropagation(); longFired = false; return; }
+    if (longFired) { e.preventDefault(); e.stopPropagation(); longFired = false; return; }
     toggleTile(scope, t.id);
   });
-}
-
-// 拖拽结束：落点吸附到网格，保存为该块的固定位置（第一优先级）
-// tlX/tlY：拖动后块的左上角相对 board 的坐标（已含手指抓取偏移，精确）
-function finishDrag(scope, t, el, cx, cy, tlX, tlY) {
-  const board = document.getElementById(scope + 'Board');
-  const { tasks } = getData(scope);
-  const target = tasks.find(x => x.id === t.id);
-  if (!target) { render(scope); return; }
-
-  const bw = board.clientWidth, bh = board.clientHeight;
-  const GAP = 6;
-  const cellW = (bw - GAP * (COLS + 1)) / COLS;
-  const cellH = (bh - GAP * (ROWS + 1)) / ROWS;
-  const { c, r } = hoursToGrid(target.hours != null ? target.hours : 2);
-
-  // 块的左上角吸附到最近的格子（四舍五入）
-  const gx = Math.round((tlX - GAP) / (cellW + GAP));
-  const gy = Math.round((tlY - GAP) / (cellH + GAP));
-  let px = Math.max(0, Math.min(COLS - c, gx));
-  let py = Math.max(0, Math.min(ROWS - r, gy));
-
-  // 挤占逻辑：目标位置放新块；被挤的块向外寻找最近空位
-  // 用「动态占用表」逐个安置，保证后续被挤块能看到前面已预占的位置，避免重叠
-  const gpos = tileGridPos[scope] || {};
-  // 拖拽前的占用快照（用于碰撞检测的基准）
-  function overlapsAt(c0, r0, cc, rr, p) {
-    return c0 < p.x + p.c && c0 + cc > p.x && r0 < p.y + p.r && r0 + rr > p.y;
-  }
-  // 找出被挤的块（与被拖块目标位置重叠的其它块）
-  const displaced = [];
-  for (const id in gpos) {
-    if (id === String(t.id)) continue;
-    if (overlapsAt(px, py, c, r, gpos[id])) displaced.push(id);
-  }
-  if (displaced.length) {
-    // 构造动态占用表：从当前布局深拷贝，去掉所有被挤块（它们将被重新安置）
-    const occMap = {};
-    for (const id in gpos) occMap[id] = { x: gpos[id].x, y: gpos[id].y, c: gpos[id].c, r: gpos[id].r };
-    const displacedSet = new Set(displaced);
-    for (const id of displacedSet) delete occMap[id];
-    delete occMap[String(t.id)];
-    // 被拖块先占住目标位置
-    occMap[String(t.id)] = { x: px, y: py, c, r };
-
-    // 按「完成块优先沉底、未完成块浮顶」的方向性排序：先安置完成块(向右下)，再未完成块(向左上)
-    const isDone = id => { const o = tasks.find(x => String(x.id) === id); return o && o.done; };
-    const doneDisp = displaced.filter(isDone);
-    const undoneDisp = displaced.filter(id => !isDone(id));
-
-    function tryPlace(id, dir) {
-      const other = tasks.find(x => String(x.id) === id);
-      if (!other) return false;
-      const g = hoursToGrid(other.hours != null ? other.hours : 2);
-      const oc = g.c, or = g.r;
-      const ox = gpos[id] ? gpos[id].x : 0, oy = gpos[id] ? gpos[id].y : 0;
-      // dir: 'br' 向右下挤(完成块), 'tl' 向左上挤(未完成块)
-      function search(directed) {
-        let found = null;
-        outer: for (let dist = 1; dist <= COLS + ROWS && !found; dist++) {
-          for (let dy = -dist; dy <= dist && !found; dy++) {
-            for (let dx = -dist; dx <= dist && !found; dx++) {
-              if (Math.max(Math.abs(dx), Math.abs(dy)) !== dist) continue;
-              if (directed) {
-                if (dir === 'br' && (dx < 0 || dy < 0)) continue;
-                if (dir === 'tl' && (dx > 0 || dy > 0)) continue;
-              }
-              const nx = ox + dx, ny = oy + dy;
-              if (nx < 0 || ny < 0 || nx + oc > COLS || ny + or > ROWS) continue;
-              let ok = true;
-              for (const id2 in occMap) {
-                const p2 = occMap[id2];
-                if (overlapsAt(nx, ny, oc, or, p2)) { ok = false; break; }
-              }
-              if (ok) { found = { nx, ny }; break outer; }
-            }
-          }
-        }
-        return found;
-      }
-      // 先按浮沉方向找，找不到再全向兜底（保证块在边界时也能安置）
-      let found = search(true) || search(false);
-      if (found) {
-        other.pos = { x: found.nx, y: found.ny };
-        occMap[id] = { x: found.nx, y: found.ny, c: oc, r: or }; // 预占，避免后续块重叠
-        return true;
-      }
-      return false;
-    }
-
-    // 完成块先向右下挤，未完成块向左上挤
-    doneDisp.forEach(id => tryPlace(id, 'br'));
-    undoneDisp.forEach(id => tryPlace(id, 'tl'));
-
-    // 重新渲染（只有被拖动的块有动画）
-    target.pos = { x: px, y: py };
-    setData(scope, tasks);
-    render(scope);
-    return;
-  }
-
-  target.pos = { x: px, y: py };
-  setData(scope, tasks);
-  render(scope);
 }
 
 function bindBoardEvents(board, scope) {
