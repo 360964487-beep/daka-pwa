@@ -37,9 +37,9 @@
   .side-link .icon svg { width:19px; height:19px; display:block; fill:none; stroke:currentColor; stroke-width:1.7; stroke-linecap:round; stroke-linejoin:round; }
   .side-spacer { flex:1; }
   .main-content { flex:1; min-width:0; padding:24px 32px 40px; }
-  /* 仅滚动中的主内容页轻微模糊；侧栏和固定控件始终清晰。 */
-  .main-content > div:not(.hidden) { transition:filter .07s cubic-bezier(.2,.7,.25,1); }
-  body.is-scrolling .main-content > div:not(.hidden) { filter:blur(.65px); }
+  /* 仅记账页滚动期间轻微模糊；其他页面和固定控件保持清晰。 */
+  #bill { transition:filter .07s cubic-bezier(.2,.7,.25,1); }
+  body.is-scrolling #bill:not(.hidden) { filter:blur(.65px); }
   .main-content > div:not(#home) { width:100%; max-width:900px; margin:0 auto; }
   .main-content > div.page-enter { animation:modulePageEnter .24s cubic-bezier(.2,.7,.25,1) both; }
   @keyframes modulePageEnter { from { opacity:0; transform:translateY(7px); } to { opacity:1; transform:translateY(0); } }
@@ -48,7 +48,7 @@
   @media(prefers-reduced-motion:reduce) {
     .main-content > div.page-enter { animation:none; }
     .side-link { transition:none; }
-    .main-content > div:not(.hidden),body.is-scrolling .main-content > div:not(.hidden) { transition:none; filter:none; }
+    #bill,body.is-scrolling #bill:not(.hidden) { transition:none; filter:none; }
   }
   .home-title { margin-bottom:18px; }
   @media(max-width:700px) { .sidebar { width:64px; flex-basis:64px; padding:10px 6px; } .side-link { justify-content:center; padding:12px 6px; } .side-label { display:none; } .main-content { padding:18px 12px 30px; } }
@@ -365,15 +365,20 @@
     background: #fff; border-radius: 14px; padding: 14px; box-shadow: 0 1px 4px rgba(16,24,40,.08);
     border: 1px solid #e8eaed;
   }
-  .pwd-item .pi-top { display: flex; align-items: center; gap: 10px; }
-  .pwd-item .pi-icon { width: 38px; height: 38px; border-radius: 10px; display: flex; align-items: center; justify-content: center; font-size: 18px; flex-shrink: 0; background: #eef1fe; }
-  .pwd-item .pi-title { flex: 1; min-width: 0; }
+  .pwd-item .pi-top { display: flex; align-items: flex-start; gap: 8px; }
+  .pwd-item .pi-icon { display:none; }
+  .pwd-item .pi-title { flex: 1; min-width: 0; display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:8px; }
   .pwd-item .pi-name { font-size: 15px; font-weight: 700; word-break: break-all; }
   .pwd-item .pi-account { font-size: 12px; color: var(--muted); margin-top: 2px; word-break: break-all; }
+  .pwd-item .pi-data { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:8px; margin-top:10px; padding-top:9px; border-top:1px dashed #e8eaed; }
+  .pwd-item .pi-field { display:flex; flex-direction:column; align-items:stretch; gap:2px; min-width:0; }
+  .pwd-item .pi-field-label { color:#9b8b78; font-family:FangSong,"仿宋","STFangsong","仿宋_GB2312","Noto Serif CJK SC",serif; font-size:12px; font-weight:400; line-height:1.4; }
+  .pwd-item .pi-field-value { min-width:0; border-radius:5px; padding:1px 4px; margin:-1px -4px; font-family:FangSong,"仿宋","STFangsong","仿宋_GB2312","Noto Serif CJK SC",serif; font-size:12px; font-weight:400; line-height:1.6; white-space:pre-wrap; overflow-wrap:anywhere; cursor:text; }
+  .pwd-item .pi-field-value:hover { background:rgba(197,138,90,.07); }
   .pwd-item .pi-del { border: none; background: none; color: #c4c8d0; font-size: 18px; cursor: pointer; padding: 0 2px; }
   .pwd-item .pi-del:hover { color: #e5484d; }
-  .pwd-item .pi-pw-row { display: flex; align-items: center; gap: 8px; margin-top: 10px; padding-top: 10px; border-top: 1px dashed #e8eaed; }
-  .pwd-item .pi-pw { flex: 1; font-size: 13px; font-family: monospace; color: var(--text); word-break: break-all; }
+  .pwd-item .pi-pw-row { display:flex; flex-direction:column; align-items:stretch; gap:2px; padding-top:0; }
+  .pwd-item .pi-pw { flex: 1; min-width:0; font-size: 13px; font-family: monospace; color: var(--text); word-break: break-all; }
   .pwd-item .pi-pw.masked { letter-spacing: 2px; color: var(--muted); }
   .pwd-item .pi-eye { border: none; background: none; color: var(--muted); font-size: 16px; cursor: pointer; padding: 2px 4px; }
   .pwd-item .pi-eye:hover { color: var(--primary); }
@@ -674,7 +679,7 @@
   #overlay.checkin-form .btn-ok { background:#b8794b; color:#fff; }
   .bill-editor { border-color:#eadfD2; }
   .bill-row.month-row:hover,.bill-row.bill-editable:hover,.mine-btn:hover { background:#f7efe4; }
-  .cal-item,.pwd-item,.note-item,.bill-row.bill-editable { cursor:pointer; }
+  .cal-item,.note-item,.bill-row.bill-editable { cursor:pointer; }
   .bill-row.month-row::after,.menu-card .arrow { color:#c2ad95; }
   .bill-row .br-amt.expense,.bill-head-sum .hs-amt.expense { color:#bd7467; }
   .bill-row .br-amt.income,.bill-head-sum .hs-amt.income { color:#668b69; }
@@ -2587,7 +2592,7 @@ function renderPwd() {
     const title = document.createElement('div');
     title.className = 'pi-title';
     const name = document.createElement('div');
-    name.className = 'pi-name inline-editable'; name.textContent = p.name;
+    name.className = 'pi-name pi-field-value inline-editable'; name.textContent = p.name;
     name.addEventListener('click', e => {
       e.stopPropagation();
       beginDirectTextEdit(name, e, { value:p.name || '', save:value => {
@@ -2597,7 +2602,7 @@ function renderPwd() {
       }});
     });
     const acc = document.createElement('div');
-    acc.className = 'pi-account inline-editable'; acc.textContent = p.account || '';
+    acc.className = 'pi-account pi-field-value inline-editable'; acc.textContent = p.account || '';
     acc.addEventListener('click', e => {
       e.stopPropagation();
       beginDirectTextEdit(acc, e, { value:p.account || '', allowEmpty:true, save:value => {
@@ -2605,8 +2610,14 @@ function renderPwd() {
         item.account = value; pwdSaveAll(all); renderPwd();
       }});
     });
-    title.appendChild(name);
-    if (p.account) title.appendChild(acc);
+    const nameRow = document.createElement('div'); nameRow.className = 'pi-field';
+    const nameLabel = document.createElement('span'); nameLabel.className = 'pi-field-label'; nameLabel.textContent = '名称';
+    nameRow.append(nameLabel, name);
+    const accountRow = document.createElement('div');
+    accountRow.className = 'pi-field';
+    const accountLabel = document.createElement('span'); accountLabel.className = 'pi-field-label'; accountLabel.textContent = '账号';
+    accountRow.append(accountLabel, acc);
+    title.append(nameRow, accountRow);
     const del = document.createElement('button');
     del.className = 'pi-del'; del.textContent = '×';
     del.addEventListener('click', () => {
@@ -2615,13 +2626,11 @@ function renderPwd() {
     });
     top.appendChild(icon); top.appendChild(title); top.appendChild(del);
     item.appendChild(top);
-    item.classList.add('inline-editable');
-
     const pwRow = document.createElement('div');
-    pwRow.className = 'pi-pw-row';
+    pwRow.className = 'pi-field pi-pw-row';
+    const pwLabel = document.createElement('span'); pwLabel.className = 'pi-field-label'; pwLabel.textContent = '密钥';
     const pw = document.createElement('div');
-    pw.className = 'pi-pw masked'; pw.textContent = '••••••••';
-    pw.classList.add('inline-editable');
+    pw.className = 'pi-pw pi-field-value masked inline-editable'; pw.textContent = '••••••••';
     pw.addEventListener('click', e => {
       e.stopPropagation();
       pw.classList.remove('masked');
@@ -2644,8 +2653,28 @@ function renderPwd() {
         navigator.clipboard.writeText(t).then(() => alert('密码已复制'));
       } else { alert('复制失败，请手动复制：' + t); }
     });
-    pwRow.appendChild(pw); pwRow.appendChild(eye); pwRow.appendChild(copy);
-    item.appendChild(pwRow);
+    const pwValueWrap = document.createElement('div');
+    pwValueWrap.style.cssText = 'display:flex;align-items:flex-start;gap:8px;min-width:0;';
+    pwValueWrap.append(pw, eye, copy);
+    pwRow.append(pwLabel, pwValueWrap);
+
+    const noteRow = document.createElement('div'); noteRow.className = 'pi-field';
+    const noteLabel = document.createElement('span'); noteLabel.className = 'pi-field-label'; noteLabel.textContent = '备注';
+    const noteText = document.createElement('div');
+    noteText.className = 'pi-note pi-field-value inline-editable';
+    noteText.textContent = p.note || '';
+    noteText.addEventListener('click', e => {
+      e.stopPropagation();
+      beginDirectTextEdit(noteText, e, { value:p.note || '', allowEmpty:true, multiline:true, save:value => {
+        const all = pwdGetAll(), item = all.find(x => x.id === p.id); if (!item) return false;
+        item.note = value; pwdSaveAll(all); renderPwd();
+      }});
+    });
+    noteRow.append(noteLabel, noteText);
+
+    const data = document.createElement('div'); data.className = 'pi-data';
+    data.append(pwRow, noteRow);
+    item.append(top, data);
 
     container.appendChild(item);
   });
