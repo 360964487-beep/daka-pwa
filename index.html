@@ -2568,7 +2568,7 @@ function editMineName(event) {
 async function exportData() {
   const data = { KEY_WEEK, KEY_DAY, KEY_TT, profileName:load(KEY_PROFILE_NAME, '我的打卡'), week: load(KEY_WEEK, {}), day: load(KEY_DAY, {}), tt: load(KEY_TT, {}), bill: load(KEY_BILL, []), pwd: load(KEY_PWD, []), fixed: load(KEY_FIXED, []), fixedIn: load(KEY_FIXED_IN, []), note: load(KEY_NOTE, []) };
   const contents = JSON.stringify(data, null, 2);
-  const filename = '打卡数据_' + dateKey(new Date()) + '.json';
+  const filename = '焦糖打卡' + dateKey(new Date()) + '.json';
   if (window.showSaveFilePicker) {
     try {
       const handle = await window.showSaveFilePicker({
