@@ -39,6 +39,14 @@
   .main-content { flex:1; min-width:0; padding:24px 32px 40px; }
   .main-content > div:not(#home) { width:100%; max-width:900px; margin:0 auto; }
   .home-title { margin-bottom:18px; }
+  .main-content > div.page-enter { animation:modulePageEnter .24s cubic-bezier(.2,.7,.25,1) both; }
+  @keyframes modulePageEnter { from { opacity:0; transform:translateY(7px); } to { opacity:1; transform:translateY(0); } }
+  .side-link { transition:background-color .18s ease,color .18s ease,transform .18s ease; }
+  .side-link:active { transform:scale(.97); }
+  @media(prefers-reduced-motion:reduce) {
+    .main-content > div.page-enter { animation:none; }
+    .side-link { transition:none; }
+  }
   @media(max-width:700px) { .sidebar { width:64px; flex-basis:64px; padding:10px 6px; } .side-link { justify-content:center; padding:12px 6px; } .side-label { display:none; } .main-content { padding:18px 12px 30px; } }
 
   .topbar { display: flex; align-items: center; gap: 10px; padding: 4px 0 18px; }
@@ -1220,6 +1228,13 @@ function goPage(page) {
   if (page === 'pwd') renderPwd();
   if (page === 'note') renderNote();
   if (page === 'mine') renderMine();
+  const activeViewId = page === 'checkin' ? (checkinTab === 'day' ? 'day' : 'week') : page;
+  const activeView = document.getElementById(activeViewId);
+  if (activeView) {
+    activeView.classList.remove('page-enter');
+    void activeView.offsetWidth;
+    activeView.classList.add('page-enter');
+  }
 }
 
 function getData(scope) {
