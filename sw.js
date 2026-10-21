@@ -1,8 +1,8 @@
 // Service Worker：打卡应用离线缓存，页面优先从线上获取最新版本
-const CACHE = 'daka-latest-v28';
+const CACHE = 'daka-latest-v29';
 const ASSETS = [
-  './', './index.html', './manifest.webmanifest', './apple-touch-icon.png',
-  './icon-192.png', './icon-512.png', './icon-maskable-192.png', './icon-maskable-512.png'
+  './', './index.html', './manifest.webmanifest', './apple-touch-icon-20261022.png',
+  './icon-192-v2.png', './icon-512-v2.png', './icon-maskable-192-v2.png', './icon-maskable-512-v2.png'
 ];
 self.addEventListener('install', (event) => {
   event.waitUntil(caches.open(CACHE).then((cache) => cache.addAll(ASSETS)).then(() => self.skipWaiting()));
@@ -26,4 +26,5 @@ self.addEventListener('fetch', (event) => {
     return response;
   })));
 });
+
 
