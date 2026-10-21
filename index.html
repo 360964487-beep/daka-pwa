@@ -813,10 +813,14 @@
   .doubao-compose button { min-width:42px; height:42px; border:0; border-radius:12px; background:#a76d42; color:#fff; cursor:pointer; font:inherit; }
   .doubao-compose button:disabled { opacity:.55; cursor:wait; }
   .doubao-compose #doubaoVoice { position:relative; display:inline-flex; align-items:center; justify-content:center; flex:0 0 42px; padding:0; font-size:19px; transition:background .18s ease,box-shadow .18s ease,transform .18s ease; }
-  .doubao-compose #doubaoVoice.is-listening { background:#8f4f38; box-shadow:0 0 0 4px rgba(167,109,66,.16); animation:voicePulse 1.15s ease-out infinite; }
-  .doubao-compose #doubaoVoice.is-listening::after { content:""; position:absolute; inset:-5px; border:1px solid rgba(167,109,66,.52); border-radius:15px; animation:voiceRing 1.15s ease-out infinite; pointer-events:none; }
-  @keyframes voicePulse { 0%,100% { transform:scale(1); } 50% { transform:scale(1.06); } }
-  @keyframes voiceRing { 0% { opacity:.8; transform:scale(.92); } 100% { opacity:0; transform:scale(1.28); } }
+  .doubao-compose #doubaoVoice { touch-action:none; user-select:none; -webkit-user-select:none; }
+  .doubao-compose #doubaoVoice.is-listening { background:#bd493f; color:#fff; box-shadow:0 0 0 5px rgba(189,73,63,.2),0 0 18px rgba(189,73,63,.48); animation:voicePulse .72s ease-in-out infinite; }
+  .doubao-compose #doubaoVoice.is-listening::before { content:"正在聆听"; position:absolute; z-index:2; left:50%; bottom:calc(100% + 10px); transform:translateX(-50%); padding:5px 10px; border-radius:999px; background:#9f3932; color:#fff; box-shadow:0 3px 12px rgba(102,43,36,.24); font:600 12px/1.2 system-ui,sans-serif; white-space:nowrap; pointer-events:none; }
+  .doubao-compose #doubaoVoice.is-listening::after { content:""; position:absolute; inset:-7px; border:2px solid rgba(189,73,63,.75); border-radius:17px; animation:voiceRing .9s ease-out infinite; pointer-events:none; }
+  .doubao-compose #doubaoVoice.is-stopping { background:#9f3932; box-shadow:0 0 0 3px rgba(189,73,63,.18); }
+  .doubao-compose #doubaoVoice.is-stopping::before { content:"正在结束"; position:absolute; z-index:2; left:50%; bottom:calc(100% + 10px); transform:translateX(-50%); padding:5px 10px; border-radius:999px; background:#76564d; color:#fff; font:600 12px/1.2 system-ui,sans-serif; white-space:nowrap; pointer-events:none; }
+  @keyframes voicePulse { 0%,100% { transform:scale(1); } 50% { transform:scale(1.12); } }
+  @keyframes voiceRing { 0% { opacity:.95; transform:scale(.84); } 100% { opacity:0; transform:scale(1.42); } }
   .doubao-config { display:none; gap:7px; padding:10px 12px; border-top:1px solid #e4d8ca; background:transparent; }
   .doubao-config.open { display:grid; grid-template-columns:minmax(0,1fr) auto; }
   .doubao-config input { min-width:0; width:100%; border:1px solid #dbcec0; border-radius:9px; padding:8px; background:var(--bg); color:var(--text); font:inherit; font-size:12px; }
@@ -1040,7 +1044,7 @@
   <header class="doubao-head"><strong>DeepSeek 助手</strong><button type="button" onclick="toggleDoubaoConfig()" aria-label="设置接口和密钥">设置</button><span class="doubao-head-spacer" aria-hidden="true"></span><button type="button" onclick="toggleDoubaoPanel(false)" aria-label="关闭">×</button></header>
   <div class="doubao-msgs" id="doubaoMessages" aria-live="polite"><div class="doubao-msg">你好，我可以协助管理日历待办、打卡任务、记账、固定账目和小纸条。每次修改都会先给你确认；密钥记录请在对应模块手动操作。</div><div class="doubao-msg status" id="doubaoSetupStatus">首次使用请点“设置”，填写你自己的 DeepSeek API 密钥。</div></div>
   <div class="doubao-config" id="doubaoConfig"><input id="deepseekApiKeyInput" type="password" placeholder="你的 DeepSeek API 密钥（仅保存在此设备）" autocomplete="new-password"><button type="button" onclick="saveDeepSeekKey()">保存</button><small>应用将直接调用 DeepSeek API。密钥保存在当前设备的浏览器本地；不要在公共设备保存。</small></div>
-  <div class="doubao-compose"><button type="button" id="doubaoVoice" onclick="startDoubaoVoice()" aria-label="语音输入">🎙</button><textarea id="doubaoInput" rows="1" placeholder="说说你要记录的事情…"></textarea><button type="button" id="doubaoSend" onclick="sendDoubaoMessage()">发送</button></div>
+  <div class="doubao-compose"><button type="button" id="doubaoVoice" aria-label="按住说话" title="按住说话，松开发送识别结果">🎙</button><textarea id="doubaoInput" rows="1" placeholder="按住麦克风说话，松开后识别…"></textarea><button type="button" id="doubaoSend" onclick="sendDoubaoMessage()">发送</button></div>
 </section>
 
 <div class="overlay" id="overlay">
@@ -3275,6 +3279,8 @@ const DEEPSEEK_API_KEY_KEY = 'checkin_deepseek_user_api_key_v1';
 let doubaoHistory = [];
 let doubaoBusy = false;
 let doubaoCloseTimer = null;
+let activeVoiceRecognition = null;
+let voiceStopReason = '';
 function toggleDoubaoPanel(force) {
   const panel = document.getElementById('doubaoPanel');
   const backdrop = document.getElementById('doubaoBackdrop');
@@ -3286,6 +3292,7 @@ function toggleDoubaoPanel(force) {
   document.querySelector('.doubao-launch').setAttribute('aria-expanded', String(open));
   if (open) { document.getElementById('deepseekApiKeyInput').value = localStorage.getItem(DEEPSEEK_API_KEY_KEY) || ''; }
   else {
+    stopDoubaoVoice(true, 'panel-close');
     document.getElementById('doubaoConfig').classList.remove('open');
     panel.classList.add('closing'); backdrop.classList.add('closing');
     doubaoCloseTimer = setTimeout(() => {
@@ -3555,10 +3562,12 @@ function applyAssistantAction(a) {
   return fail('这项操作暂不支持。');
 }
 function startDoubaoVoice() {
+  if (activeVoiceRecognition) return;
   const Recognition = window.SpeechRecognition || window.webkitSpeechRecognition;
   if (!Recognition) { doubaoStatus('当前浏览器不支持语音识别，请使用下方文字输入。'); return; }
   const rec = new Recognition(); rec.lang = 'zh-CN'; rec.interimResults = true; rec.maxAlternatives = 1;
-  const button = document.getElementById('doubaoVoice'); button.disabled = true; button.classList.add('is-listening'); button.textContent = '🔴'; button.setAttribute('aria-label', '正在聆听');
+  activeVoiceRecognition = rec; voiceStopReason = '';
+  const button = document.getElementById('doubaoVoice'); button.classList.remove('is-stopping'); button.classList.add('is-listening'); button.setAttribute('aria-label', '正在聆听，松开停止');
   let hadError = false; let gotResult = false;
   const input = document.getElementById('doubaoInput'); const initialText = input.value.trim();
   rec.onresult = e => {
@@ -3571,13 +3580,22 @@ function startDoubaoVoice() {
     input.value = [initialText, finalText, interimText].filter(Boolean).join(' ').replace(/\s+/g, ' ');
     input.dispatchEvent(new Event('input', { bubbles: true }));
   };
-  rec.onerror = e => { hadError = true; doubaoStatus(e.error === 'not-allowed' ? '麦克风权限未开启，语音输入已停止。' : '语音识别暂不可用，语音输入已停止。请改用文字输入。'); };
+  rec.onerror = e => { hadError = true; if (voiceStopReason !== 'panel-close' && voiceStopReason !== 'page-hidden') doubaoStatus(e.error === 'not-allowed' ? '麦克风权限未开启，语音输入已停止。' : '语音识别暂不可用，语音输入已停止。请改用文字输入。'); };
   rec.onend = () => {
-    button.disabled = false; button.classList.remove('is-listening'); button.textContent = '🎙'; button.setAttribute('aria-label', '语音输入');
-    if (!hadError) doubaoStatus(gotResult ? '语音输入已结束，识别内容已放入输入框。' : '语音输入已结束，没有识别到内容。');
-    playVoiceCue('stop');
+    if (activeVoiceRecognition === rec) activeVoiceRecognition = null;
+    button.classList.remove('is-listening','is-stopping'); button.setAttribute('aria-label', '按住说话');
+    if (!hadError && voiceStopReason !== 'panel-close' && voiceStopReason !== 'page-hidden') doubaoStatus(gotResult ? '语音输入已结束，识别内容已放入输入框。' : '语音输入已结束，没有识别到内容。');
+    if (voiceStopReason !== 'panel-close' && voiceStopReason !== 'page-hidden') playVoiceCue('stop');
+    voiceStopReason = '';
   };
-  try { rec.start(); doubaoStatus('正在聆听…说完后会自动结束。'); playVoiceCue('start'); } catch(e) { button.disabled = false; button.classList.remove('is-listening'); button.textContent = '🎙'; button.setAttribute('aria-label', '语音输入'); doubaoStatus('语音输入启动失败，请改用文字输入。'); }
+  try { rec.start(); doubaoStatus('按住麦克风说话，松开即可停止。'); playVoiceCue('start'); } catch(e) { activeVoiceRecognition = null; button.classList.remove('is-listening','is-stopping'); button.setAttribute('aria-label', '按住说话'); doubaoStatus('语音输入启动失败，请改用文字输入。'); }
+}
+function stopDoubaoVoice(abort, reason) {
+  const rec = activeVoiceRecognition; if (!rec) return;
+  voiceStopReason = reason || 'released';
+  const button = document.getElementById('doubaoVoice'); button.classList.remove('is-listening'); button.classList.add('is-stopping'); button.setAttribute('aria-label', '正在结束语音输入');
+  if (reason !== 'panel-close' && reason !== 'page-hidden') doubaoStatus(abort ? '已取消语音识别。' : '正在结束识别…');
+  try { abort ? rec.abort() : rec.stop(); } catch (_) { if (activeVoiceRecognition === rec) activeVoiceRecognition = null; button.classList.remove('is-stopping'); button.setAttribute('aria-label', '按住说话'); }
 }
 function playVoiceCue(kind) {
   try {
@@ -3591,6 +3609,15 @@ function playVoiceCue(kind) {
   } catch (_) {}
 }
 document.getElementById('doubaoInput').addEventListener('keydown', e => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); sendDoubaoMessage(); } });
+const doubaoVoiceButton = document.getElementById('doubaoVoice');
+doubaoVoiceButton.addEventListener('pointerdown', e => {
+  if (e.button !== undefined && e.button !== 0) return;
+  e.preventDefault(); try { doubaoVoiceButton.setPointerCapture(e.pointerId); } catch (_) {}
+  startDoubaoVoice();
+});
+doubaoVoiceButton.addEventListener('pointerup', e => { e.preventDefault(); stopDoubaoVoice(false, 'released'); });
+doubaoVoiceButton.addEventListener('pointercancel', () => stopDoubaoVoice(true, 'cancelled'));
+document.addEventListener('visibilitychange', () => { if (document.hidden) stopDoubaoVoice(true, 'page-hidden'); });
 initTimePicker();
 initAppTheme();
 goPage('checkin');
