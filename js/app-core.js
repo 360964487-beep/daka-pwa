@@ -84,6 +84,7 @@ let activeInlineEditor = null;
 let activeInlineAnchor = null;
 let activeInlineAnchorHTML = null;
 let activeInlineReposition = null;
+let activeInlineVisualViewport = null;
 let activeInlineBackdrop = null;
 let inlineEditorOpenedByLongPress = false;
 let suppressNextInlineEditorClick = false;
@@ -92,6 +93,11 @@ function dismissInlineEditor() {
   if (activeInlineReposition) {
     window.removeEventListener('scroll', activeInlineReposition, true);
     window.removeEventListener('resize', activeInlineReposition);
+    if (activeInlineVisualViewport) {
+      activeInlineVisualViewport.removeEventListener('resize', activeInlineReposition);
+      activeInlineVisualViewport.removeEventListener('scroll', activeInlineReposition);
+      activeInlineVisualViewport = null;
+    }
     activeInlineReposition = null;
   }
   const closingEditor = activeInlineEditor;
@@ -184,9 +190,10 @@ function showInlineEditor(anchor, title, fields, onSave, onCancel, onDelete, pla
   if (activeInlineEditor && activeInlineAnchor === anchor) { dismissInlineEditor(); return null; }
   dismissInlineEditor();
   document.querySelectorAll('.inline-editor:not(.closing),.tile-editor-backdrop:not(.closing)').forEach(x => x.remove());
-  const tilePlacement = placement === 'below-tile' && anchor && anchor.classList.contains('tile');
+  const tilePlacement = ['below-tile', 'centered-tile'].includes(placement) && anchor && anchor.classList.contains('tile');
+  const centeredTilePlacement = placement === 'centered-tile' && tilePlacement;
   inlineEditorOpenedByLongPress = !!tilePlacement;
-  if (tilePlacement) anchor.scrollIntoView({ block:'center', inline:'nearest' });
+  if (tilePlacement && !centeredTilePlacement) anchor.scrollIntoView({ block:'center', inline:'nearest' });
   const editor = document.createElement('div');
   editor.className = 'inline-editor';
   const heading = document.createElement('div');
@@ -277,19 +284,34 @@ function showInlineEditor(anchor, title, fields, onSave, onCancel, onDelete, pla
       if (!anchor.isConnected || !editor.isConnected) return;
       const rect = anchor.getBoundingClientRect();
       const vw = document.documentElement.clientWidth || window.innerWidth;
-      const mobile = vw <= 700;
       const width = Math.min(420, vw - 24);
-      const left = Math.max(12, Math.min(vw - width - 12, rect.left + rect.width / 2 - width / 2));
-      const top = Math.max(8, rect.bottom + 7);
-      const bottomSpace = window.innerHeight - top - (mobile && !document.body.classList.contains('inline-editing') ? 132 : 12);
+      const viewport = window.visualViewport;
+      const viewportTop = viewport ? viewport.offsetTop : 0;
+      const viewportHeight = viewport ? viewport.height : window.innerHeight;
+      const left = centeredTilePlacement
+        ? Math.max(12, (vw - width) / 2)
+        : Math.max(12, Math.min(vw - width - 12, rect.left + rect.width / 2 - width / 2));
       editor.style.left = left + 'px';
-      editor.style.top = top + 'px';
       editor.style.width = width + 'px';
-      editor.style.maxHeight = Math.max(96, bottomSpace) + 'px';
+      if (centeredTilePlacement) {
+        editor.style.maxHeight = Math.max(96, viewportHeight - 24) + 'px';
+        const editorHeight = editor.getBoundingClientRect().height;
+        editor.style.top = Math.max(viewportTop + 12, viewportTop + (viewportHeight - editorHeight) / 2) + 'px';
+      } else {
+        const top = Math.max(8, rect.bottom + 7);
+        const bottomSpace = window.innerHeight - top - 12;
+        editor.style.top = top + 'px';
+        editor.style.maxHeight = Math.max(96, bottomSpace) + 'px';
+      }
     };
     activeInlineReposition = placeEditor;
     window.addEventListener('scroll', placeEditor, true);
     window.addEventListener('resize', placeEditor);
+    if (centeredTilePlacement && window.visualViewport) {
+      activeInlineVisualViewport = window.visualViewport;
+      activeInlineVisualViewport.addEventListener('resize', placeEditor);
+      activeInlineVisualViewport.addEventListener('scroll', placeEditor);
+    }
     placeEditor();
   }
   else if (anchor && anchor.parentNode) anchor.after(editor);
