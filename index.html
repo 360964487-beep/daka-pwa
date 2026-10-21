@@ -3278,7 +3278,7 @@ function toggleDoubaoPanel(force) {
   panel.classList.toggle('open', open);
   backdrop.classList.toggle('open', open);
   document.querySelector('.doubao-launch').setAttribute('aria-expanded', String(open));
-  if (open) { document.getElementById('deepseekApiKeyInput').value = localStorage.getItem(DEEPSEEK_API_KEY_KEY) || ''; document.getElementById('doubaoInput').focus(); }
+  if (open) { document.getElementById('deepseekApiKeyInput').value = localStorage.getItem(DEEPSEEK_API_KEY_KEY) || ''; }
   else {
     panel.classList.add('closing'); backdrop.classList.add('closing');
     doubaoCloseTimer = setTimeout(() => {
@@ -3431,7 +3431,7 @@ async function sendDoubaoMessage() {
     const action = validateAssistantAction(parsed.action);
     if (action) renderAssistantAction(action);
   } catch (e) { doubaoStatus('连接失败：' + (e.message || '请检查 API 密钥和网络')); }
-  finally { send.disabled = false; doubaoBusy = false; input.focus(); }
+  finally { send.disabled = false; doubaoBusy = false; }
 }
 function parseDeepSeekAssistantJson(content) {
   const raw = typeof content === 'string' ? content : '';
@@ -3560,7 +3560,7 @@ function startDoubaoVoice() {
       if (transcript) { if (result.isFinal) finalText += transcript; else interimText += transcript; }
     }
     input.value = [initialText, finalText, interimText].filter(Boolean).join(' ').replace(/\s+/g, ' ');
-    input.dispatchEvent(new Event('input', { bubbles: true })); input.focus();
+    input.dispatchEvent(new Event('input', { bubbles: true }));
   };
   rec.onerror = e => doubaoStatus(e.error === 'not-allowed' ? '请在浏览器设置中允许麦克风权限。' : '语音识别暂不可用，请改用文字输入。');
   rec.onend = () => { button.disabled = false; button.textContent = '🎙'; };
