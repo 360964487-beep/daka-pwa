@@ -378,7 +378,7 @@ function openTileMenu(scope, t, el) {
     if (start === null) { alert('小时范围为 0–23，分钟范围为 0–59'); return false; }
     obj.text = name; obj.start = start;
     setData(scope, tasks); render(scope);
-  }, null, () => deleteTile(scope, obj), 'below-tile');
+  }, null, () => deleteTile(scope, obj), 'centered-tile');
 }
 function clearTimeOf(scope, t) {
   if (!t || !scope) return;
