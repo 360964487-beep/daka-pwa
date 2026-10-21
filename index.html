@@ -812,12 +812,17 @@
   .doubao-compose textarea { flex:1; min-height:42px; max-height:110px; resize:vertical; border:1px solid #e8dccb; border-radius:12px; padding:10px; background:#fff; color:#453b32; font:inherit; font-size:14px; }
   .doubao-compose button { min-width:42px; height:42px; border:0; border-radius:12px; background:#a76d42; color:#fff; cursor:pointer; font:inherit; }
   .doubao-compose button:disabled { opacity:.55; cursor:wait; }
+  .doubao-compose #doubaoVoice { position:relative; display:inline-flex; align-items:center; justify-content:center; flex:0 0 42px; padding:0; font-size:19px; transition:background .18s ease,box-shadow .18s ease,transform .18s ease; }
+  .doubao-compose #doubaoVoice.is-listening { background:#8f4f38; box-shadow:0 0 0 4px rgba(167,109,66,.16); animation:voicePulse 1.15s ease-out infinite; }
+  .doubao-compose #doubaoVoice.is-listening::after { content:""; position:absolute; inset:-5px; border:1px solid rgba(167,109,66,.52); border-radius:15px; animation:voiceRing 1.15s ease-out infinite; pointer-events:none; }
+  @keyframes voicePulse { 0%,100% { transform:scale(1); } 50% { transform:scale(1.06); } }
+  @keyframes voiceRing { 0% { opacity:.8; transform:scale(.92); } 100% { opacity:0; transform:scale(1.28); } }
   .doubao-config { display:none; gap:7px; padding:10px 12px; border-top:1px solid #e4d8ca; background:transparent; }
   .doubao-config.open { display:grid; grid-template-columns:minmax(0,1fr) auto; }
   .doubao-config input { min-width:0; width:100%; border:1px solid #dbcec0; border-radius:9px; padding:8px; background:var(--bg); color:var(--text); font:inherit; font-size:12px; }
   .doubao-config small { grid-column:1/-1; color:#87796b; font-size:11px; line-height:1.5; }
   @media(max-width:700px) { .doubao-panel { left:12px; right:12px; bottom:calc(174px + env(safe-area-inset-bottom)); width:auto; height:min(62dvh,560px); } }
-  @media(prefers-reduced-motion:reduce) { .doubao-panel.open,.doubao-panel.closing { animation:none; } .doubao-backdrop,.doubao-backdrop.open,.doubao-backdrop.closing { transition:none; } }
+  @media(prefers-reduced-motion:reduce) { .doubao-panel.open,.doubao-panel.closing { animation:none; } .doubao-backdrop,.doubao-backdrop.open,.doubao-backdrop.closing { transition:none; } .doubao-compose #doubaoVoice.is-listening,.doubao-compose #doubaoVoice.is-listening::after { animation:none; } }
 </style>
 </head>
 <body>
@@ -3553,9 +3558,11 @@ function startDoubaoVoice() {
   const Recognition = window.SpeechRecognition || window.webkitSpeechRecognition;
   if (!Recognition) { doubaoStatus('当前浏览器不支持语音识别，请使用下方文字输入。'); return; }
   const rec = new Recognition(); rec.lang = 'zh-CN'; rec.interimResults = true; rec.maxAlternatives = 1;
-  const button = document.getElementById('doubaoVoice'); button.disabled = true; button.textContent = '…';
+  const button = document.getElementById('doubaoVoice'); button.disabled = true; button.classList.add('is-listening'); button.textContent = '🔴'; button.setAttribute('aria-label', '正在聆听');
+  let hadError = false; let gotResult = false;
   const input = document.getElementById('doubaoInput'); const initialText = input.value.trim();
   rec.onresult = e => {
+    gotResult = true;
     let finalText = ''; let interimText = '';
     for (let i = 0; i < e.results.length; i++) {
       const result = e.results[i]; const transcript = result[0] && result[0].transcript;
@@ -3564,9 +3571,24 @@ function startDoubaoVoice() {
     input.value = [initialText, finalText, interimText].filter(Boolean).join(' ').replace(/\s+/g, ' ');
     input.dispatchEvent(new Event('input', { bubbles: true }));
   };
-  rec.onerror = e => doubaoStatus(e.error === 'not-allowed' ? '请在浏览器设置中允许麦克风权限。' : '语音识别暂不可用，请改用文字输入。');
-  rec.onend = () => { button.disabled = false; button.textContent = '🎙'; };
-  try { rec.start(); doubaoStatus('正在听，请说出要记录的内容…'); } catch(e) { button.disabled = false; button.textContent = '🎙'; doubaoStatus('语音输入启动失败，请改用文字输入。'); }
+  rec.onerror = e => { hadError = true; doubaoStatus(e.error === 'not-allowed' ? '麦克风权限未开启，语音输入已停止。' : '语音识别暂不可用，语音输入已停止。请改用文字输入。'); };
+  rec.onend = () => {
+    button.disabled = false; button.classList.remove('is-listening'); button.textContent = '🎙'; button.setAttribute('aria-label', '语音输入');
+    if (!hadError) doubaoStatus(gotResult ? '语音输入已结束，识别内容已放入输入框。' : '语音输入已结束，没有识别到内容。');
+    playVoiceCue('stop');
+  };
+  try { rec.start(); doubaoStatus('正在聆听…说完后会自动结束。'); playVoiceCue('start'); } catch(e) { button.disabled = false; button.classList.remove('is-listening'); button.textContent = '🎙'; button.setAttribute('aria-label', '语音输入'); doubaoStatus('语音输入启动失败，请改用文字输入。'); }
+}
+function playVoiceCue(kind) {
+  try {
+    const AudioCtx = window.AudioContext || window.webkitAudioContext;
+    if (!AudioCtx) return;
+    const ctx = new AudioCtx(); const osc = ctx.createOscillator(); const gain = ctx.createGain();
+    const now = ctx.currentTime; osc.type = 'sine'; osc.frequency.setValueAtTime(kind === 'start' ? 740 : 520, now);
+    if (kind === 'start') osc.frequency.exponentialRampToValueAtTime(980, now + .11);
+    gain.gain.setValueAtTime(.0001, now); gain.gain.exponentialRampToValueAtTime(.075, now + .018); gain.gain.exponentialRampToValueAtTime(.0001, now + .16);
+    osc.connect(gain); gain.connect(ctx.destination); osc.start(now); osc.stop(now + .17); osc.onended = () => ctx.close();
+  } catch (_) {}
 }
 document.getElementById('doubaoInput').addEventListener('keydown', e => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); sendDoubaoMessage(); } });
 initTimePicker();
@@ -3578,6 +3600,7 @@ if ('serviceWorker' in navigator && /^https?:$/.test(location.protocol)) { windo
 </script>
 </body>
 </html>
+
 
 
 
