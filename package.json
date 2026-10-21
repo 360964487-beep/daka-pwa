@@ -1,0 +1,7 @@
+{
+  "name": "caramel-checkin-pwa",
+  "private": true,
+  "scripts": {
+    "check": "node scripts/check-project.cjs"
+  }
+}
