@@ -38,7 +38,7 @@
   .side-spacer { flex:1; }
   .main-content { flex:1; min-width:0; padding:24px 32px 40px; }
   /* 仅滚动中的主内容页轻微模糊；侧栏和固定控件始终清晰。 */
-  .main-content > div:not(.hidden) { transition:filter .12s ease-out; }
+  .main-content > div:not(.hidden) { transition:filter .07s cubic-bezier(.2,.7,.25,1); }
   body.is-scrolling .main-content > div:not(.hidden) { filter:blur(.65px); }
   .main-content > div:not(#home) { width:100%; max-width:900px; margin:0 auto; }
   .main-content > div.page-enter { animation:modulePageEnter .24s cubic-bezier(.2,.7,.25,1) both; }
@@ -1000,7 +1000,7 @@
   const markScrolling = () => {
     document.body.classList.add('is-scrolling');
     clearTimeout(scrollEndTimer);
-    scrollEndTimer = setTimeout(() => document.body.classList.remove('is-scrolling'), 110);
+    scrollEndTimer = setTimeout(() => document.body.classList.remove('is-scrolling'), 16);
   };
   window.addEventListener('scroll', markScrolling, { passive:true });
 })();
