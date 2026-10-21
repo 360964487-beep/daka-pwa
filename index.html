@@ -1104,7 +1104,7 @@
 })();
 </script>
 <script>
-// 同一浏览器只保留一个可操作实例；第二个标签页显示提示并停用交互。
+// 仅在确认另一个活动页面在线时，才拦截重复实例。
 const APP_INSTANCE_ID = (Date.now() + Math.random()).toString(36);
 let APP_DUPLICATE_INSTANCE = false;
 function showDuplicateInstanceNotice() {
@@ -1115,22 +1115,6 @@ function showDuplicateInstanceNotice() {
   lock.textContent = '打卡工具已在另一个页面打开，请切换到已打开的页面继续使用。';
   document.body.appendChild(lock);
 }
-// localStorage 可用时做第二层实例锁，覆盖不支持 BroadcastChannel 的本地预览。
-const APP_LOCK_KEY = 'checkin_app_instance_lock_v1';
-try {
-  const oldLock = JSON.parse(localStorage.getItem(APP_LOCK_KEY) || 'null');
-  if (oldLock && oldLock.id !== APP_INSTANCE_ID && Date.now() - oldLock.time < 10000) showDuplicateInstanceNotice();
-  else localStorage.setItem(APP_LOCK_KEY, JSON.stringify({ id:APP_INSTANCE_ID, time:Date.now() }));
-  setInterval(() => {
-    const currentLock = JSON.parse(localStorage.getItem(APP_LOCK_KEY) || 'null');
-    if (currentLock && currentLock.id !== APP_INSTANCE_ID && Date.now() - currentLock.time < 10000) showDuplicateInstanceNotice();
-    else if (!APP_DUPLICATE_INSTANCE) localStorage.setItem(APP_LOCK_KEY, JSON.stringify({ id:APP_INSTANCE_ID, time:Date.now() }));
-  }, 3000);
-  window.addEventListener('beforeunload', () => {
-    const currentLock = JSON.parse(localStorage.getItem(APP_LOCK_KEY) || 'null');
-    if (currentLock && currentLock.id === APP_INSTANCE_ID) localStorage.removeItem(APP_LOCK_KEY);
-  });
-} catch(e) { /* local file storage may be disabled */ }
 if ('BroadcastChannel' in window) {
  try {
   const appChannel = new BroadcastChannel('checkin-app-single-instance');
