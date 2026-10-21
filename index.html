@@ -96,7 +96,6 @@
     display: flex; flex-direction: column; align-items: stretch; justify-content: flex-start; overflow: hidden;
     box-shadow: 0 1px 4px rgba(16,24,40,.10);
     transition: width .22s ease, height .22s ease, opacity .24s ease, filter .24s ease, box-shadow .24s ease;
-    will-change: transform;
     touch-action: manipulation;
     -webkit-user-select: none; user-select: none;
   }
@@ -1274,27 +1273,37 @@ function tilePosition(transform) {
     return { x:0, y:0 };
   }
 }
-function animateTilePosition(el, fromTransform, tx, ty, isNew) {
-  const target = tileTransform(tx, ty);
-  const from = tilePosition(fromTransform);
-  const dx = tx - from.x, dy = ty - from.y;
+function tileElementPosition(el) {
+  const offset = tilePosition(getComputedStyle(el).transform);
+  return { x:el.offsetLeft + offset.x, y:el.offsetTop + offset.y };
+}
+function animateTilePosition(el, fromPosition, tx, ty, isNew) {
+  const targetX = Math.round(tx), targetY = Math.round(ty);
+  const dx = targetX - fromPosition.x, dy = targetY - fromPosition.y;
   const distance = Math.hypot(dx, dy);
   const reduceMotion = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
   const animations = el.getAnimations ? el.getAnimations() : [];
   animations.forEach(a => a.cancel());
-  if (reduceMotion || distance < 1) { el.style.transform = target; return; }
+  el.style.left = targetX + 'px';
+  el.style.top = targetY + 'px';
+  el.style.transform = 'none';
+  if (reduceMotion || distance < 1 || typeof el.animate !== 'function') return;
 
   const overshoot = Math.min(11, Math.max(2.5, distance * 0.035));
-  const ox = tx + dx / distance * overshoot;
-  const oy = ty + dy / distance * overshoot;
+  const ox = dx / distance * overshoot;
+  const oy = dy / distance * overshoot;
   const duration = Math.max(380, Math.min(820, 340 + distance * 0.38));
-  el.style.transform = target;
-  if (typeof el.animate !== 'function') return;
+  el.style.willChange = 'transform';
+  const startX = fromPosition.x - targetX, startY = fromPosition.y - targetY;
   const frames = isNew
-    ? [{ transform:tileTransform(from.x, from.y, .94), opacity:.72, offset:0 }, { transform:tileTransform(ox, oy, 1.025), opacity:1, offset:.76 }, { transform:target, opacity:1, offset:1 }]
-    : [{ transform:tileTransform(from.x, from.y), offset:0 }, { transform:tileTransform(ox, oy, 1.012), offset:.78 }, { transform:target, offset:1 }];
+    ? [{ transform:tileTransform(startX, startY), opacity:.72, offset:0 }, { transform:tileTransform(ox, oy), opacity:1, offset:.76 }, { transform:'none', opacity:1, offset:1 }]
+    : [{ transform:tileTransform(startX, startY), offset:0 }, { transform:tileTransform(ox, oy), offset:.78 }, { transform:'none', offset:1 }];
   const animation = el.animate(frames, { duration, easing:'cubic-bezier(.2,.72,.25,1)', fill:'both' });
-  animation.onfinish = () => { el.style.transform = target; animation.cancel(); };
+  animation.onfinish = () => {
+    animation.cancel();
+    el.style.transform = 'none';
+    el.style.willChange = 'auto';
+  };
 }
 
 // 难度级别 = 占用的格子数，尽量排成接近正方形（优先正方形，其次宽扁，浪费最少）
@@ -1415,7 +1424,7 @@ function render(scope) {
   tiles.forEach(({ t, pw, ph, tx, ty }) => {
     let el = board.querySelector('[data-id="' + t.id + '"]');
     const isNew = !el;
-    const fromTransform = isNew ? '' : getComputedStyle(el).transform;
+    const fromPosition = isNew ? null : tileElementPosition(el);
     const fit = fitStyle(pw, ph, !!t.start);
     if (isNew) {
       el = document.createElement('div');
@@ -1456,7 +1465,7 @@ function render(scope) {
         tm.style.fontSize = fit.tfs + 'px';
       } else if (tm) { tm.remove(); }
     }
-    animateTilePosition(el, isNew ? el.style.transform : fromTransform, tx, ty, isNew);
+    animateTilePosition(el, isNew ? tilePosition(el.style.transform) : fromPosition, tx, ty, isNew);
   });
 
   // 移除已删除的块
