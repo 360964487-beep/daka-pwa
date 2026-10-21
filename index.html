@@ -796,7 +796,8 @@
   @keyframes doubaoIn { from { opacity:0; transform:translateY(8px) scale(.985); } to { opacity:1; transform:translateY(0) scale(1); } }
   @keyframes doubaoOut { from { opacity:1; transform:translateY(0) scale(1); } to { opacity:0; transform:translateY(8px) scale(.985); } }
   .doubao-head { display:flex; align-items:center; gap:10px; padding:14px 16px; border-bottom:1px solid #e4d8ca; background:transparent; }
-  .doubao-head strong { flex:1; font-size:15px; }
+  .doubao-head strong { flex:0 0 auto; font-size:15px; }
+  .doubao-head-spacer { flex:1; }
   .doubao-head button,.doubao-config button { border:0; background:transparent; color:#7a6b5d; cursor:pointer; font:inherit; }
   .doubao-msgs { flex:1; overflow:auto; padding:14px; display:flex; flex-direction:column; gap:10px; background:transparent; }
   .doubao-msg { max-width:88%; align-self:flex-start; padding:10px 12px; border-radius:14px 14px 14px 4px; background:#e8dfd4; font-size:14px; line-height:1.55; white-space:pre-wrap; overflow-wrap:anywhere; }
@@ -1031,7 +1032,7 @@
 
 <div class="doubao-backdrop" id="doubaoBackdrop" aria-hidden="true"></div>
 <section class="doubao-panel" id="doubaoPanel" role="dialog" aria-label="DeepSeek 助手" aria-modal="false">
-  <header class="doubao-head"><strong>DeepSeek 助手</strong><button type="button" onclick="toggleDoubaoConfig()" aria-label="设置接口和密钥">设置</button><button type="button" onclick="toggleDoubaoPanel(false)" aria-label="关闭">×</button></header>
+  <header class="doubao-head"><strong>DeepSeek 助手</strong><button type="button" onclick="toggleDoubaoConfig()" aria-label="设置接口和密钥">设置</button><span class="doubao-head-spacer" aria-hidden="true"></span><button type="button" onclick="toggleDoubaoPanel(false)" aria-label="关闭">×</button></header>
   <div class="doubao-msgs" id="doubaoMessages" aria-live="polite"><div class="doubao-msg">你好，我可以协助管理日历待办、打卡任务、记账、固定账目和小纸条。每次修改都会先给你确认；密钥记录请在对应模块手动操作。</div><div class="doubao-msg status" id="doubaoSetupStatus">首次使用请点“设置”，填写你自己的 DeepSeek API 密钥。</div></div>
   <div class="doubao-config" id="doubaoConfig"><input id="deepseekApiKeyInput" type="password" placeholder="你的 DeepSeek API 密钥（仅保存在此设备）" autocomplete="new-password"><button type="button" onclick="saveDeepSeekKey()">保存</button><small>应用将直接调用 DeepSeek API。密钥保存在当前设备的浏览器本地；不要在公共设备保存。</small></div>
   <div class="doubao-compose"><button type="button" id="doubaoVoice" onclick="startDoubaoVoice()" aria-label="语音输入">🎙</button><textarea id="doubaoInput" rows="1" placeholder="说说你要记录的事情…"></textarea><button type="button" id="doubaoSend" onclick="sendDoubaoMessage()">发送</button></div>
@@ -3280,6 +3281,7 @@ function toggleDoubaoPanel(force) {
   document.querySelector('.doubao-launch').setAttribute('aria-expanded', String(open));
   if (open) { document.getElementById('deepseekApiKeyInput').value = localStorage.getItem(DEEPSEEK_API_KEY_KEY) || ''; }
   else {
+    document.getElementById('doubaoConfig').classList.remove('open');
     panel.classList.add('closing'); backdrop.classList.add('closing');
     doubaoCloseTimer = setTimeout(() => {
       if (!panel.classList.contains('open')) { panel.classList.remove('closing'); backdrop.classList.remove('closing'); }
