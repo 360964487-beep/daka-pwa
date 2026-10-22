@@ -520,8 +520,8 @@
   .bill-row.month-row { cursor:pointer; }
   .bill-row.month-row .br-name { font-size:15px; font-weight:400; }
   .bill-row.month-row:hover { background:#f7f7f5; }
-  .bill-row.month-row::after { content:"⌄"; margin-left:10px; color:#a0a5ad; font-size:13px; }
-  .bill-row.month-row.expanded::after { content:"⌃"; }
+  .bill-row.month-row::after { content:"⌄"; display:inline-block; margin-left:10px; color:#a0a5ad; font-size:13px; transform:rotate(0deg); transform-origin:center; transition:transform .26s cubic-bezier(.22,.72,.24,1),color .2s ease; }
+  .bill-row.month-row.expanded::after { color:var(--primary); transform:rotate(180deg); }
   .bill-row.bill-editable { cursor:pointer; }
   .bill-row.bill-editable:hover { background:#f7f7f5; }
   .bill-month-head { display:none; }
