@@ -9,6 +9,9 @@ let billMonth = new Date().getMonth();       // 0-11
 let billUnknownMode = false;                 // 是否查看未知日期记录
 let billExpandedKey = null;
 let billMonthPanel = null;
+let billMonthAnimationToken = 0;
+let billMonthAnimationFrame = 0;
+let billMonthAnimationCleanup = null;
 let billEditingId = null;
 function billGetAll() { return load(KEY_BILL, []); }
 function billSaveAll(list) { save(KEY_BILL, list); }
@@ -48,14 +51,88 @@ function billToggleMonth(key) {
     billUnknownMode = false;
     billEditingId = null;
     billClearEditor();
+    document.querySelectorAll('#billYearRows .month-row.expanded').forEach(row => row.classList.remove('expanded'));
+    animateBillMonthPanel(false, () => {
+      renderBill();
+    });
   } else {
     billExpandedKey = key;
     billUnknownMode = key === 'unknown';
     if (!billUnknownMode) billMonth = key;
     billEditingId = null;
     billClearEditor();
+    renderBill();
+    animateBillMonthPanel(true);
   }
-  renderBill();
+}
+function animateBillMonthPanel(open, onComplete) {
+  if (!billMonthPanel) billMonthPanel = document.getElementById('billMonthView');
+  const panel = billMonthPanel;
+  const token = ++billMonthAnimationToken;
+  const reducedMotion = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  if (billMonthAnimationFrame) cancelAnimationFrame(billMonthAnimationFrame);
+  if (billMonthAnimationCleanup) {
+    billMonthAnimationCleanup();
+    billMonthAnimationCleanup = null;
+  }
+  const wasAnimating = !!panel.style.height && !!panel.style.transition;
+  const currentHeight = wasAnimating ? panel.getBoundingClientRect().height : (open ? 0 : panel.getBoundingClientRect().height);
+  const currentOpacity = wasAnimating ? getComputedStyle(panel).opacity : (open ? '0' : '1');
+  const currentTransform = wasAnimating ? getComputedStyle(panel).transform : (open ? 'translateY(-7px)' : 'translateY(0)');
+  const targetHeight = open ? panel.scrollHeight : 0;
+  const duration = reducedMotion ? 0 : Math.max(190, Math.min(360, Math.round(Math.abs(targetHeight - currentHeight) * 0.42)));
+  panel.style.transition = 'none';
+  panel.style.overflow = 'hidden';
+  panel.style.willChange = 'height, opacity, transform';
+  panel.style.height = currentHeight + 'px';
+  panel.style.opacity = currentOpacity;
+  panel.style.transform = currentTransform;
+  if (!open && (panel.classList.contains('hidden') || !panel.getClientRects().length)) {
+    clearMotion();
+    if (onComplete) onComplete();
+    return;
+  }
+  void panel.offsetHeight;
+  billMonthAnimationFrame = requestAnimationFrame(() => {
+    billMonthAnimationFrame = 0;
+    if (token !== billMonthAnimationToken || !panel.isConnected) return;
+    const easing = 'cubic-bezier(.22,.72,.24,1)';
+    panel.style.transition = `height ${duration}ms ${easing}, opacity ${Math.min(duration, 230)}ms ease, transform ${duration}ms ${easing}`;
+    panel.style.height = targetHeight + 'px';
+    panel.style.opacity = open ? '1' : '0';
+    panel.style.transform = open ? 'translateY(0)' : 'translateY(-4px)';
+    finish();
+  });
+
+  function finish() {
+    let settled = false;
+    let timer = 0;
+    const cleanupListener = () => {
+      panel.removeEventListener('transitionend', done);
+      if (timer) clearTimeout(timer);
+      if (billMonthAnimationCleanup === cleanupListener) billMonthAnimationCleanup = null;
+    };
+    const done = event => {
+      if (settled || (event && (event.target !== panel || event.propertyName !== 'height'))) return;
+      settled = true;
+      cleanupListener();
+      if (token !== billMonthAnimationToken) return;
+      clearMotion();
+      if (onComplete) onComplete();
+    };
+    panel.addEventListener('transitionend', done);
+    timer = setTimeout(done, duration + 60);
+    billMonthAnimationCleanup = cleanupListener;
+    if (!duration) done();
+  }
+  function clearMotion() {
+    panel.style.transition = '';
+    panel.style.height = '';
+    panel.style.opacity = '';
+    panel.style.overflow = '';
+    panel.style.willChange = '';
+    panel.style.transform = '';
+  }
 }
 function billShiftYear(delta) { billYear += delta; renderBill(); }
 
