@@ -37,6 +37,7 @@ function renderNote() {
     const del = document.createElement('button');
     del.className = 'note-del'; del.textContent = '×';
     del.addEventListener('click', () => {
+      if (!confirm('确定删除这张小纸条吗？')) return;
       noteSaveAll(noteGetAll().filter(x => x.id !== n.id)); renderNote();
     });
     item.appendChild(txt); item.appendChild(tm); item.appendChild(del);
@@ -127,7 +128,7 @@ function editMineName(event) {
 }
 
 async function exportData() {
-  const data = { backupVersion:1, app:'焦糖打卡', exportedAt:new Date().toISOString(), KEY_WEEK, KEY_DAY, KEY_TT, profileName:load(KEY_PROFILE_NAME, '我的打卡'), week: load(KEY_WEEK, {}), day: load(KEY_DAY, {}), tt: load(KEY_TT, {}), bill: load(KEY_BILL, []), pwd: load(KEY_PWD, []), fixed: load(KEY_FIXED, []), fixedIn: load(KEY_FIXED_IN, []), note: load(KEY_NOTE, []) };
+  const data = { backupVersion:1, app:'焦糖打卡', exportedAt:new Date().toISOString(), KEY_WEEK, KEY_DAY, KEY_CAL, KEY_TT, profileName:load(KEY_PROFILE_NAME, '我的打卡'), week: load(KEY_WEEK, {}), day: load(KEY_DAY, {}), calendar: load(KEY_CAL, {}), tt: load(KEY_TT, {}), bill: load(KEY_BILL, []), pwd: load(KEY_PWD, []), fixed: load(KEY_FIXED, []), fixedIn: load(KEY_FIXED_IN, []), note: load(KEY_NOTE, []) };
   const contents = JSON.stringify(data, null, 2);
   const filename = '焦糖打卡' + dateKey(new Date()) + '.json';
   if (window.showSaveFilePicker) {
@@ -194,6 +195,7 @@ function importData() {
         const staged = [
           [KEY_WEEK, importField(data, 'week', KEY_WEEK, 'object', '周任务')],
           [KEY_DAY, importField(data, 'day', KEY_DAY, 'object', '日任务')],
+          [KEY_CAL, importField(data, 'calendar', KEY_CAL, 'object', '日历待办')],
           [KEY_TT, importField(data, 'tt', KEY_TT, 'object', '周打卡')],
           [KEY_BILL, importField(data, 'bill', KEY_BILL, 'array', '账本')],
           [KEY_PWD, importField(data, 'pwd', KEY_PWD, 'array', '密钥记录')],
@@ -249,6 +251,7 @@ function clearAllData() {
   if (!confirm('确定要清空所有打卡数据吗？此操作不可恢复！')) return;
   save(KEY_WEEK, {});
   save(KEY_DAY, {});
+  save(KEY_CAL, {});
   save(KEY_TT, {});
   save(KEY_BILL, []);
   save(KEY_PWD, []);
