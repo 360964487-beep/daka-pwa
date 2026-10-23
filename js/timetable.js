@@ -198,8 +198,10 @@ function openTTTileMenu(t, el) {
     obj.text = name; obj.start = start;
     ttSetWeekTasks(tasks); renderTimetable();
   }, null, () => {
+    if (!confirm('确定删除这条周打卡任务吗？')) return false;
     ttSetWeekTasks(tasks.filter(x => x.id !== obj.id));
     renderTimetable();
+    return true;
   });
 }
 
