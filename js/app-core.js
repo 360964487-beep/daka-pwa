@@ -25,6 +25,7 @@ if ('BroadcastChannel' in window) {
 const COLORS = 8;
 const KEY_WEEK = 'checkin_weeks_v6';
 const KEY_DAY  = 'checkin_days_v6';
+const KEY_CAL  = 'calendar_todos_v1';
 const KEY_TT   = 'checkin_timetable_v1';
 const KEY_BILL = 'checkin_bills_v1';    // 记账
 const KEY_PWD  = 'checkin_pwds_v1';     // 密码记录
@@ -253,7 +254,7 @@ function showInlineEditor(anchor, title, fields, onSave, onCancel, onDelete, pla
   actions.className = 'inline-editor-actions';
   if (onDelete) {
     const del = document.createElement('button'); del.type = 'button'; del.className = 'delete'; del.textContent = '删除';
-    del.addEventListener('click', () => { onDelete(); dismissInlineEditor(); });
+    del.addEventListener('click', () => { if (onDelete() !== false) dismissInlineEditor(); });
     actions.appendChild(del);
   }
   const cancel = document.createElement('button'); cancel.type = 'button'; cancel.textContent = '取消';
