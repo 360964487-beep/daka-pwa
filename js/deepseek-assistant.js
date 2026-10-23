@@ -108,14 +108,14 @@ function buildAssistantDataContext(query) {
     };
   }
   if (wants.daily) {
-    const daily = load(KEY_DAY, {});
-    context.待办与日任务共享数据 = Object.entries(daily).sort(([a],[b])=>b.localeCompare(a)).slice(0,180).map(([date,list])=>({日期:date,事项:(Array.isArray(list)?list:[]).slice(0,20).map(x=>({内容:String(x.text||'').slice(0,300),时间:String(x.start||''),完成:!!x.done}))}));
+    const calendarTodos = load(KEY_CAL, {});
+    context.日历待办 = Object.entries(calendarTodos).sort(([a],[b])=>b.localeCompare(a)).slice(0,180).map(([date,list])=>({日期:date,事项:(Array.isArray(list)?list:[]).slice(0,20).map(x=>({内容:String(x.text||'').slice(0,300),时间:String(x.start||''),完成:!!x.done}))}));
   }
   if (wants.weekly) {
     const weekly = load(KEY_WEEK, {});
     context.日周打卡任务 = {
       周任务:Object.entries(weekly).sort(([a],[b])=>b.localeCompare(a)).slice(0,52).map(([week,list])=>({周起始:week,事项:(Array.isArray(list)?list:[]).slice(0,30).map(x=>({内容:String(x.text||'').slice(0,300),时间:String(x.start||''),完成:!!x.done}))})),
-      日任务说明:'日任务与待办共用同一组按日期存储的数据；请查看“待办与日任务共享数据”字段。'
+      日任务说明:'日任务与日历待办使用不同数据，查询日任务请查看日任务字段，查询待办请查看日历待办字段。'
     };
   }
   if (wants.timetable) {
@@ -249,7 +249,7 @@ function applyAssistantAction(a) {
   const fail = message => ({ok:false,message});
   const success = message => ({ok:true,message});
   if (a.kind.includes('calendar_todo')) {
-    const all = load(KEY_DAY, {}), list = all[a.date] || [];
+    const all = load(KEY_CAL, {}), list = all[a.date] || [];
     if (a.kind === 'add_calendar_todo') list.push({id:Date.now()+Math.random(),text:a.text,start:a.time,done:false,color:list.length%COLORS});
     else {
       const item = assistantUniqueMatch(list,a.target,x=>x.text); if (!item) return fail('没有找到唯一匹配的待办；请提供完整原文后再试。');
@@ -258,7 +258,7 @@ function applyAssistantAction(a) {
       if (a.kind === 'complete_calendar_todo') item.done = a.done;
     }
     if (a.kind === 'add_calendar_todo') all[a.date] = list;
-    save(KEY_DAY,all); renderCalendar(); if (a.date===today) render('day'); return success('日历待办已更新。');
+    save(KEY_CAL,all); renderCalendar(); return success('日历待办已更新。');
   }
   if (a.kind.includes('checkin_task')) {
     const isWeek = a.scope==='week', keyDate = isWeek ? dateKey(getMonday(new Date(a.date+'T12:00:00'))) : a.date;
