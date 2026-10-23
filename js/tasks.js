@@ -415,8 +415,10 @@ function renameTile(scope, t) {
 }
 function deleteTile(scope, t) {
   if (!t || !scope) return;
+  if (!confirm('确定删除这条任务吗？')) return false;
   setData(scope, getData(scope).tasks.filter(x => x.id !== t.id));
   render(scope);
+  return true;
 }
 
 document.addEventListener('click', (e) => {
