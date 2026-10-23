@@ -243,6 +243,7 @@ function renderBill() {
       del.className = 'br-del'; del.textContent = '×';
       del.addEventListener('click', (e) => {
         e.stopPropagation();
+        if (!confirm('确定删除这条账目吗？')) return;
         billSaveAll(billGetAll().filter(x => x.id !== b.id)); renderBill();
       });
       row.appendChild(name); row.appendChild(amt); row.appendChild(del);
