@@ -1,12 +1,12 @@
 // ===== 日历待办 =====
-// 复用 KEY_DAY 存储：按日期 key 存任务数组（与「日打卡」同源，互通）
+// 日历待办独立存储：按日期 key 存任务数组，与日任务互不联动。
 function calGetTasks(key) {
-  const all = load(KEY_DAY, {});
+  const all = load(KEY_CAL, {});
   return all[key] || [];
 }
 function calSetTasks(key, tasks) {
-  const all = load(KEY_DAY, {});
-  all[key] = tasks; save(KEY_DAY, all);
+  const all = load(KEY_CAL, {});
+  all[key] = tasks; save(KEY_CAL, all);
 }
 function calShift(delta) {
   calMonth += delta;
@@ -119,6 +119,7 @@ function renderCalendar() {
     del.className = 'ci-del'; del.textContent = '×';
     del.addEventListener('click', (e) => {
       e.stopPropagation();
+      if (!confirm('确定删除这条待办吗？')) return;
       calSetTasks(calSelKey, selTasks.filter(x => x.id !== t.id)); renderCalendar();
     });
     row.appendChild(ck); row.appendChild(tx); row.appendChild(tm); row.appendChild(del);
