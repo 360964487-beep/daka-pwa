@@ -163,51 +163,6 @@ document.addEventListener('click', e => {
   if (inlineEditorOpeningAnchor && (e.target === inlineEditorOpeningAnchor || inlineEditorOpeningAnchor.contains(e.target))) return;
   dismissInlineEditor();
 });
-// Keep the fixed mobile module dock at a constant physical size during page pinch-zoom.
-(() => {
-  const dock = document.querySelector('.sidebar');
-  const viewport = window.visualViewport;
-  if (!dock || !viewport) return;
-  let baseHeight = 0;
-  let frame = 0;
-  const resetDock = () => {
-    dock.style.position = '';
-    dock.style.top = '';
-    dock.style.left = '';
-    dock.style.right = '';
-    dock.style.bottom = '';
-    dock.style.width = '';
-    dock.style.transform = '';
-    dock.style.transformOrigin = '';
-  };
-  const updateDock = () => {
-    frame = 0;
-    if (!window.matchMedia('(max-width: 700px)').matches) { resetDock(); return; }
-    const scale = viewport.scale || 1;
-    if (Math.abs(scale - 1) < 0.015) {
-      resetDock();
-      baseHeight = dock.getBoundingClientRect().height;
-      return;
-    }
-    if (!baseHeight) baseHeight = dock.getBoundingClientRect().height / scale;
-    dock.style.position = 'fixed';
-    dock.style.left = viewport.offsetLeft + 'px';
-    dock.style.right = 'auto';
-    dock.style.width = document.documentElement.clientWidth + 'px';
-    dock.style.top = (viewport.offsetTop + viewport.height - baseHeight / scale) + 'px';
-    dock.style.bottom = 'auto';
-    dock.style.transformOrigin = 'top left';
-    dock.style.transform = 'scale(' + (1 / scale) + ')';
-  };
-  const scheduleDockUpdate = () => {
-    if (!frame) frame = requestAnimationFrame(updateDock);
-  };
-  scheduleDockUpdate();
-  viewport.addEventListener('resize', scheduleDockUpdate, { passive:true });
-  viewport.addEventListener('scroll', scheduleDockUpdate, { passive:true });
-  window.addEventListener('resize', scheduleDockUpdate, { passive:true });
-})();
-
 document.addEventListener('focusin', e => {
   if (e.target.closest('.inline-editor,.inline-add-form,.pwd-add-fields')) document.body.classList.add('inline-editing');
 });
