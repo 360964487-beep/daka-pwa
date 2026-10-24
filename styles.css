@@ -982,3 +982,4 @@ body.is-scrolling #bill:not(.hidden) { filter:none; }
 .cal-cell.all-done:hover { background:color-mix(in srgb,var(--ui-success) 18%,var(--ui-surface)); }
 
 .direct-editing { background:var(--ui-surface); color:var(--ui-ink); outline-color:var(--ui-focus); }
+
