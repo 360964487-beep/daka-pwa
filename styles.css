@@ -579,9 +579,8 @@
   .inline-choice { display:flex; flex-wrap:wrap; gap:7px; }
   .inline-choice-btn { min-width:34px; padding:5px 8px; border:1px solid #e2e4e8; border-radius:8px; background:#fff; color:#646b75; font-family:inherit; font-size:12px; font-weight:400; line-height:1.35; cursor:pointer; }
   .inline-choice-btn.active { border-color:var(--primary); background:var(--primary); color:#fff; }
-  .checkin-add-btn { display:block; width:min(100%,420px); margin:12px auto; padding:10px 14px; border:0; border-radius:10px; background:#f1f2f7; color:var(--primary); font:inherit; cursor:pointer; }
-  .cal-add,.bill-add,.pwd-add,.checkin-add-btn { display:block; width:100%; max-width:460px; margin:12px auto; padding:12px; border:1px dashed #c4c8d0; border-radius:12px; background:#fafbfc; color:var(--muted); font-family:inherit; font-size:14px; font-weight:600; line-height:1.5; text-align:center; cursor:pointer; }
-  .cal-add:hover,.bill-add:hover,.pwd-add:hover,.checkin-add-btn:hover { background:#f0f1f4; color:var(--text); }
+  .cal-add,.bill-add,.pwd-add { display:block; width:100%; max-width:460px; margin:12px auto; padding:12px; border:1px dashed #c4c8d0; border-radius:12px; background:#fafbfc; color:var(--muted); font-family:inherit; font-size:14px; font-weight:600; line-height:1.5; text-align:center; cursor:pointer; }
+  .cal-add:hover,.bill-add:hover,.pwd-add:hover { background:#f0f1f4; color:var(--text); }
   .inline-editable { cursor:pointer; }
   @keyframes editorReveal { from { opacity:0; transform:translateY(-5px); } to { opacity:1; transform:translateY(0); } }
   #overlay.checkin-form { background:rgba(42,48,77,.42); backdrop-filter:blur(7px); }
@@ -686,7 +685,7 @@
 /* Impeccable UI pass: consistent focus, touch targets, rhythm and responsive behavior. */
 :where(button,a,[role="button"],input,textarea,select):focus-visible { outline:3px solid color-mix(in srgb,var(--primary) 48%,transparent); outline-offset:2px; }
 button { -webkit-tap-highlight-color:transparent; }
-.side-link,.menu-card,.mine-btn,.cal-add,.bill-add,.checkin-add-btn,.vt-btn,.cal-nav,.dialog-btns button,.inline-editor-actions button,.bill-editor-actions button { min-height:44px; }
+.side-link,.menu-card,.mine-btn,.cal-add,.bill-add,.vt-btn,.cal-nav,.dialog-btns button,.inline-editor-actions button,.bill-editor-actions button { min-height:44px; }
 .cal-item .ci-check,.cal-item .ci-del,.bill-row .br-del,.note-del,.pwd-item .pi-del { min-width:36px; min-height:36px; }
 .cal-item .ci-check { width:24px; height:24px; }
 input,textarea,select { color:var(--text); }
@@ -767,7 +766,7 @@ input::placeholder,textarea::placeholder { color:var(--ui-muted); opacity:1; }
 .checkin-heading p,.page-description { color:var(--ui-muted); font-size:14px; margin-top:8px; }
 .heading-dot { display:inline-block; width:10px; height:10px; margin-left:9px; border-radius:50%; background:var(--ui-accent); }
 .appearance-shortcut { display:grid; place-items:center; width:46px; height:46px; flex:none; border:0; background:var(--ui-surface); border-radius:14px; }
-.appearance-shortcut svg,.checkin-add-btn svg { width:23px; height:23px; fill:none; stroke:currentColor; stroke-width:1.8; stroke-linecap:round; stroke-linejoin:round; }
+.appearance-shortcut svg { width:23px; height:23px; fill:none; stroke:currentColor; stroke-width:1.8; stroke-linecap:round; stroke-linejoin:round; }
 .topbar { padding:0; gap:12px; min-height:44px; }
 .page-description { margin:10px 0 26px; }
 .back-btn,.cal-nav { min-width:44px; height:44px; border:0; background:var(--ui-surface); border-radius:12px; color:var(--ui-ink); }
@@ -780,13 +779,10 @@ input::placeholder,textarea::placeholder { color:var(--ui-muted); opacity:1; }
 .checkin-tabs-row.weekend-row { grid-template-columns:repeat(3,minmax(0,1fr)); margin:0; }
 .checkin-tabs .vt-btn { font-size:12px; padding:10px 0; min-width:0; min-height:44px; border:0; color:var(--ui-ink); }
 .checkin-tabs .vt-btn.active { background:var(--ui-accent); color:var(--ui-on-accent); box-shadow:none; }
-.board-wrap,.board-actions { width:100%; max-width:520px; margin-inline:auto; }
+.board-wrap { width:100%; max-width:520px; margin-inline:auto; }
 .board { aspect-ratio:16/21; border:0; border-radius:16px; background:var(--ui-surface); box-shadow:none; }
 .board-hint { color:var(--ui-muted); font-size:14px; }
 .board.pressing { box-shadow:inset 0 0 0 3px var(--ui-accent); }
-.board-actions { display:flex; align-items:center; justify-content:space-between; gap:12px; margin-top:16px; }
-.board-actions > span { font-size:12px; color:var(--ui-muted); }
-.checkin-add-btn { display:flex; align-items:center; justify-content:center; gap:6px; min-height:46px; padding:10px 16px; border:0; border-radius:12px; background:var(--ui-accent); color:var(--ui-on-accent); font-size:14px; font-weight:700; }
 .tile { border:0; border-radius:10px; box-shadow:none; background:var(--ui-tile); color:var(--ui-ink); }
 .tile.c0 { background:var(--tile-0); } .tile.c1 { background:var(--tile-1); } .tile.c2 { background:var(--tile-2); } .tile.c3 { background:var(--tile-3); }
 .tile.c4 { background:var(--tile-4); } .tile.c5 { background:var(--tile-5); } .tile.c6 { background:var(--tile-6); } .tile.c7 { background:var(--tile-7); }
@@ -942,9 +938,6 @@ body.is-scrolling #bill:not(.hidden) { filter:none; }
  .checkin-tabs { margin-bottom:14px; }
  .checkin-tabs .vt-btn { font-size:11px; }
  .board { aspect-ratio:16/21; }
- .board-actions { margin-top:14px; }
- .board-actions > span { font-size:11px; }
- .checkin-add-btn { font-size:13px; padding:10px 14px; }
  .topbar { flex-wrap:wrap; }
  #bill > .topbar .view-tabs { margin-left:auto; }
  .page-description { margin-bottom:24px; }
