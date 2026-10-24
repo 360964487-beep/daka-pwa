@@ -166,6 +166,15 @@ document.addEventListener('click', e => {
 document.addEventListener('focusin', e => {
   if (e.target.closest('.inline-editor,.inline-add-form,.pwd-add-fields')) document.body.classList.add('inline-editing');
 });
+document.addEventListener('focusout', e => {
+  if (!e.target.closest('.inline-editor,.inline-add-form,.pwd-add-fields')) return;
+  setTimeout(() => {
+    const active = document.activeElement;
+    const editingField = active && active.matches('input,textarea,[contenteditable="true"]')
+      && active.closest('.inline-editor,.inline-add-form,.pwd-add-fields');
+    if (!editingField && !activeInlineEditor) document.body.classList.remove('inline-editing');
+  }, 0);
+});
 function markLongPressEditorRelease() {
   if (!inlineEditorOpenedByLongPress || !activeInlineBackdrop) return;
   inlineEditorOpenedByLongPress = false;
