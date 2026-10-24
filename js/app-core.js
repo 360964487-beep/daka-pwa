@@ -112,7 +112,7 @@ function dismissInlineEditor() {
   activeInlineBackdrop = null;
   inlineEditorOpenedByLongPress = false;
   document.body.classList.remove('inline-editing');
-  if (activeInlineAnchor && activeInlineAnchorHTML !== null && activeInlineAnchor.matches('.cal-add,.bill-add,.pwd-add,.checkin-add-btn')) activeInlineAnchor.innerHTML = activeInlineAnchorHTML;
+  if (activeInlineAnchor && activeInlineAnchorHTML !== null && activeInlineAnchor.matches('.cal-add,.bill-add,.pwd-add')) activeInlineAnchor.innerHTML = activeInlineAnchorHTML;
   activeInlineEditor = null; activeInlineAnchor = null; activeInlineAnchorHTML = null;
 }
 function beginDirectTextEdit(el, event, options) {
@@ -266,7 +266,7 @@ function showInlineEditor(anchor, title, fields, onSave, onCancel, onDelete, pla
   inlineEditorOpeningAnchor = anchor;
   queueMicrotask(() => { inlineEditorOpeningAnchor = null; });
   if (tilePlacement) editor.classList.add('tile-editor');
-  if (anchor && anchor.matches('.cal-add,.bill-add,.pwd-add,.checkin-add-btn')) {
+  if (anchor && anchor.matches('.cal-add,.bill-add,.pwd-add')) {
     editor.classList.add('add-editor');
     activeInlineAnchorHTML = anchor.innerHTML;
     anchor.textContent = '− 收起';
@@ -385,6 +385,7 @@ function switchCheckinTab(tab) {
 function goPage(page) {
   if (page === 'week') { checkinTab = 'week'; page = 'checkin'; }
   if (page === 'day') { checkinTab = 'day-' + ((new Date().getDay() + 6) % 7); page = 'checkin'; }
+  if (page !== 'bill') delete document.body.dataset.billType;
   currentPage = page;
   document.getElementById('week').classList.toggle('hidden', page !== 'checkin' || checkinTab !== 'week');
   document.getElementById('day').classList.toggle('hidden', page !== 'checkin' || checkinTab === 'week');
@@ -419,6 +420,7 @@ function setData(scope, tasks) {
   const all = load(storeKey, {});
   all[dataKey] = tasks; save(storeKey, all);
 }
+
 
 
 
