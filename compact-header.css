@@ -1,22 +1,22 @@
 /* Compact task header: keep the work area ahead of decorative chrome. */
-.checkin-heading { min-height:44px; gap:12px; margin-bottom:12px; }
+.checkin-heading { min-height:44px; gap:8px; margin-bottom:8px; }
 .checkin-heading h1 { font-size:22px; line-height:1.25; font-weight:700; letter-spacing:-.02em; }
 .checkin-heading p { display:none; }
 
 .appearance-shortcut { width:44px; height:44px; border-radius:10px; background:transparent; }
 .appearance-shortcut svg { width:18px; height:18px; }
-.main-content { padding-top:24px; }
+.main-content { padding-top:20px; }
 @media(max-width:700px) {
-  .main-content { padding-top:12px; }
-  .checkin-heading { margin-bottom:10px; }
+  .main-content { padding-top:10px; }
+  .checkin-heading { margin-bottom:6px; }
   .checkin-heading h1 { font-size:20px; }
 }
 
 /* Compact page headers across all modules. Keep navigation targets comfortable. */
 .topbar {
   min-height: 44px;
-  gap: 10px;
-  margin: 0 0 10px;
+  gap: 8px;
+  margin: 0 0 8px;
   padding: 0;
   align-items: center;
 }
@@ -28,22 +28,24 @@
   letter-spacing: -.025em;
 }
 .page-description { display: none !important; }
-.checkin-heading { margin-bottom: 10px; }
+.checkin-heading { margin-bottom: 8px; }
 @media (max-width: 700px) {
-  .topbar { min-height: 40px; margin-bottom: 8px; }
+  .topbar { min-height: 44px; margin-bottom: 6px; flex-wrap: nowrap; }
+  #bill > .topbar .view-tabs { margin-left: auto; flex: 0 0 auto; }
   .topbar h1 { font-size: 20px; }
+  .checkin-heading { margin-bottom: 6px; }
 }
 
 /* Calendar month controls: keep the month navigation visually subordinate to page back. */
 #calendar .cal-head {
   justify-content: center;
-  gap: 12px;
-  margin-bottom: 12px;
+  gap: 8px;
+  margin-bottom: 8px;
 }
 #calendar .cal-head .cal-nav {
-  width: 44px;
-  min-width: 44px;
-  height: 44px;
+  width: 40px;
+  min-width: 40px;
+  height: 40px;
   border: 0;
   border-radius: 50%;
   background: transparent;
@@ -56,9 +58,9 @@
   background: var(--ui-hover);
 }
 #calendar .cal-head .cal-title {
-  min-width: 104px;
+  min-width: 96px;
   text-align: center;
-  font-size: 18px;
+  font-size: 16px;
 }
 
 /* Mobile navigation: use the full width for four modules and keep selection compact. */
@@ -133,3 +135,389 @@ body[data-bill-type="income"] {
   --primary: var(--ui-income);
   --green: var(--ui-income);
 }
+/* Shared compact rhythm for secondary navigation and period controls. */
+.view-tabs .vt-btn { min-height: 44px; padding-block: 6px; }
+.checkin-tabs { margin-bottom: 12px; padding: 3px; }
+.checkin-tabs .vt-btn { min-height: 44px; padding-block: 5px; }
+.bill-sub-tabs { margin-bottom: 12px; }
+.bill-head { gap: 8px; margin-bottom: 12px; }
+.bill-head .cal-nav { width: 44px; min-width: 44px; height: 44px; }
+.bill-head .cal-title { font-size: 16px; }
+
+@media (max-width: 700px) {
+  .view-tabs { gap: 3px; padding: 3px; }
+  .checkin-tabs { gap: 3px; }
+  #calendar .cal-head .cal-nav,
+  .bill-head .cal-nav { min-width: 44px; width: 44px; height: 44px; }
+  #calendar .cal-head .cal-title,
+  .bill-head .cal-title { font-size: 15px; }
+  .bill-head { margin-bottom: 10px; }
+}
+
+/* Finance page hierarchy: type switch, view switch, then year navigation + totals. */
+#bill > .topbar {
+  margin-bottom: 8px;
+}
+#bill > .topbar .view-tabs {
+  margin-left: auto;
+  flex: 0 0 auto;
+}
+#bill .bill-sub-tabs {
+  margin-bottom: 10px;
+}
+#billYearView > .bill-head {
+  display: grid;
+  grid-template-columns: 44px minmax(56px, auto) 44px minmax(0, 1fr);
+  align-items: center;
+  justify-content: stretch;
+  gap: 4px;
+  width: 100%;
+  margin: 0 0 10px;
+  flex-wrap: nowrap;
+}
+#billYearView > .bill-head .cal-nav {
+  width: 44px;
+  min-width: 44px;
+  height: 44px;
+  border-radius: 12px;
+  background: var(--ui-surface);
+  color: var(--ui-ink);
+  font-size: 19px;
+}
+#billYearView > .bill-head .cal-title {
+  min-width: 0;
+  text-align: center;
+  white-space: nowrap;
+  font-size: 16px;
+  font-weight: 750;
+  letter-spacing: -.02em;
+}
+#billYearView > .bill-head .bill-head-sum {
+  display: flex;
+  align-items: baseline;
+  justify-content: flex-end;
+  gap: 5px;
+  min-width: 0;
+  margin: 0 0 0 2px;
+  padding-left: 8px;
+  border-left: 1px solid var(--ui-border);
+  white-space: nowrap;
+}
+#billYearSummary::before {
+  content: "总账";
+  color: var(--ui-muted);
+  font-size: 11px;
+  font-weight: 600;
+}
+#billYearView > .bill-head .bill-head-sum .hs-amt {
+  font-size: 15px;
+  font-weight: 750;
+  letter-spacing: -.02em;
+}
+#billYearView > .bill-head .bill-head-sum .hs-sub {
+  font-size: 11px;
+  white-space: nowrap;
+}
+@media (max-width: 380px) {
+  #billYearView > .bill-head {
+    grid-template-columns: 44px minmax(52px, auto) 44px minmax(0, 1fr);
+    gap: 3px;
+  }
+  #billYearView > .bill-head .cal-nav {
+    width: 44px;
+    min-width: 44px;
+    height: 44px;
+  }
+  #billYearView > .bill-head .bill-head-sum {
+    gap: 4px;
+    padding-left: 6px;
+  }
+  #billYearView > .bill-head .bill-head-sum .hs-amt { font-size: 14px; }
+}
+/* Desktop check-in workspace: place weekday switching in a dedicated right rail. */
+@media (min-width: 600px) {
+  #week:not(.hidden),
+  #day:not(.hidden) {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) 136px;
+    column-gap: 16px;
+    align-content: start;
+  }
+  #week > .checkin-heading,
+  #day > .checkin-heading {
+    grid-column: 1 / -1;
+  }
+  #week > .checkin-tabs,
+  #day > .checkin-tabs {
+    grid-column: 2;
+    grid-row: 2;
+    display: flex;
+    flex-direction: column;
+    width: 100%;
+    max-width: none;
+    align-self: start;
+    gap: 8px;
+    margin: 0;
+    padding: 0;
+    background: transparent;
+  }
+  #week > .checkin-tabs .checkin-tabs-row,
+  #day > .checkin-tabs .checkin-tabs-row,
+  #week > .checkin-tabs .checkin-tabs-row.weekend-row,
+  #day > .checkin-tabs .checkin-tabs-row.weekend-row {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr);
+    gap: 6px;
+  }
+  #week > .checkin-tabs .vt-btn,
+  #day > .checkin-tabs .vt-btn {
+    width: 100%;
+    min-height: 44px;
+    padding: 8px 6px;
+    border-radius: 10px;
+    background: var(--ui-raised);
+  }
+  #week > .checkin-tabs .vt-btn.active,
+  #day > .checkin-tabs .vt-btn.active {
+    background: var(--ui-accent);
+    color: var(--ui-on-accent);
+  }
+  #week > .board-wrap,
+  #day > .board-wrap {
+    grid-column: 1;
+    grid-row: 2;
+    width: 100%;
+  }
+}
+
+/* Keep the two finance segmented controls compact instead of stretching full width. */
+#bill > .topbar .view-tabs {
+  width: 132px;
+  max-width: 42vw;
+  gap: 3px;
+  padding: 3px;
+}
+#bill > .topbar .view-tabs .vt-btn,
+#bill .bill-sub-tabs .vt-btn {
+  flex: 1 1 0;
+  min-width: 0;
+  padding-inline: 8px;
+}
+#bill .bill-sub-tabs {
+  width: min(260px, 100%);
+  margin: 0 0 10px auto;
+  gap: 3px;
+  padding: 3px;
+}
+
+/* Quiet finance controls so transaction rows remain the visual focus. */
+#bill > .topbar h1 { font-size: 18px; font-weight: 700; }
+#bill > .topbar .view-tabs {
+  width: 112px;
+  max-width: 38vw;
+  background: color-mix(in srgb, var(--ui-surface) 72%, var(--ui-page));
+  border-radius: 10px;
+  padding: 2px;
+}
+#bill .bill-sub-tabs {
+  width: min(208px, 100%);
+  background: color-mix(in srgb, var(--ui-surface) 72%, var(--ui-page));
+  border-radius: 10px;
+  padding: 2px;
+}
+#bill > .topbar .view-tabs .vt-btn,
+#bill .bill-sub-tabs .vt-btn {
+  min-height: 38px;
+  padding: 5px 6px;
+  border-radius: 8px;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--ui-muted);
+  box-shadow: none;
+}
+#bill > .topbar .view-tabs .vt-btn.active,
+#bill .bill-sub-tabs .vt-btn.active {
+  background: color-mix(in srgb, var(--ui-accent) 16%, var(--ui-surface));
+  color: var(--ui-accent-ink);
+  font-weight: 700;
+  box-shadow: none;
+}
+#billYearView > .bill-head .cal-nav {
+  background: transparent;
+  color: var(--ui-muted);
+  font-size: 17px;
+}
+#billYearView > .bill-head .cal-title {
+  font-size: 14px;
+  font-weight: 650;
+  letter-spacing: 0;
+}
+#billYearView > .bill-head .bill-head-sum {
+  border-left: 0;
+  padding-left: 4px;
+  gap: 4px;
+}
+#billYearSummary::before { font-size: 10px; font-weight: 500; }
+#billYearView > .bill-head .bill-head-sum .hs-amt {
+  font-size: 13px;
+  font-weight: 650;
+  letter-spacing: 0;
+}
+#billYearView > .bill-head .bill-head-sum .hs-sub { font-size: 10px; }
+@media (max-width: 380px) {
+  #billYearView > .bill-head .bill-head-sum .hs-amt { font-size: 12px; }
+}
+
+/* Single compact annual toolbar: fixed/year tabs, year navigation and totals share one line. */
+#bill .bill-wrap {
+  display: grid;
+  grid-template-columns: minmax(118px, .72fr) minmax(0, 1fr);
+  column-gap: 8px;
+  row-gap: 10px;
+  align-items: center;
+}
+#bill .bill-switch-row { display: contents; }
+#bill .bill-sub-tabs {
+  grid-column: 1;
+  grid-row: 1;
+  width: 100%;
+  margin: 0;
+  gap: 2px;
+  padding: 2px;
+}
+#bill .bill-sub-tabs .vt-btn {
+  min-height: 36px;
+  padding: 4px 5px;
+  font-size: 11px;
+}
+#bill .bill-sub-tabs #billTabFixed { order: 0; }
+#bill .bill-sub-tabs #billTabYear { order: 1; }
+#billYearView:not(.hidden) { display: contents; }
+#billYearView > .bill-head {
+  grid-column: 2;
+  grid-row: 1;
+  display: grid;
+  grid-template-columns: 36px minmax(48px, auto) 36px minmax(0, 1fr);
+  gap: 2px;
+  width: 100%;
+  min-width: 0;
+  margin: 0;
+}
+#billYearView > .bill-head .cal-nav {
+  width: 36px;
+  min-width: 36px;
+  height: 44px;
+}
+#billYearView > .bill-head .cal-title { font-size: 13px; }
+#billYearView > .bill-head .bill-head-sum {
+  justify-content: flex-end;
+  padding-left: 2px;
+  gap: 3px;
+}
+#billYearSummary::before { font-size: 9px; }
+#billYearView > .bill-head .bill-head-sum .hs-amt { font-size: 12px; }
+#billYearView > .bill-head .bill-head-sum .hs-sub { font-size: 9px; }
+#billYearView > .bill-card,
+#billYearView > #billMonthPlaceholder,
+#billMonthView,
+#billFixedView { grid-column: 1 / -1; }
+#billYearView > .bill-card { grid-row: 2; }
+@media (max-width: 420px) {
+  #bill .bill-wrap { grid-template-columns: 92px minmax(0, 1fr); column-gap: 5px; row-gap: 8px; }
+  #bill .bill-sub-tabs .vt-btn { font-size: 10px; padding-inline: 2px; }
+  #billYearView > .bill-head {
+    grid-template-columns: 34px minmax(42px, auto) 34px minmax(0, 1fr);
+    gap: 1px;
+  }
+  #billYearView > .bill-head .cal-nav { width: 34px; min-width: 34px; }
+  #billYearView > .bill-head .cal-title { font-size: 12px; }
+  #billYearView > .bill-head .bill-head-sum { gap: 2px; }
+  #billYearSummary::before { display: none; }
+  #billYearView > .bill-head .bill-head-sum .hs-amt { font-size: 11px; }
+  #billYearView > .bill-head .bill-head-sum .hs-sub { font-size: 9px; }
+}
+
+/* Narrower weekday rail; keep it beside the task board on phones as well. */
+@media (min-width: 600px) {
+  #week:not(.hidden),
+  #day:not(.hidden) { grid-template-columns: minmax(0, 1fr) 92px; column-gap: 10px; }
+  #week > .checkin-tabs,
+  #day > .checkin-tabs { width: 92px; }
+}
+@media (max-width: 599px) {
+  #week:not(.hidden),
+  #day:not(.hidden) {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) 66px;
+    column-gap: 8px;
+    align-content: start;
+  }
+  #week > .checkin-heading,
+  #day > .checkin-heading { grid-column: 1 / -1; }
+  #week > .checkin-tabs,
+  #day > .checkin-tabs {
+    grid-column: 2;
+    grid-row: 2;
+    display: flex;
+    flex-direction: column;
+    width: 66px;
+    max-width: none;
+    gap: 6px;
+    align-self: start;
+    margin: 0;
+    padding: 0;
+    background: transparent;
+  }
+  #week > .checkin-tabs .checkin-tabs-row,
+  #day > .checkin-tabs .checkin-tabs-row,
+  #week > .checkin-tabs .checkin-tabs-row.weekend-row,
+  #day > .checkin-tabs .checkin-tabs-row.weekend-row {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr);
+    gap: 5px;
+  }
+  #week > .checkin-tabs .vt-btn,
+  #day > .checkin-tabs .vt-btn {
+    width: 66px;
+    min-width: 0;
+    min-height: 44px;
+    padding: 7px 2px;
+    border-radius: 10px;
+    font-size: 11px;
+    background: var(--ui-raised);
+  }
+  #week > .checkin-tabs .vt-btn.active,
+  #day > .checkin-tabs .vt-btn.active {
+    background: var(--ui-accent);
+    color: var(--ui-on-accent);
+  }
+  #week > .board-wrap,
+  #day > .board-wrap {
+    grid-column: 1;
+    grid-row: 2;
+    width: 100%;
+    min-width: 0;
+  }
+  #week > .topbar,
+  #day > .topbar { display: none; }
+}
+
+/* Highlight the currently opened month in the annual ledger. */
+#billYearRows .bill-row.month-row.expanded {
+  position: relative;
+  z-index: 1;
+  background: color-mix(in srgb, var(--ui-accent) 14%, var(--ui-surface));
+  box-shadow: inset 3px 0 var(--ui-accent);
+}
+#billYearRows .bill-row.month-row.expanded .br-name {
+  color: var(--ui-accent-ink);
+  font-weight: 700;
+}
+#billYearRows .bill-row.month-row.expanded .br-amt {
+  color: var(--ui-accent-ink);
+  font-weight: 700;
+}
+#billYearRows .bill-row.month-row.expanded::after {
+  color: var(--ui-accent-ink);
+}
+
