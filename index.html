@@ -74,18 +74,18 @@
     <div class="topbar">
       <h1>记账</h1>
       <div class="spacer"></div>
-      <div class="view-tabs">
+      <div class="view-tabs bill-type-tabs" aria-label="收支类型">
         <button class="vt-btn active" id="billTabExpense" onclick="switchBillType('expense')">支出</button>
         <button class="vt-btn" id="billTabIncome" onclick="switchBillType('income')">收入</button>
       </div>
     </div>
     <div class="bill-wrap">
-      <!-- 二级切换：年账单 / 固定 -->
-      <div class="view-tabs bill-sub-tabs">
-        <button class="vt-btn active" id="billTabYear" onclick="switchBillTab('year')">年账单</button>
-        <button class="vt-btn" id="billTabFixed" onclick="switchBillTab('fixed')">固定</button>
+      <div class="bill-switch-row">
+        <div class="view-tabs bill-sub-tabs" aria-label="账单视图">
+          <button class="vt-btn" id="billTabFixed" onclick="switchBillTab('fixed')">固定</button>
+          <button class="vt-btn active" id="billTabYear" onclick="switchBillTab('year')">年账单</button>
+        </div>
       </div>
-
       <!-- 年账单模块（默认） -->
       <div id="billYearView">
         <div class="bill-head">
@@ -285,3 +285,4 @@ if ('serviceWorker' in navigator && /^https?:$/.test(location.protocol)) { windo
 </script>
 </body>
 </html>
+
