@@ -841,3 +841,37 @@ body[data-bill-type="income"] {
   #billEditor .bill-editor-actions .bill-editor-save,
   #billFixedAddForm .bill-editor-actions .bill-editor-save { padding-inline: 8px; }
 }
+
+
+/* Desktop assistant belongs in the left navigation rail. */
+@media (min-width: 701px) {
+  .sidebar > .doubao-launch {
+    position: static;
+    align-self: stretch;
+    width: 100%;
+    min-height: 48px;
+    height: auto;
+    box-sizing: border-box;
+    justify-content: flex-start;
+    flex-direction: row;
+    gap: 12px;
+    margin-top: 8px;
+    padding: 12px 14px;
+    border: 0;
+    border-radius: 12px;
+    color: #ded8e5;
+    background: transparent;
+    box-shadow: none;
+    font-size: 14px;
+    font-weight: 600;
+  }
+  .sidebar > .doubao-launch .icon { width: 24px; height: 24px; flex: 0 0 24px; }
+  .sidebar > .doubao-launch svg { width: 21px; height: 21px; }
+  .sidebar > .doubao-launch .side-label { display: block; }
+  .sidebar > .doubao-launch:hover,
+  .sidebar > .doubao-launch:focus-visible { color: #fff; background: #ffffff16; }
+  .sidebar > .doubao-launch[aria-expanded="true"] {
+    color: var(--ui-accent-ink);
+    background: var(--ui-accent-soft);
+  }
+}
