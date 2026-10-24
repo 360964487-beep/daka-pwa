@@ -639,6 +639,25 @@ body[data-bill-type="income"] {
   #day > .topbar { display: none; }
 }
 
+.checkin-add-form {
+  grid-column: 1 / -1;
+  width: 100%;
+  box-sizing: border-box;
+  margin: 16px 0 0;
+  padding: 14px;
+  border: 1px solid var(--ui-border);
+  border-radius: 14px;
+  background: var(--ui-surface);
+}
+.checkin-add-form .bill-editor-title { margin-bottom: 8px; font-size: 15px; }
+.checkin-add-form textarea { min-height: 64px; resize: vertical; }
+.checkin-add-form .inline-time-inputs { margin-top: 10px; }
+.checkin-add-form .bill-editor-actions { margin-top: 10px; }
+@media (max-width: 599px) {
+  .checkin-add-form { margin-top: 12px; padding: 12px; }
+  .checkin-add-form .inline-time-inputs > span { width: 100%; }
+}
+
 /* Highlight the currently opened month in the annual ledger. */
 #billYearRows .bill-row.month-row.expanded {
   position: relative;
