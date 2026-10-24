@@ -93,7 +93,7 @@ function renderMine() {
 }
 
 const APP_THEME_KEY = 'taskTrackerTheme';
-const APP_THEME_OPTIONS = ['caramel','mint','berry','sea','dopamine','arcade','citrus','midnight'];
+const APP_THEME_OPTIONS = ['caramel','mint','berry','sea','dopamine','arcade','citrus','midnight','monochrome'];
 function syncThemeOptions() {
   const activeTheme = document.body.dataset.theme || 'dopamine';
   document.querySelectorAll('[data-theme-option]').forEach(button => {
