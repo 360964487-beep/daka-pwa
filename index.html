@@ -2,7 +2,7 @@
 <html lang="zh-CN">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>任务打卡</title>
 <meta name="theme-color" content="#faf6ef">
 <meta name="apple-mobile-web-app-capable" content="yes">
@@ -11,48 +11,47 @@
 <link rel="apple-touch-icon" sizes="180x180" href="./apple-touch-icon.png">
 <link rel="manifest" href="./manifest.webmanifest">
 <link rel="stylesheet" href="./styles.css">
+<link rel="stylesheet" href="./compact-header.css">
 </head>
 <body>
 <div class="app">
-  <aside class="sidebar"><nav class="side-nav">
+  <aside class="sidebar"><div class="app-brand"><svg viewBox="0 0 32 32" aria-hidden="true"><rect x="2" y="2" width="28" height="28" rx="9" fill="currentColor"/><path d="m10 16 4 4 8-9" fill="none" stroke="var(--ui-on-accent)" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/></svg><strong>任务打卡</strong><span>把日子过成喜欢的样子</span></div><nav class="side-nav" aria-label="主导航">
     <button class="side-link active" data-page="checkin" onclick="goPage('checkin')"><span class="icon"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="4" y="4" width="16" height="16" rx="4"/><path d="m8 12 2.5 2.5L16 9"/></svg></span><span class="side-label">任务打卡</span></button>
     <button class="side-link" data-page="calendar" onclick="goPage('calendar')"><span class="icon"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3.5" y="5" width="17" height="16" rx="3"/><path d="M7.5 3.5v3M16.5 3.5v3M4 9h16M8 12h.01M12 12h.01M16 12h.01M8 16h.01M12 16h.01"/></svg></span><span class="side-label">日历待办</span></button>
     <button class="side-link" data-page="bill" onclick="goPage('bill')"><span class="icon"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="6" width="18" height="14" rx="3"/><path d="M3 10h18M16 15h2"/><path d="M7 6V4h11"/></svg></span><span class="side-label">记账</span></button>
     <button class="side-link" data-page="note" onclick="goPage('note')"><span class="icon"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M14 3H6a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V9z"/><path d="M14 3v6h6M8 13h8M8 17h6"/></svg></span><span class="side-label">小纸条</span></button>
-    <button class="side-link" data-page="pwd" onclick="goPage('pwd')"><span class="icon"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="4" y="10" width="16" height="11" rx="3"/><path d="M8 10V7a4 4 0 0 1 8 0v3M12 14v3"/></svg></span><span class="side-label">密钥</span></button>
-    <button class="doubao-launch side-link" type="button" onclick="toggleDoubaoPanel()" aria-label="打开 DeepSeek 助手" aria-expanded="false"><span class="icon"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M20 11.5a7.5 7.5 0 0 1-7.5 7.5H7l-3 2v-5.2A7.5 7.5 0 1 1 20 11.5Z"/><path d="M8 12h.01M12 12h.01M16 12h.01"/></svg></span><span class="side-label">DeepSeek 助手</span></button>
-  </nav><div class="side-spacer"></div><button class="side-link" data-page="mine" onclick="goPage('mine')"><span class="icon"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="8" r="3.3"/><path d="M5 20a7 7 0 0 1 14 0"/></svg></span><span class="side-label">我的</span></button></aside>
+
+  </nav></aside>
   <main class="main-content">
   <div id="week" class="hidden">
+<header class="checkin-heading"><div><h1>任务打卡<span class="heading-dot" aria-hidden="true"></span></h1></div><button type="button" class="appearance-shortcut" onclick="goPage('mine')" aria-label="切换外观主题"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3a9 9 0 1 0 0 18h1a2 2 0 0 0 1-3.7 1.5 1.5 0 0 1 1-2.8h2A4 4 0 0 0 21 10c0-4-4-7-9-7Z"/><circle cx="7.5" cy="10" r=".8"/><circle cx="11" cy="6.8" r=".8"/><circle cx="16" cy="8" r=".8"/></svg></button></header>
     <div class="view-tabs checkin-tabs"><div class="checkin-tabs-row weekday-row"><button class="vt-btn" data-checkin="day-0" onclick="switchCheckinTab('day-0')">周一</button><button class="vt-btn" data-checkin="day-1" onclick="switchCheckinTab('day-1')">周二</button><button class="vt-btn" data-checkin="day-2" onclick="switchCheckinTab('day-2')">周三</button><button class="vt-btn" data-checkin="day-3" onclick="switchCheckinTab('day-3')">周四</button><button class="vt-btn" data-checkin="day-4" onclick="switchCheckinTab('day-4')">周五</button></div><div class="checkin-tabs-row weekend-row"><button class="vt-btn" data-checkin="day-5" onclick="switchCheckinTab('day-5')">周六</button><button class="vt-btn" data-checkin="day-6" onclick="switchCheckinTab('day-6')">周日</button><button class="vt-btn checkin-week-tab active" data-checkin="week" onclick="switchCheckinTab('week')">其他</button></div></div>
     <div class="topbar">
-      <button class="back-btn" onclick="goPage('checkin')">‹</button>
       <h1>周任务</h1>
       <div class="spacer"></div>
 </div>
-    <div class="board-wrap" id="weekBoardWrap"><div class="board" id="weekBoard"></div></div>
+    <div class="board-wrap" id="weekBoardWrap"><div class="board" id="weekBoard"></div></div><div class="board-actions"><span>点击打卡 · 长按编辑</span><button type="button" class="checkin-add-btn" onclick="openDialog('week')"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg>添加任务</button></div>
     <div class="tt-wrap hidden" id="weekTableWrap"></div>
   </div>
 
   <div id="day" class="hidden">
+<header class="checkin-heading"><div><h1>任务打卡<span class="heading-dot" aria-hidden="true"></span></h1></div><button type="button" class="appearance-shortcut" onclick="goPage('mine')" aria-label="切换外观主题"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3a9 9 0 1 0 0 18h1a2 2 0 0 0 1-3.7 1.5 1.5 0 0 1 1-2.8h2A4 4 0 0 0 21 10c0-4-4-7-9-7Z"/><circle cx="7.5" cy="10" r=".8"/><circle cx="11" cy="6.8" r=".8"/><circle cx="16" cy="8" r=".8"/></svg></button></header>
     <div class="view-tabs checkin-tabs"><div class="checkin-tabs-row weekday-row"><button class="vt-btn" data-checkin="day-0" onclick="switchCheckinTab('day-0')">周一</button><button class="vt-btn" data-checkin="day-1" onclick="switchCheckinTab('day-1')">周二</button><button class="vt-btn" data-checkin="day-2" onclick="switchCheckinTab('day-2')">周三</button><button class="vt-btn" data-checkin="day-3" onclick="switchCheckinTab('day-3')">周四</button><button class="vt-btn" data-checkin="day-4" onclick="switchCheckinTab('day-4')">周五</button></div><div class="checkin-tabs-row weekend-row"><button class="vt-btn" data-checkin="day-5" onclick="switchCheckinTab('day-5')">周六</button><button class="vt-btn" data-checkin="day-6" onclick="switchCheckinTab('day-6')">周日</button><button class="vt-btn checkin-week-tab" data-checkin="week" onclick="switchCheckinTab('week')">其他</button></div></div>
     <div class="topbar">
-      <button class="back-btn" onclick="goPage('checkin')">‹</button>
       <h1>日任务</h1>
     </div>
-    <div class="board-wrap"><div class="board" id="dayBoard"></div></div>
+    <div class="board-wrap"><div class="board" id="dayBoard"></div></div><div class="board-actions"><span>点击打卡 · 长按编辑</span><button type="button" class="checkin-add-btn" onclick="openDialog('day')"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg>添加任务</button></div>
   </div>
 
   <div id="calendar" class="hidden">
     <div class="topbar">
-      <button class="back-btn" onclick="goPage('checkin')">‹</button>
       <h1>日历待办</h1>
     </div>
-    <div class="cal-wrap">
+<div class="cal-wrap">
       <div class="cal-head">
-        <button class="cal-nav" onclick="calShift(-1)">‹</button>
+        <button class="cal-nav" onclick="calShift(-1)" aria-label="上个月">‹</button>
         <div class="cal-title" id="calTitle"></div>
-        <button class="cal-nav" onclick="calShift(1)">›</button>
+        <button class="cal-nav" onclick="calShift(1)" aria-label="下个月">›</button>
       </div>
       <div class="cal-weekdays">
         <span>日</span><span>一</span><span>二</span><span>三</span><span>四</span><span>五</span><span>六</span>
@@ -63,7 +62,7 @@
         <div class="cal-items" id="calItems"></div>
         <div class="bill-editor inline-add-form" id="calAddForm">
   <div class="bill-editor-title">添加待办</div>
-  <textarea id="calAddText" rows="2" placeholder="待办内容"></textarea>
+  <textarea id="calAddText" aria-label="待办内容" rows="2" placeholder="待办内容"></textarea>
   <div class="inline-time-inputs"><span>时间（可选）</span><input id="calAddHour" type="text" inputmode="numeric" maxlength="2" placeholder="小时" aria-label="小时"><b>:</b><input id="calAddMinute" type="text" inputmode="numeric" maxlength="2" placeholder="分钟" aria-label="分钟"></div>
   <div class="bill-editor-actions"><button class="bill-editor-save" onclick="calAdd()">添加</button></div>
 </div>
@@ -73,7 +72,6 @@
 
   <div id="bill" class="hidden">
     <div class="topbar">
-      <button class="back-btn" onclick="goPage('checkin')">‹</button>
       <h1>记账</h1>
       <div class="spacer"></div>
       <div class="view-tabs">
@@ -91,9 +89,9 @@
       <!-- 年账单模块（默认） -->
       <div id="billYearView">
         <div class="bill-head">
-          <button class="cal-nav" onclick="billShiftYear(-1)">‹</button>
+          <button class="cal-nav" onclick="billShiftYear(-1)" aria-label="上一年">‹</button>
           <div class="cal-title" id="billYearTitle"></div>
-          <button class="cal-nav" onclick="billShiftYear(1)">›</button>
+          <button class="cal-nav" onclick="billShiftYear(1)" aria-label="下一年">›</button>
           <div class="bill-head-sum" id="billYearSummary"></div>
         </div>
         
@@ -143,34 +141,16 @@
       </div>
     </div>
   </div>
-
-  <div id="pwd" class="hidden">
-    <div class="topbar">
-      <button class="back-btn" onclick="goPage('checkin')">‹</button>
-      <h1>密钥</h1>
-    </div>
-    <div class="pwd-wrap">
-      <div class="pwd-hint">账号密码记录仅保存在此浏览器中，建议定期导出备份</div>
-      <div class="pwd-items" id="pwdItems"></div>
-      <div class="bill-editor inline-add-form" id="pwdAddForm">
-  <div class="bill-editor-title">添加记录</div>
-  <div class="pwd-add-fields"><input id="pwdAddName" type="text" placeholder="名称"><input id="pwdAddAccount" type="text" placeholder="账号"><input id="pwdAddPassword" type="password" placeholder="密码"><input id="pwdAddNote" type="text" placeholder="备注"></div>
-  <div class="bill-editor-actions"><button class="bill-editor-save" onclick="pwdAdd()">添加</button></div>
-</div>
-    </div>
-  </div>
-
   <div id="note" class="hidden">
     <div class="topbar">
-      <button class="back-btn" onclick="goPage('checkin')">‹</button>
       <h1>小纸条</h1>
     </div>
-    <div class="pwd-wrap">
+<div class="pwd-wrap">
       <div class="pwd-hint">记录一些琐事，随手记、随手删</div>
       <div class="note-items" id="noteItems"></div>
       <div class="bill-editor inline-add-form" id="noteAddForm">
   <div class="bill-editor-title">写一张纸条</div>
-  <textarea id="noteAddText" rows="3" placeholder="内容"></textarea>
+  <textarea id="noteAddText" aria-label="纸条内容" rows="3" placeholder="内容"></textarea>
   <div class="bill-editor-actions"><button class="bill-editor-save" onclick="noteAdd()">添加</button></div>
 </div>
     </div>
@@ -178,12 +158,11 @@
 
   <div id="mine" class="hidden">
     <div class="topbar">
-      <button class="back-btn" onclick="goPage('checkin')">‹</button>
       <h1>我的</h1>
     </div>
-    <div class="mine-wrap">
+<div class="mine-wrap">
       <div class="mine-profile">
-        <div class="mine-avatar">👤</div>
+        <div class="mine-avatar" aria-hidden="true"><svg viewBox="0 0 24 24"><circle cx="12" cy="8" r="3.3"/><path d="M5 20a7 7 0 0 1 14 0"/></svg></div>
         <div class="mine-info">
           <div class="mine-name inline-editable" onclick="editMineName(event)">我的打卡</div>
           <div class="mine-sub">坚持记录每一天</div>
@@ -192,10 +171,15 @@
       <section class="theme-picker" aria-label="主题选择">
         <div class="theme-picker-title">选择主题</div>
         <div class="theme-options">
-          <button class="theme-option" type="button" data-theme-option="caramel" onclick="setAppTheme('caramel')" aria-pressed="false"><span class="theme-swatches"><i style="background:#b85f2e"></i><i style="background:#f2dfbd"></i><i style="background:#52372a"></i></span><span class="theme-option-name">复古焦糖<small>温暖浓郁</small></span></button>
-          <button class="theme-option" type="button" data-theme-option="mint" onclick="setAppTheme('mint')" aria-pressed="false"><span class="theme-swatches"><i style="background:#78927d"></i><i style="background:#dce9dc"></i><i style="background:#34493d"></i></span><span class="theme-option-name">薄荷奶油<small>清新柔和</small></span></button>
-          <button class="theme-option" type="button" data-theme-option="berry" onclick="setAppTheme('berry')" aria-pressed="false"><span class="theme-swatches"><i style="background:#ad6878"></i><i style="background:#f0dce0"></i><i style="background:#50333c"></i></span><span class="theme-option-name">莓果奶茶<small>柔和甜暖</small></span></button>
-          <button class="theme-option" type="button" data-theme-option="sea" onclick="setAppTheme('sea')" aria-pressed="false"><span class="theme-swatches"><i style="background:#687da6"></i><i style="background:#dce4f3"></i><i style="background:#333b53"></i></span><span class="theme-option-name">海盐蓝紫<small>清爽雅致</small></span></button>
+          <button class="theme-option theme-option-bold" type="button" data-theme-option="dopamine" onclick="setAppTheme('dopamine')" aria-pressed="false"><span class="theme-swatches"><i style="background:#b61959"></i><i style="background:#ffe475"></i><i style="background:#9be1cd"></i></span><span class="theme-option-name">多巴胺派对<small>明快撞色</small></span></button>
+          <button class="theme-option" type="button" data-theme-option="caramel" onclick="setAppTheme('caramel')" aria-pressed="false"><span class="theme-swatches"><i style="background:#98502b"></i><i style="background:#f1d7b8"></i><i style="background:#f2e6d4"></i></span><span class="theme-option-name">复古焦糖<small>温暖浓郁</small></span></button>
+          <button class="theme-option" type="button" data-theme-option="mint" onclick="setAppTheme('mint')" aria-pressed="false"><span class="theme-swatches"><i style="background:#216a4e"></i><i style="background:#c4e8d2"></i><i style="background:#cde7d8"></i></span><span class="theme-option-name">薄荷奶油<small>清新柔和</small></span></button>
+          <button class="theme-option" type="button" data-theme-option="berry" onclick="setAppTheme('berry')" aria-pressed="false"><span class="theme-swatches"><i style="background:#a22d68"></i><i style="background:#f5ccdf"></i><i style="background:#f3d3e1"></i></span><span class="theme-option-name">莓果奶茶<small>柔和甜暖</small></span></button>
+          <button class="theme-option" type="button" data-theme-option="sea" onclick="setAppTheme('sea')" aria-pressed="false"><span class="theme-swatches"><i style="background:#2859a5"></i><i style="background:#cce0fc"></i><i style="background:#d6e7fc"></i></span><span class="theme-option-name">海盐蓝紫<small>清爽雅致</small></span></button>
+
+          <button class="theme-option theme-option-bold" type="button" data-theme-option="arcade" onclick="setAppTheme('arcade')" aria-pressed="false"><span class="theme-swatches"><i style="background:#6530b7"></i><i style="background:#8fe3ea"></i><i style="background:#ffdb66"></i></span><span class="theme-option-name">霓虹电玩<small>电光紫青</small></span></button>
+        <button class="theme-option" type="button" data-theme-option="citrus" onclick="setAppTheme('citrus')" aria-pressed="false"><span class="theme-swatches"><i style="background:#b83c13"></i><i style="background:#ffd970"></i><i style="background:#fcf0df"></i></span><span class="theme-option-name">日光橘<small>热烈向前</small></span></button>
+<button class="theme-option" type="button" data-theme-option="midnight" onclick="setAppTheme('midnight')" aria-pressed="false"><span class="theme-swatches"><i style="background:#bcb0ff"></i><i style="background:#273553"></i><i style="background:#141b2d"></i></span><span class="theme-option-name">午夜蓝<small>夜色专注</small></span></button>
         </div>
       </section>
       <div class="mine-stats">
@@ -213,27 +197,28 @@
         </div>
       </div>
       <div class="mine-actions">
-        <button class="mine-btn" onclick="exportData()">📤 导出数据</button>
-        <button class="mine-btn" onclick="importData()">📥 导入数据</button>
-        <button class="mine-btn danger" onclick="clearAllData()">🗑️ 清空数据</button>
+        <button class="mine-btn" onclick="exportData()"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 16V4m0 0L7 9m5-5 5 5M5 14v5h14v-5"/></svg><span>导出数据</span></button>
+        <button class="mine-btn" onclick="importData()"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 4v12m0 0 5-5m-5 5-5-5M5 15v4h14v-4"/></svg><span>导入数据</span></button>
+        <button class="mine-btn danger" onclick="clearAllData()"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 7h16M10 11v6m4-6v6M6 7l1 13h10l1-13M9 7V4h6v3"/></svg><span>清空数据</span></button>
       </div>
     </div>
   </div>
   </main>
+    <button class="doubao-launch" type="button" onclick="toggleDoubaoPanel()" aria-label="打开 DeepSeek 助手" aria-expanded="false"><span class="icon"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M20 11.5a7.5 7.5 0 0 1-7.5 7.5H7l-3 2v-5.2A7.5 7.5 0 1 1 20 11.5Z"/><path d="M8 12h.01M12 12h.01M16 12h.01"/></svg></span><span class="side-label">助手</span></button>
 </div>
 
 <div class="doubao-backdrop" id="doubaoBackdrop" aria-hidden="true"></div>
 <section class="doubao-panel" id="doubaoPanel" role="dialog" aria-label="DeepSeek 助手" aria-modal="false">
   <header class="doubao-head"><strong>DeepSeek 助手</strong><button type="button" onclick="toggleDoubaoConfig()" aria-label="设置接口和密钥">设置</button><span class="doubao-head-spacer" aria-hidden="true"></span><button type="button" onclick="toggleDoubaoPanel(false)" aria-label="关闭">×</button></header>
   <div class="doubao-msgs" id="doubaoMessages" aria-live="polite"><div class="doubao-msg">你好，我可以协助管理日历待办、打卡任务、记账、固定账目和小纸条。每次修改都会先给你确认；密钥请在对应模块手动操作。</div><div class="doubao-msg status" id="doubaoSetupStatus">首次使用请点“设置”，填写你自己的 DeepSeek API 密钥。</div></div>
-  <div class="doubao-config" id="doubaoConfig"><input id="deepseekApiKeyInput" type="password" placeholder="你的 DeepSeek API 密钥（仅保存在此设备）" autocomplete="new-password"><button type="button" onclick="saveDeepSeekKey()">保存</button><small>应用将直接调用 DeepSeek API。密钥保存在当前设备的浏览器本地；不要在公共设备保存。</small></div>
-  <div class="doubao-compose"><button type="button" id="doubaoVoice" aria-label="按住说话" title="按住说话，松开后自动发送">🎙</button><textarea id="doubaoInput" rows="1" placeholder="按住麦克风说话，松开后自动发送…"></textarea><button type="button" id="doubaoSend" onclick="sendDoubaoMessage()">发送</button></div>
+  <div class="doubao-config" id="doubaoConfig"><input id="deepseekApiKeyInput" aria-label="DeepSeek API 密钥" type="password" placeholder="你的 DeepSeek API 密钥（仅保存在此设备）" autocomplete="new-password"><button type="button" onclick="saveDeepSeekKey()">保存</button><small>应用将直接调用 DeepSeek API。密钥保存在当前设备的浏览器本地；不要在公共设备保存。</small></div>
+  <div class="doubao-compose"><button type="button" id="doubaoVoice" aria-label="按住说话" title="按住说话，松开后自动发送"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="9" y="3" width="6" height="12" rx="3"/><path d="M5 11a7 7 0 0 0 14 0M12 18v3m-4 0h8"/></svg></button><textarea id="doubaoInput" aria-label="发送给助手的消息" rows="1" placeholder="按住麦克风说话，松开后自动发送…"></textarea><button type="button" id="doubaoSend" onclick="sendDoubaoMessage()">发送</button></div>
 </section>
 
 <div class="overlay" id="overlay">
   <div class="dialog">
     <h3 id="dialogTitle">添加任务</h3>
-    <textarea id="dialogInput" autocomplete="off" rows="2"></textarea>
+    <textarea id="dialogInput" aria-label="任务内容" autocomplete="off" rows="2"></textarea>
     <div class="time-picker" id="timePicker">
       <span class="time-label">时间（可选）</span>
       <input class="tp-inp" id="tpHour" type="text" inputmode="numeric" maxlength="2" placeholder="小时" autocomplete="off" aria-label="小时">
@@ -300,7 +285,3 @@ if ('serviceWorker' in navigator && /^https?:$/.test(location.protocol)) { windo
 </script>
 </body>
 </html>
-
-
-
-

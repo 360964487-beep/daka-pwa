@@ -1,0 +1,101 @@
+/* Compact task header: keep the work area ahead of decorative chrome. */
+.checkin-heading { min-height:44px; gap:12px; margin-bottom:12px; }
+.checkin-heading h1 { font-size:22px; line-height:1.25; font-weight:700; letter-spacing:-.02em; }
+.checkin-heading p { display:none; }
+.heading-dot { width:6px; height:6px; margin-left:6px; }
+.appearance-shortcut { width:44px; height:44px; border-radius:10px; background:transparent; }
+.appearance-shortcut svg { width:18px; height:18px; }
+.main-content { padding-top:24px; }
+@media(max-width:700px) {
+  .main-content { padding-top:12px; }
+  .checkin-heading { margin-bottom:10px; }
+  .checkin-heading h1 { font-size:20px; }
+}
+
+/* Compact page headers across all modules. Keep navigation targets comfortable. */
+.topbar {
+  min-height: 44px;
+  gap: 10px;
+  margin: 0 0 10px;
+  padding: 0;
+  align-items: center;
+}
+.topbar h1 {
+  margin: 0;
+  font-size: 22px;
+  line-height: 1.25;
+  font-weight: 750;
+  letter-spacing: -.025em;
+}
+.page-description { display: none !important; }
+.checkin-heading { margin-bottom: 10px; }
+@media (max-width: 700px) {
+  .topbar { min-height: 40px; margin-bottom: 8px; }
+  .topbar h1 { font-size: 20px; }
+}
+
+/* Calendar month controls: keep the month navigation visually subordinate to page back. */
+#calendar .cal-head {
+  justify-content: center;
+  gap: 12px;
+  margin-bottom: 12px;
+}
+#calendar .cal-head .cal-nav {
+  width: 44px;
+  min-width: 44px;
+  height: 44px;
+  border: 0;
+  border-radius: 50%;
+  background: transparent;
+  color: var(--ui-muted);
+  font-size: 20px;
+  box-shadow: none;
+}
+#calendar .cal-head .cal-nav:hover,
+#calendar .cal-head .cal-nav:focus-visible {
+  background: var(--ui-hover);
+}
+#calendar .cal-head .cal-title {
+  min-width: 104px;
+  text-align: center;
+  font-size: 18px;
+}
+
+/* Mobile navigation: use the full width for four modules and keep selection compact. */
+@media (max-width: 700px) {
+  .sidebar {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    grid-template-rows: 56px;
+    padding-top: 4px;
+    padding-bottom: calc(4px + env(safe-area-inset-bottom));
+  }
+  .sidebar .side-link {
+    min-height: 48px;
+    gap: 2px;
+    padding: 3px 0;
+    border-radius: 10px;
+    background: transparent;
+  }
+  .sidebar .side-link.active {
+    background: transparent;
+    color: var(--ui-accent-ink);
+  }
+  .sidebar .side-link .icon {
+    display: grid;
+    place-items: center;
+    width: 28px;
+    height: 28px;
+    border-radius: 9px;
+    transition: background-color .16s ease, color .16s ease;
+  }
+  .sidebar .side-link.active .icon {
+    background: var(--ui-accent);
+    color: var(--ui-on-accent);
+  }
+  .sidebar .side-label {
+    font-size: 10px;
+    line-height: 1.2;
+    font-weight: 600;
+  }
+  .sidebar .side-link.active .side-label { font-weight: 750; }
+}
