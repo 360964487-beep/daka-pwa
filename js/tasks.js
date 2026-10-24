@@ -92,11 +92,6 @@ function cmpSeq(a, b) {
 function render(scope, animate = true) {
   const board = document.getElementById(scope + 'Board');
   const { tasks } = getData(scope);
-  let hint = board.querySelector('.board-hint');
-  if (!hint) { hint = document.createElement('div'); hint.className = 'board-hint'; board.appendChild(hint); }
-  hint.textContent = tasks.length ? '' : '还没有任务';
-  hint.style.display = tasks.length ? 'none' : 'flex';
-
   const bw = board.clientWidth || board.offsetWidth || 400;
   const bh = board.clientHeight || board.offsetHeight || 600;
   const GAP = 6;
