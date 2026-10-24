@@ -94,7 +94,8 @@ function render(scope, animate = true) {
   const { tasks } = getData(scope);
   let hint = board.querySelector('.board-hint');
   if (!hint) { hint = document.createElement('div'); hint.className = 'board-hint'; board.appendChild(hint); }
-  hint.textContent = '长按空白处添加任务';
+  hint.textContent = tasks.length ? '' : '还没有任务';
+  hint.style.display = tasks.length ? 'none' : 'flex';
 
   const bw = board.clientWidth || board.offsetWidth || 400;
   const bh = board.clientHeight || board.offsetHeight || 600;
@@ -234,7 +235,6 @@ function render(scope, animate = true) {
     if (!tasks.find(t => String(t.id) === el.dataset.id)) el.remove();
   });
 
-  bindBoardEvents(board, scope);
 }
 
 // ===== 交互绑定 =====
@@ -261,29 +261,40 @@ function bindTileEvents(el, scope, t) {
   });
 }
 
-function bindBoardEvents(board, scope) {
-  board.oncontextmenu = (e) => e.preventDefault();
-  let boardTimer = null;
-  function boardDown(e) {
-    if (e.target !== board && !e.target.classList.contains('board-hint')) return;
-    board.classList.add('pressing');
-    boardTimer = setTimeout(() => { board.classList.remove('pressing'); openDialog(scope); }, 400);
-  }
-  function boardUp() { board.classList.remove('pressing'); clearTimeout(boardTimer); }
-  board.addEventListener('touchstart', boardDown, { passive: true });
-  board.addEventListener('mousedown', boardDown);
-  board.addEventListener('touchend', boardUp);
-  board.addEventListener('touchmove', boardUp, { passive: true });
-  board.addEventListener('mouseup', boardUp);
-  board.addEventListener('mouseleave', boardUp);
-}
-
 function toggleTile(scope, id) {
   const { tasks } = getData(scope);
   const t = tasks.find(x => x.id === id);
   if (t) t.done = !t.done;
   setData(scope, tasks);
   render(scope);  // 重新渲染，物理会让它飞向新区域
+}
+
+function addCheckinTask(scope) {
+  const prefix = scope === 'week' ? 'week' : 'day';
+  const textInput = document.getElementById(prefix + 'AddText');
+  const hourInput = document.getElementById(prefix + 'AddHour');
+  const minuteInput = document.getElementById(prefix + 'AddMinute');
+  const text = textInput.value.trim();
+  const hourText = hourInput.value.trim();
+  const minuteText = minuteInput.value.trim();
+  if (!text) { alert('请填写任务内容'); textInput.focus(); return; }
+  if (!!hourText !== !!minuteText) { alert('请同时填写小时和分钟，或都留空'); return; }
+  let start = '';
+  if (hourText && minuteText) {
+    const hour = Number(hourText), minute = Number(minuteText);
+    if (!Number.isInteger(hour) || hour < 0 || hour > 23 || !Number.isInteger(minute) || minute < 0 || minute > 59) {
+      alert('小时范围为 0–23，分钟范围为 0–59'); return;
+    }
+    start = String(hour).padStart(2, '0') + ':' + String(minute).padStart(2, '0');
+  }
+  const { tasks } = getData(scope);
+  tasks.push({ id: Date.now() + Math.random(), text, start, done: false, color: tasks.length % COLORS });
+  setData(scope, tasks);
+  textInput.value = '';
+  hourInput.value = '';
+  minuteInput.value = '';
+  render(scope);
+  textInput.focus({ preventScroll: true });
 }
 
 // ===== 新增任务（均在当前模块内展开） =====
