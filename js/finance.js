@@ -19,6 +19,7 @@ function fmtMoney(n) {
   return '¥' + (Math.round(n * 100) / 100).toFixed(2).replace(/\B(?=(\d{3})+(?!\d))/g, ',');
 }
 function switchBillType(type) {
+  document.body.dataset.billType = type;
   billEditingId = null;
   if (document.getElementById('billEditorText')) billClearEditor();
   billType = type;
@@ -482,3 +483,4 @@ function billFixedEdit(f, anchor) {
   });
 }// ===== 密码记录 =====
 // 记录字段：{ id, name, account, password, note }
+
