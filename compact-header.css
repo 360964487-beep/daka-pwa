@@ -1,4 +1,141 @@
 /* Compact task header: keep the work area ahead of decorative chrome. */
+.checkin-heading { min-height:44px; gap:12px; margin-bottom:12px; }
+.checkin-heading h1 { font-size:22px; line-height:1.25; font-weight:700; letter-spacing:-.02em; }
+.checkin-heading p { display:none; }
+
+.appearance-shortcut { width:44px; height:44px; border-radius:10px; background:transparent; }
+.appearance-shortcut svg { width:18px; height:18px; }
+.main-content { padding-top:24px; }
+@media(max-width:700px) {
+  .main-content { padding-top:12px; }
+  .checkin-heading { margin-bottom:10px; }
+  .checkin-heading h1 { font-size:20px; }
+}
+
+/* Compact page headers across all modules. Keep navigation targets comfortable. */
+.topbar {
+  min-height: 44px;
+  gap: 10px;
+  margin: 0 0 10px;
+  padding: 0;
+  align-items: center;
+}
+.topbar h1 {
+  margin: 0;
+  font-size: 22px;
+  line-height: 1.25;
+  font-weight: 750;
+  letter-spacing: -.025em;
+}
+.page-description { display: none !important; }
+.checkin-heading { margin-bottom: 10px; }
+@media (max-width: 700px) {
+  .topbar { min-height: 40px; margin-bottom: 8px; }
+  .topbar h1 { font-size: 20px; }
+}
+
+/* Calendar month controls: keep the month navigation visually subordinate to page back. */
+#calendar .cal-head {
+  justify-content: center;
+  gap: 12px;
+  margin-bottom: 12px;
+}
+#calendar .cal-head .cal-nav {
+  width: 44px;
+  min-width: 44px;
+  height: 44px;
+  border: 0;
+  border-radius: 50%;
+  background: transparent;
+  color: var(--ui-muted);
+  font-size: 20px;
+  box-shadow: none;
+}
+#calendar .cal-head .cal-nav:hover,
+#calendar .cal-head .cal-nav:focus-visible {
+  background: var(--ui-hover);
+}
+#calendar .cal-head .cal-title {
+  min-width: 104px;
+  text-align: center;
+  font-size: 18px;
+}
+
+/* Mobile navigation: use the full width for four modules and keep selection compact. */
+@media (max-width: 700px) {
+  .sidebar {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    grid-template-rows: 56px;
+    padding-top: 4px;
+    padding-bottom: calc(4px + env(safe-area-inset-bottom));
+  }
+  .sidebar .side-link {
+    min-height: 48px;
+    gap: 2px;
+    padding: 3px 0;
+    border-radius: 10px;
+    background: transparent;
+  }
+  .sidebar .side-link.active {
+    background: transparent;
+    color: var(--ui-accent-ink);
+  }
+  .sidebar .side-link .icon {
+    display: grid;
+    place-items: center;
+    width: 28px;
+    height: 28px;
+    border-radius: 9px;
+    transition: background-color .16s ease, color .16s ease;
+  }
+  .sidebar .side-link.active .icon {
+    background: var(--ui-accent);
+    color: var(--ui-on-accent);
+  }
+  .sidebar .side-label {
+    font-size: 10px;
+    line-height: 1.2;
+    font-weight: 600;
+  }
+  .sidebar .side-link.active .side-label { font-weight: 750; }
+}
+
+/* Income accent colors paired with each theme. */
+:root, body[data-theme="dopamine"] { --ui-income: #236748; --ui-income-ink: #fff; }
+body[data-theme="caramel"] { --ui-income: #426746; --ui-income-ink: #fff; }
+body[data-theme="mint"] { --ui-income: #a4442b; --ui-income-ink: #fff; }
+body[data-theme="berry"] { --ui-income: #31664d; --ui-income-ink: #fff; }
+body[data-theme="sea"] { --ui-income: #8a5a00; --ui-income-ink: #fff; }
+body[data-theme="arcade"] { --ui-income: #147d83; --ui-income-ink: #fff; }
+body[data-theme="citrus"] { --ui-income: #35643a; --ui-income-ink: #fff; }
+body[data-theme="midnight"] { --ui-income: #83d6b2; --ui-income-ink: #123b35; }
+
+/* Theme-specific base canvases let income tint the entire app without changing saved themes. */
+:root, body[data-theme="dopamine"] { --ui-theme-page: #fff0a6; }
+body[data-theme="caramel"] { --ui-theme-page: #f2e6d4; }
+body[data-theme="mint"] { --ui-theme-page: #cde7d8; }
+body[data-theme="berry"] { --ui-theme-page: #f3d3e1; }
+body[data-theme="sea"] { --ui-theme-page: #d6e7fc; }
+body[data-theme="arcade"] { --ui-theme-page: #d8c7ff; }
+body[data-theme="citrus"] { --ui-theme-page: #ffd690; }
+body[data-theme="midnight"] { --ui-theme-page: #141b2d; }
+body[data-bill-type="income"] {
+  --ui-page: color-mix(in srgb, var(--ui-income) 17%, var(--ui-theme-page));
+  --ui-accent: var(--ui-income);
+  --ui-accent-ink: var(--ui-income);
+  --ui-accent-soft: color-mix(in srgb, var(--ui-income) 18%, var(--ui-surface));
+  --ui-raised: color-mix(in srgb, var(--ui-income) 12%, var(--ui-surface));
+  --ui-border: color-mix(in srgb, var(--ui-income) 26%, var(--ui-surface));
+  --ui-hover: color-mix(in srgb, var(--ui-income) 12%, var(--ui-surface));
+  --ui-success: var(--ui-income);
+  --ui-focus: var(--ui-income);
+  --ui-on-accent: var(--ui-income-ink);
+  --primary: var(--ui-income);
+  --green: var(--ui-income);
+}
+
+/* Workspace layout refinements layered on the current GitHub stylesheet. */
+/* Compact task header: keep the work area ahead of decorative chrome. */
 .checkin-heading { min-height:44px; gap:8px; margin-bottom:8px; }
 .checkin-heading h1 { font-size:22px; line-height:1.25; font-weight:700; letter-spacing:-.02em; }
 .checkin-heading p { display:none; }
