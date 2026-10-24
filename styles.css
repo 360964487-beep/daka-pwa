@@ -983,3 +983,48 @@ body.is-scrolling #bill:not(.hidden) { filter:none; }
 
 .direct-editing { background:var(--ui-surface); color:var(--ui-ink); outline-color:var(--ui-focus); }
 
+/* Black & white: surface, type and spacing carry hierarchy; borders stay quiet. */
+body[data-theme="monochrome"] {
+ color-scheme: light;
+ --ui-page:#f4f4f2;
+ --ui-surface:#fff;
+ --ui-raised:#ededeb;
+ --ui-border:#e3e3df;
+ --ui-ink:#171717;
+ --ui-muted:#5a5a56;
+ --ui-accent:#171717;
+ --ui-accent-ink:#171717;
+ --ui-accent-soft:#e9e9e6;
+ --ui-hover:#f1f1ef;
+ --ui-tile:#e4e4e1;
+ --ui-success:#30302e;
+ --ui-danger:#444442;
+ --ui-focus:#171717;
+ --ui-on-accent:#fff;
+ --ui-nav:#171717;
+ --tile-0:#e5e5e2; --tile-1:#dcdcd9; --tile-2:#d3d3d0; --tile-3:#ebebe8;
+ --tile-4:#d0d0cd; --tile-5:#e1e1de; --tile-6:#d8d8d5; --tile-7:#c9c9c6;
+}
+body[data-theme="monochrome"] .cal-cell { background:transparent; }
+body[data-theme="monochrome"] .cal-cell.today { background:#ededeb; }
+body[data-theme="monochrome"] .cal-cell.sel,
+body[data-theme="monochrome"] .cal-cell.has-task,
+body[data-theme="monochrome"] .cal-cell.all-done { background:#171717; color:#fff; outline:0; }
+body[data-theme="monochrome"] .cal-cell.has-task .cal-day-note,
+body[data-theme="monochrome"] .cal-cell.all-done .cal-day-note { color:#fff; }
+body[data-theme="monochrome"] .bill-card,
+body[data-theme="monochrome"] .mine-actions { background:transparent; border:0; }
+body[data-theme="monochrome"] .bill-row { border-color:transparent; }
+body[data-theme="monochrome"] .bill-row + .bill-row { border-top:1px solid #eeeeeb; }
+body[data-theme="monochrome"] .mine-profile,
+body[data-theme="monochrome"] .cal-item,
+body[data-theme="monochrome"] .note-item,
+body[data-theme="monochrome"] .pwd-item { background:transparent; }
+body[data-theme="monochrome"] .mine-profile { padding-inline:0; }
+body[data-theme="monochrome"] .mine-stats,
+body[data-theme="monochrome"] .stat-box + .stat-box,
+body[data-theme="monochrome"] .mine-btn { border-color:transparent; }
+body[data-theme="monochrome"] .theme-option { border:0; border-radius:10px; background:transparent; }
+body[data-theme="monochrome"] .theme-option.active { background:#ededeb; }
+body[data-theme="monochrome"] .theme-swatches { border-radius:3px; }
+body[data-theme="monochrome"] .theme-option.active::after { border-radius:3px; }
