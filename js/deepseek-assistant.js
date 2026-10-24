@@ -174,9 +174,12 @@ async function sendDoubaoMessage() {
     const parsed = parseDeepSeekAssistantJson(content);
     let suggestedAction = parsed.action;
     let routedToCheckin = false;
+    let checkinNeedsTaskText = false;
+    let routedCheckinScope = null;
+    let routedCheckinDate = '';
     const asksToAddCheckin = /(添加|新增|设定|设置|安排|创建|加上|帮我加)/.test(text) && /(打卡任务|任务打卡|日任务|周任务)/.test(text);
-    if (asksToAddCheckin && suggestedAction && ['add_calendar_todo','add_checkin_task'].includes(suggestedAction.kind)) {
-      const weekday = text.match(/(?:周|星期)([一二三四五六日天])/);
+    const weekday = asksToAddCheckin ? text.match(/(?:周|星期)([一二三四五六日天])/) : null;
+    if (asksToAddCheckin && (!suggestedAction || ['add_calendar_todo','add_checkin_task'].includes(suggestedAction.kind))) {
       const explicitWeek = /周任务|周打卡|每周/.test(text) && !weekday;
       const explicitDay = /日任务|每日|每天/.test(text) || !!weekday;
       const scope = explicitWeek ? 'week' : explicitDay ? 'day' : (checkinTab === 'week' ? 'week' : 'day');
@@ -184,16 +187,27 @@ async function sendDoubaoMessage() {
       if (weekday) {
         const dayIndex = {'一':0,'二':1,'三':2,'四':3,'五':4,'六':5,'日':6,'天':6}[weekday[1]];
         targetDate = new Date(currentWeekStart);
+        if (/下周|下个星期/.test(text)) targetDate.setDate(targetDate.getDate() + 7);
+        if (/上周|上个星期/.test(text)) targetDate.setDate(targetDate.getDate() - 7);
         targetDate.setDate(targetDate.getDate() + dayIndex);
-      } else if (/(今天|明天|后天|上周|下周|\d{4}年|\d{4}-\d{1,2}-\d{1,2})/.test(text) && /^\d{4}-\d{2}-\d{2}$/.test(suggestedAction.date || '')) {
+      } else if (/(今天|明天|后天|上周|下周|\d{4}年|\d{4}-\d{1,2}-\d{1,2})/.test(text) && /^\d{4}-\d{2}-\d{2}$/.test(suggestedAction?.date || '')) {
         targetDate = new Date(suggestedAction.date + 'T12:00:00');
       }
-      suggestedAction = {...suggestedAction, kind:'add_checkin_task', scope, date:dateKey(targetDate)};
+      const taskText = String(suggestedAction?.text || suggestedAction?.name || '').trim();
       routedToCheckin = true;
+      routedCheckinScope = scope;
+      routedCheckinDate = dateKey(targetDate);
+      if (taskText) {
+        suggestedAction = {...suggestedAction, kind:'add_checkin_task', scope, date:routedCheckinDate, text:taskText};
+      } else {
+        suggestedAction = null;
+        checkinNeedsTaskText = true;
+      }
     }
-    const actionPreview = suggestedAction && suggestedAction.kind === 'add_checkin_task' ? suggestedAction : null;
     const reply = routedToCheckin
-      ? `明白，我会把“${suggestedAction.text || '这项任务'}”添加到${actionPreview.scope === 'week' ? '周打卡' : '日任务打卡'}（${actionPreview.date}），不会放进日历待办。`
+      ? (checkinNeedsTaskText
+          ? `可以，${weekday ? '周' + (weekday[1] === '天' ? '日' : weekday[1]) : ''}会放在任务打卡的日任务里，不会放进日历待办。请告诉我具体任务内容，例如“背单词 30 分钟”。`
+          : `明白，我会把“${suggestedAction.text}”添加到${routedCheckinScope === 'week' ? '周打卡' : '日任务打卡'}（${routedCheckinDate}），不会放进日历待办。`)
       : (String(parsed.reply || '').trim() || '我没能整理出明确答复。你可以换一种说法，或补充目标、时间和具体内容，我会继续帮你处理。');
     doubaoBubble(reply);
     doubaoHistory.push({ role:'assistant', content:reply });
