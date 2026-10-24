@@ -577,15 +577,15 @@ body[data-bill-type="income"] {
 /* Narrower weekday rail; keep it beside the task board on phones as well. */
 @media (min-width: 600px) {
   #week:not(.hidden),
-  #day:not(.hidden) { grid-template-columns: minmax(0, 1fr) 92px; column-gap: 10px; }
+  #day:not(.hidden) { grid-template-columns: minmax(0, 1fr) 60px; column-gap: 8px; }
   #week > .checkin-tabs,
-  #day > .checkin-tabs { width: 92px; }
+  #day > .checkin-tabs { width: 60px; }
 }
 @media (max-width: 599px) {
   #week:not(.hidden),
   #day:not(.hidden) {
     display: grid;
-    grid-template-columns: minmax(0, 1fr) 66px;
+    grid-template-columns: minmax(0, 1fr) 44px;
     column-gap: 8px;
     align-content: start;
   }
@@ -597,7 +597,7 @@ body[data-bill-type="income"] {
     grid-row: 2;
     display: flex;
     flex-direction: column;
-    width: 66px;
+    width: 44px;
     max-width: none;
     gap: 6px;
     align-self: start;
@@ -615,7 +615,7 @@ body[data-bill-type="income"] {
   }
   #week > .checkin-tabs .vt-btn,
   #day > .checkin-tabs .vt-btn {
-    width: 66px;
+    width: 44px;
     min-width: 0;
     min-height: 44px;
     padding: 7px 2px;
@@ -708,4 +708,136 @@ body[data-bill-type="income"] {
 #day > .checkin-tabs .checkin-tabs-row .vt-btn {
   min-height: 0;
   height: 100%;
+}
+
+
+/* One compact five-entry mobile dock; it stays visible outside text editing. */
+@media (max-width: 700px) {
+  .sidebar {
+    grid-template-columns: repeat(5, minmax(0, 1fr));
+    grid-template-rows: 52px;
+    gap: 2px;
+    padding-top: 3px;
+    padding-bottom: calc(3px + env(safe-area-inset-bottom));
+  }
+  .sidebar .side-link,
+  .sidebar > .doubao-launch {
+    position: static;
+    width: 100%;
+    min-width: 0;
+    min-height: 48px;
+    height: auto;
+    box-sizing: border-box;
+    flex-direction: column;
+    justify-content: center;
+    gap: 2px;
+    padding: 2px 0;
+    border: 0;
+    border-radius: 9px;
+    box-shadow: none;
+    font-size: 10px;
+    line-height: 1.15;
+  }
+  .sidebar .side-link .icon,
+  .sidebar > .doubao-launch .icon { width: 22px; height: 22px; }
+  .sidebar .side-link .icon svg,
+  .sidebar > .doubao-launch svg { width: 20px; height: 20px; }
+  .sidebar .side-label { font-size: 9px; }
+  .sidebar > .doubao-launch { color: var(--ui-muted); background: transparent; }
+  .sidebar > .doubao-launch[aria-expanded="true"] { color: var(--ui-accent-ink); background: var(--ui-accent-soft); }
+  .sidebar > .doubao-launch:hover,
+  .sidebar > .doubao-launch:focus-visible { color: var(--ui-accent-ink); background: var(--ui-hover); }
+}
+
+/* Keep optional time and Add action together on one compact row. */
+.checkin-add-form,
+#calendar .cal-wrap #calAddForm {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 10px 8px;
+}
+.checkin-add-form > .bill-editor-title,
+.checkin-add-form > textarea,
+#calendar .cal-wrap #calAddForm > .bill-editor-title,
+#calendar .cal-wrap #calAddForm > textarea { grid-column: 1 / -1; }
+.checkin-add-form .inline-time-inputs,
+#calendar .cal-wrap #calAddForm .inline-time-inputs {
+  grid-column: 1;
+  min-width: 0;
+  display: flex;
+  flex-wrap: nowrap;
+  align-items: center;
+  gap: 6px;
+  margin: 0;
+}
+.checkin-add-form .inline-time-inputs > span,
+#calendar .cal-wrap #calAddForm .inline-time-inputs > span {
+  flex: 0 0 auto;
+  width: auto;
+  margin-right: auto;
+  white-space: nowrap;
+}
+.checkin-add-form .inline-time-inputs input,
+#calendar .cal-wrap #calAddForm .inline-time-inputs input {
+  flex: 0 0 54px;
+  width: 54px;
+  min-width: 0;
+  padding-inline: 6px;
+  text-align: center;
+}
+.checkin-add-form .bill-editor-actions,
+#calendar .cal-wrap #calAddForm .bill-editor-actions {
+  grid-column: 2;
+  margin: 0;
+  align-self: center;
+}
+.checkin-add-form .bill-editor-actions .bill-editor-save,
+#calendar .cal-wrap #calAddForm .bill-editor-actions .bill-editor-save {
+  min-height: 44px;
+  padding-inline: 14px;
+}
+@media (max-width: 360px) {
+  .checkin-add-form,
+  #calendar .cal-wrap #calAddForm { gap: 8px 5px; }
+  .checkin-add-form .inline-time-inputs,
+  #calendar .cal-wrap #calAddForm .inline-time-inputs { gap: 4px; }
+  .checkin-add-form .inline-time-inputs input,
+  #calendar .cal-wrap #calAddForm .inline-time-inputs input { flex-basis: 46px; width: 46px; }
+  .checkin-add-form .bill-editor-actions .bill-editor-save,
+  #calendar .cal-wrap #calAddForm .bill-editor-actions .bill-editor-save { padding-inline: 10px; }
+}
+
+/* Place accounting Add directly after amount in the same row. */
+#billEditor,
+#billFixedAddForm {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(88px, 120px) auto;
+  align-items: center;
+  gap: 8px;
+}
+#billEditor > .bill-editor-title,
+#billFixedAddForm > .bill-editor-title { grid-column: 1 / -1; }
+#billEditor .bill-editor-fields,
+#billFixedAddForm .bill-editor-fields,
+#billEditor .bill-editor-actions,
+#billFixedAddForm .bill-editor-actions { display: contents; }
+#billEditor .bill-editor-fields input:first-child,
+#billFixedAddForm .bill-editor-fields input:first-child { grid-column: 1; }
+#billEditor .bill-editor-fields input:nth-child(2),
+#billFixedAddForm .bill-editor-fields input:nth-child(2) { grid-column: 2; }
+#billEditor .bill-editor-actions .bill-editor-save,
+#billFixedAddForm .bill-editor-actions .bill-editor-save { grid-column: 3; min-height: 44px; padding-inline: 14px; }
+#billEditor .bill-editor-actions .bill-editor-cancel { grid-column: 1; grid-row: 3; }
+@media (max-width: 420px) {
+  #billEditor,
+  #billFixedAddForm { grid-template-columns: minmax(0, 1fr) 78px auto; gap: 6px; }
+  #billEditor .bill-editor-actions .bill-editor-save,
+  #billFixedAddForm .bill-editor-actions .bill-editor-save { padding-inline: 10px; }
+}
+@media (max-width: 360px) {
+  #billEditor,
+  #billFixedAddForm { grid-template-columns: minmax(0, 1fr) 68px auto; gap: 4px; }
+  #billEditor .bill-editor-actions .bill-editor-save,
+  #billFixedAddForm .bill-editor-actions .bill-editor-save { padding-inline: 8px; }
 }
