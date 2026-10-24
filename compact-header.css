@@ -677,3 +677,35 @@ body[data-bill-type="income"] {
   color: var(--ui-accent-ink);
 }
 
+
+
+/* Stretch the weekday rail to the board height and distribute all choices evenly. */
+@media (min-width: 600px) {
+  #week > .checkin-tabs,
+  #day > .checkin-tabs { align-self: stretch; }
+}
+@media (max-width: 599px) {
+  #week > .checkin-tabs,
+  #day > .checkin-tabs { align-self: stretch; }
+}
+#week > .checkin-tabs .weekday-row,
+#day > .checkin-tabs .weekday-row {
+  flex: 5 1 0;
+  grid-template-rows: repeat(5, minmax(0, 1fr));
+  min-height: 0;
+}
+#week > .checkin-tabs .weekend-row,
+#day > .checkin-tabs .weekend-row {
+  flex: 3 1 0;
+  grid-template-rows: repeat(3, minmax(0, 1fr));
+  min-height: 0;
+}
+#week > .checkin-tabs .checkin-tabs-row,
+#day > .checkin-tabs .checkin-tabs-row {
+  grid-template-columns: minmax(0, 1fr);
+}
+#week > .checkin-tabs .checkin-tabs-row .vt-btn,
+#day > .checkin-tabs .checkin-tabs-row .vt-btn {
+  min-height: 0;
+  height: 100%;
+}
