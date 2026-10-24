@@ -374,9 +374,13 @@ function switchCheckinTab(tab) {
   if (title) { title.textContent = ''; title.style.display = 'none'; }
   document.getElementById('week').classList.toggle('hidden', showDay);
   document.getElementById('day').classList.toggle('hidden', !showDay);
+  const activeCheckinView = document.getElementById(showDay ? 'day' : 'week');
+  activeCheckinView.classList.remove('checkin-view-enter');
+  void activeCheckinView.offsetWidth;
+  activeCheckinView.classList.add('checkin-view-enter');
   document.querySelectorAll('.checkin-tabs .vt-btn').forEach(b => b.classList.toggle('active', b.dataset.checkin === tab));
-  if (showDay) render('day');
-  else switchWeekView('board');
+  if (showDay) render('day', false);
+  else switchWeekView('board', false);
 }
 function goPage(page) {
   if (page === 'week') { checkinTab = 'week'; page = 'checkin'; }
@@ -386,14 +390,12 @@ function goPage(page) {
   document.getElementById('day').classList.toggle('hidden', page !== 'checkin' || checkinTab === 'week');
   document.getElementById('calendar').classList.toggle('hidden', page !== 'calendar');
   document.getElementById('bill').classList.toggle('hidden', page !== 'bill');
-  document.getElementById('pwd').classList.toggle('hidden', page !== 'pwd');
   document.getElementById('note').classList.toggle('hidden', page !== 'note');
   document.getElementById('mine').classList.toggle('hidden', page !== 'mine');
   document.querySelectorAll('.side-link').forEach(b => b.classList.toggle('active', b.dataset.page === page));
   if (page === 'checkin') switchCheckinTab(checkinTab);
   if (page === 'calendar') renderCalendar();
   if (page === 'bill') { billType = 'expense'; billTab = 'year'; billYear = new Date().getFullYear(); billMonth = new Date().getMonth(); switchBillType('expense'); }
-  if (page === 'pwd') renderPwd();
   if (page === 'note') renderNote();
   if (page === 'mine') renderMine();
   window.scrollTo({ top: 0, behavior: 'smooth' });
@@ -417,3 +419,8 @@ function setData(scope, tasks) {
   const all = load(storeKey, {});
   all[dataKey] = tasks; save(storeKey, all);
 }
+
+
+
+
+

@@ -93,9 +93,9 @@ function renderMine() {
 }
 
 const APP_THEME_KEY = 'taskTrackerTheme';
-const APP_THEME_OPTIONS = ['caramel','mint','berry','sea'];
+const APP_THEME_OPTIONS = ['caramel','mint','berry','sea','dopamine','arcade','citrus','midnight'];
 function syncThemeOptions() {
-  const activeTheme = document.body.dataset.theme || 'caramel';
+  const activeTheme = document.body.dataset.theme || 'dopamine';
   document.querySelectorAll('[data-theme-option]').forEach(button => {
     const active = button.dataset.themeOption === activeTheme;
     button.classList.toggle('active', active);
@@ -107,9 +107,11 @@ function setAppTheme(theme) {
   document.body.dataset.theme = theme;
   try { localStorage.setItem(APP_THEME_KEY, theme); } catch (_) {}
   syncThemeOptions();
+  const themeColor = document.querySelector('meta[name="theme-color"]');
+  if (themeColor) themeColor.content = getComputedStyle(document.body).getPropertyValue('--ui-page').trim();
 }
 function initAppTheme() {
-  let theme = 'caramel';
+  let theme = 'dopamine';
   try { const saved = localStorage.getItem(APP_THEME_KEY); if (APP_THEME_OPTIONS.includes(saved)) theme = saved; } catch (_) {}
   setAppTheme(theme);
 }

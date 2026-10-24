@@ -89,7 +89,7 @@ function cmpSeq(a, b) {
   return ah ? at - bt : 0;
 }
 
-function render(scope) {
+function render(scope, animate = true) {
   const board = document.getElementById(scope + 'Board');
   const { tasks } = getData(scope);
   let hint = board.querySelector('.board-hint');
@@ -217,7 +217,16 @@ function render(scope) {
         tm.style.fontSize = fit.tfs + 'px';
       } else if (tm) { tm.remove(); }
     }
-    animateTilePosition(el, isNew ? tilePosition(el.style.transform) : fromPosition, tx, ty, isNew);
+    if (animate) {
+      animateTilePosition(el, isNew ? tilePosition(el.style.transform) : fromPosition, tx, ty, isNew);
+    } else {
+      if (el.getAnimations) el.getAnimations().forEach(animation => animation.cancel());
+      el.style.left = Math.round(tx) + 'px';
+      el.style.top = Math.round(ty) + 'px';
+      el.style.transform = 'none';
+      el.style.opacity = '1';
+      el.style.willChange = 'auto';
+    }
   });
 
   // 移除已删除的块
@@ -550,3 +559,7 @@ function openForm(title, fields, okText) {
     document.getElementById('formOverlay').addEventListener('click', onBackdrop);
   });
 }
+
+
+
+

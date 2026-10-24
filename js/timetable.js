@@ -29,14 +29,14 @@ function ttSetWeekTasks(tasks) {
   save(KEY_TT, all);
 }
 
-function switchWeekView(view) {
+function switchWeekView(view, animate = true) {
   weekView = view;
   document.querySelectorAll('#weekTabs .vt-btn').forEach(b => {
     b.classList.toggle('active', b.dataset.view === view);
   });
   document.getElementById('weekBoardWrap').classList.toggle('hidden', view !== 'board');
   document.getElementById('weekTableWrap').classList.toggle('hidden', view !== 'timetable');
-  if (view === 'board') render('week');
+  if (view === 'board') render('week', animate);
   else renderTimetable();
 }
 
