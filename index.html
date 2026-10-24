@@ -31,6 +31,12 @@
       <div class="spacer"></div>
 </div>
     <div class="board-wrap" id="weekBoardWrap"><div class="board" id="weekBoard"></div></div>
+    <section class="bill-editor inline-add-form checkin-add-form" aria-label="添加周任务">
+      <div class="bill-editor-title">添加任务</div>
+      <textarea id="weekAddText" aria-label="周任务内容" rows="2" placeholder="写下要打卡的任务"></textarea>
+      <div class="inline-time-inputs"><span>时间（可选）</span><input id="weekAddHour" type="text" inputmode="numeric" maxlength="2" placeholder="小时" aria-label="小时"><b>:</b><input id="weekAddMinute" type="text" inputmode="numeric" maxlength="2" placeholder="分钟" aria-label="分钟"></div>
+      <div class="bill-editor-actions"><button type="button" class="bill-editor-save" onclick="addCheckinTask('week')">添加</button></div>
+    </section>
     <div class="tt-wrap hidden" id="weekTableWrap"></div>
   </div>
 
@@ -41,6 +47,12 @@
       <h1>日任务</h1>
     </div>
     <div class="board-wrap"><div class="board" id="dayBoard"></div></div>
+    <section class="bill-editor inline-add-form checkin-add-form" aria-label="添加日任务">
+      <div class="bill-editor-title">添加任务</div>
+      <textarea id="dayAddText" aria-label="日任务内容" rows="2" placeholder="写下要打卡的任务"></textarea>
+      <div class="inline-time-inputs"><span>时间（可选）</span><input id="dayAddHour" type="text" inputmode="numeric" maxlength="2" placeholder="小时" aria-label="小时"><b>:</b><input id="dayAddMinute" type="text" inputmode="numeric" maxlength="2" placeholder="分钟" aria-label="分钟"></div>
+      <div class="bill-editor-actions"><button type="button" class="bill-editor-save" onclick="addCheckinTask('day')">添加</button></div>
+    </section>
   </div>
 
   <div id="calendar" class="hidden">
