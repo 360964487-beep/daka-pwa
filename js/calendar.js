@@ -1,3 +1,87 @@
+// ===== 日历待办到点提醒 =====
+const calendarReminderTimers = new Map();
+const CALENDAR_REMINDER_MAX_DELAY = 2147483000;
+function requestCalendarReminderPermission() {
+  if (!('Notification' in window)) return Promise.resolve('unsupported');
+  if (Notification.permission !== 'default') return Promise.resolve(Notification.permission);
+  return Notification.requestPermission().catch(() => Notification.permission || 'denied');
+}
+function calendarReminderNotice(permission) {
+  if (permission === 'granted') return;
+  if (permission === 'unsupported') {
+    alert('待办已保存，但当前浏览器不支持系统通知，无法发送到点提醒。');
+    return;
+  }
+  alert('待办已保存，但通知权限未开启。请在浏览器的网站设置中允许通知，才能收到提醒。');
+}
+async function showCalendarReminder(task, date) {
+  const title = '焦糖打卡 · 日历待办';
+  const options = {
+    body: String(task.text || '待办时间到了'),
+    tag: 'calendar-todo-' + date + '-' + String(task.id),
+    icon: './icon-192-rounded.png',
+    badge: './icon-192-rounded.png',
+    data: { date }
+  };
+  try {
+    if ('serviceWorker' in navigator) {
+      const registration = await navigator.serviceWorker.getRegistration();
+      if (registration && registration.showNotification) {
+        await registration.showNotification(title, options);
+        return;
+      }
+    }
+  } catch (_) {}
+  try { new Notification(title, options); } catch (_) {}
+}
+function scheduleCalendarReminders() {
+  for (const timer of calendarReminderTimers.values()) clearTimeout(timer);
+  calendarReminderTimers.clear();
+  if (!('Notification' in window) || Notification.permission !== 'granted') return;
+  const all = load(KEY_CAL, {});
+  const now = Date.now();
+  Object.entries(all || {}).forEach(([date, tasks]) => {
+    if (!Array.isArray(tasks)) return;
+    tasks.forEach(task => {
+      if (!task || task.done || !task.start || !/^\d{4}-\d{2}-\d{2}$/.test(date) || !/^([01]\d|2[0-3]):[0-5]\d$/.test(task.start)) return;
+      const due = new Date(date + 'T' + task.start + ':00').getTime();
+      if (!Number.isFinite(due) || due < now - 5 * 60 * 1000) return;
+      const id = String(task.id == null ? task.text : task.id);
+      const timerKey = date + '|' + id + '|' + task.start;
+      const firedKey = 'calendar_reminder_fired_v1|' + timerKey;
+      try { if (localStorage.getItem(firedKey)) return; } catch (_) {}
+      const arm = () => {
+        const remaining = due - Date.now();
+        if (remaining > CALENDAR_REMINDER_MAX_DELAY) {
+          calendarReminderTimers.set(timerKey, setTimeout(arm, CALENDAR_REMINDER_MAX_DELAY));
+          return;
+        }
+        calendarReminderTimers.set(timerKey, setTimeout(() => {
+          calendarReminderTimers.delete(timerKey);
+          const current = calGetTasks(date).find(item =>
+            String(item.id == null ? item.text : item.id) === id &&
+            item.start === task.start &&
+            !item.done
+          );
+          if (!current) return;
+          try {
+            if (localStorage.getItem(firedKey)) return;
+            localStorage.setItem(firedKey, String(Date.now()));
+          } catch (_) {}
+          showCalendarReminder(current, date);
+        }, Math.max(0, remaining)));
+      };
+      arm();
+    });
+  });
+}
+window.addEventListener('load', scheduleCalendarReminders, { once:true });
+window.addEventListener('pageshow', scheduleCalendarReminders);
+window.addEventListener('storage', event => { if (event.key === KEY_CAL) scheduleCalendarReminders(); });
+document.addEventListener('visibilitychange', () => {
+  if (!document.hidden) scheduleCalendarReminders();
+});
+
 // ===== 日历待办 =====
 // 日历待办独立存储：按日期 key 存任务数组，与日任务互不联动。
 function calGetTasks(key) {
@@ -137,7 +221,7 @@ function renderCalendar() {
     items.appendChild(row);
   });
 }
-function calAdd() {
+async function calAdd() {
   const text = document.getElementById('calAddText').value.trim();
   const hourText = document.getElementById('calAddHour').value.trim();
   const minuteText = document.getElementById('calAddMinute').value.trim();
@@ -149,6 +233,7 @@ function calAdd() {
     if (!Number.isInteger(hour) || hour < 0 || hour > 23 || !Number.isInteger(minute) || minute < 0 || minute > 59) { alert('小时范围为 0–23，分钟范围为 0–59'); return; }
     start = pad(hour) + ':' + pad(minute);
   }
+  const reminderPermission = start ? await requestCalendarReminderPermission() : null;
   const tasks = calGetTasks(calSelKey);
   tasks.push({ id:Date.now() + Math.random(), text, start, done:false, color:tasks.length % COLORS });
   calSetTasks(calSelKey, tasks);
@@ -157,7 +242,13 @@ function calAdd() {
   document.getElementById('calAddMinute').value = '';
   document.body.classList.remove('inline-editing');
   renderCalendar();
+  if (start) {
+    const due = new Date(calSelKey + 'T' + start + ':00').getTime();
+    if (reminderPermission !== 'granted') calendarReminderNotice(reminderPermission);
+    else if (due < Date.now() - 5 * 60 * 1000) alert('待办已保存，但设定的时间已过，不会再提醒。');
+  }
 }
+
 // 待办内容与时间在当前行下方直接编辑
 function calEdit(t, key, anchor) {
   const tasks = calGetTasks(key);
@@ -171,10 +262,19 @@ function calEdit(t, key, anchor) {
     const start = readTimeFields(values, 1);
     if (!text) { alert('请填写待办内容'); return false; }
     if (start === null) { alert('小时范围为 0–23，分钟范围为 0–59'); return false; }
-    obj.text = text; obj.start = start;
-    calSetTasks(key, tasks); renderCalendar();
+    const saveEdit = permission => {
+      obj.text = text; obj.start = start;
+      calSetTasks(key, tasks); renderCalendar();
+      if (start && permission !== 'granted') calendarReminderNotice(permission);
+    };
+    if (start) {
+      requestCalendarReminderPermission().then(saveEdit);
+      return false;
+    }
+    saveEdit(null);
   });
 }
+
 function bindLongPress(el, onLongPress) {
   el.oncontextmenu = (e) => e.preventDefault();
   let timer = null;
