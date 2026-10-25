@@ -215,7 +215,7 @@ function importData() {
             throw new Error('备份中的“' + label + '”包含无法识别的记录');
           }
         }
-        if (!confirm('即将用备份覆盖本机的任务、账本、密钥和小纸条数据。建议先导出当前数据。确定导入吗？')) return;
+        if (!confirm('即将用备份覆盖本机的任务、账本、密钥和小纸条数据。建议先保存当前数据。确定导入吗？')) return;
 
         if (own(data, 'profileName')) staged.push([KEY_PROFILE_NAME, data.profileName]);
         const keys = staged.map(([key]) => key);
@@ -233,14 +233,14 @@ function importData() {
               else if (previousMemory.get(key) === undefined) delete memStore[key];
               else memStore[key] = previousMemory.get(key);
             }
-            throw new Error('浏览器存储空间不足，未能完整写入，原数据已尽量恢复。请先导出备份或清理空间后重试。');
+            throw new Error('浏览器存储空间不足，未能完整写入，原数据已尽量恢复。请先保存备份或清理空间后重试。');
           }
         } else {
           for (const [key, value] of staged) memStore[key] = JSON.stringify(value);
-          warnVolatileStorage('导入数据仅保存在本次页面会话中，关闭后可能丢失。请尽快导出备份。');
+          warnVolatileStorage('导入数据仅保存在本次页面会话中，关闭后可能丢失。请尽快保存备份。');
         }
         refreshVisiblePage();
-        alert(storageOK ? '导入完成。' : '导入完成，但当前浏览器不支持永久保存；请保持页面打开并尽快导出备份。');
+        alert(storageOK ? '导入完成。' : '导入完成，但当前浏览器不支持永久保存；请保持页面打开并尽快保存备份。');
       } catch(e) { alert('导入失败：' + (e && e.message ? e.message : '文件格式不正确')); }
     };
     reader.onerror = () => alert('导入失败：无法读取所选文件。');
