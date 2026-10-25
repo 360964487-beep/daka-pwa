@@ -12,6 +12,9 @@
     "standalone",
     "minimal-ui"
   ],
+  "launch_handler": {
+    "client_mode": "focus-existing"
+  },
   "orientation": "portrait",
   "background_color": "#faf6ef",
   "theme_color": "#faf6ef",
