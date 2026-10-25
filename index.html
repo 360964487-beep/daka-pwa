@@ -77,7 +77,8 @@
         <div class="bill-editor inline-add-form" id="calAddForm">
   <div class="bill-editor-title">添加待办</div>
   <textarea id="calAddText" aria-label="待办内容" rows="2" placeholder="待办内容"></textarea>
-  <div class="inline-time-inputs"><span>时间（可选）</span><input id="calAddHour" type="text" inputmode="numeric" maxlength="2" placeholder="小时" aria-label="小时"><b>:</b><input id="calAddMinute" type="text" inputmode="numeric" maxlength="2" placeholder="分钟" aria-label="分钟"></div>
+  <div class="inline-time-inputs"><span>提醒时间（可选）</span><input id="calAddHour" type="text" inputmode="numeric" maxlength="2" placeholder="小时" aria-label="小时"><b>:</b><input id="calAddMinute" type="text" inputmode="numeric" maxlength="2" placeholder="分钟" aria-label="分钟"></div>
+  <div class="calendar-reminder-note" style="font-size:12px;color:var(--ui-muted);margin-top:6px">填写时间并允许通知后，到点提醒。应用关闭时无法保证触发。</div>
   <div class="bill-editor-actions"><button class="bill-editor-save" onclick="calAdd()">添加</button></div>
 </div>
       </div>
