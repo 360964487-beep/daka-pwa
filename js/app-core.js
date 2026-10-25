@@ -81,14 +81,14 @@ function warnVolatileStorage(message) {
   const show = () => {
     const tip = document.createElement('div');
     tip.style.cssText = 'max-width:520px;margin:0 auto 12px;padding:10px 14px;background:#fff7e6;border:1px solid #f5c518;border-radius:12px;font-size:13px;color:#8a6d1a;line-height:1.6;';
-    tip.textContent = '⚠️ ' + (message || '浏览器无法永久保存数据，当前修改仅在本次打开期间有效。请尽快导出备份。');
+    tip.textContent = '⚠️ ' + (message || '浏览器无法永久保存数据，当前修改仅在本次打开期间有效。请尽快保存备份。');
     const app = document.querySelector('.app');
     if (app) app.prepend(tip); else document.body.prepend(tip);
   };
   if (document.readyState === 'loading') window.addEventListener('DOMContentLoaded', show, { once:true });
   else show();
 }
-if (!storageOK) warnVolatileStorage('当前浏览器环境不支持永久保存，数据仅本次打开期间有效。请尽快导出备份。');
+if (!storageOK) warnVolatileStorage('当前浏览器环境不支持永久保存，数据仅本次打开期间有效。请尽快保存备份。');
 function load(k, f) {
   if (Object.prototype.hasOwnProperty.call(memStore, k)) {
     try { const value = JSON.parse(memStore[k]); return value == null ? f : value; } catch(e) { return f; }
@@ -100,7 +100,7 @@ function save(k, d) {
   const s = JSON.stringify(d);
   if (!storageOK) { memStore[k] = s; return false; }
   try { localStorage.setItem(k, s); delete memStore[k]; return true; }
-  catch(e) { memStore[k] = s; warnVolatileStorage('浏览器保存失败（可能是存储空间不足或受限），本次修改暂存在内存中，关闭页面后可能丢失。请尽快导出备份。'); return false; }
+  catch(e) { memStore[k] = s; warnVolatileStorage('浏览器保存失败（可能是存储空间不足或受限），本次修改暂存在内存中，关闭页面后可能丢失。请尽快保存备份。'); return false; }
 }
 
 // 通用页内编辑栏：直接插入到被编辑记录之后，不弹出模态窗口。
