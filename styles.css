@@ -1041,3 +1041,17 @@ body[data-theme="monochrome"] .theme-option.active::after { border-radius:3px; }
 .app-update-status { min-height:18px; }
 body[data-theme="monochrome"] .app-update-card { border-color:#dededb; }
 @media(max-width:380px) { .app-update-card { padding:12px 0; } .app-update-button { padding-inline:12px; } }
+
+
+/* Fixed bills: compact grip, touch-safe long press and low-jank reorder feedback. */
+.bill-reorder-handle { flex:0 0 40px; width:40px; min-width:40px; height:44px; min-height:44px; display:grid; place-items:center; margin:0 -4px; padding:0; border:0; border-radius:10px; background:transparent; color:var(--ui-muted); cursor:grab; touch-action:none; -webkit-user-select:none; user-select:none; -webkit-tap-highlight-color:transparent; }
+.bill-reorder-handle svg { width:18px; height:18px; fill:currentColor; opacity:.72; }
+.bill-reorder-handle:active,.bill-reorder-handle.is-dragging { color:var(--ui-accent); cursor:grabbing; background:var(--ui-accent-soft); }
+.bill-reorder-handle:focus-visible { outline:2px solid var(--ui-focus); outline-offset:1px; }
+#billFixedRows.is-reordering { user-select:none; -webkit-user-select:none; }
+#billFixedRows .bill-fixed-entry { transform-origin:center; }
+#billFixedRows .bill-fixed-entry.is-dragging { position:relative; z-index:2; opacity:.98; background:var(--ui-surface); border-radius:10px; box-shadow:0 10px 26px color-mix(in srgb,var(--ui-ink) 18%,transparent); transition:none!important; will-change:transform; }
+#billFixedRows .bill-fixed-entry.just-dropped { animation:fixedBillDrop .22s cubic-bezier(.2,.75,.25,1) both; }
+@keyframes fixedBillDrop { 0% { scale:1.025; } 70% { scale:.995; } 100% { scale:1; } }
+.sr-only { position:absolute!important; width:1px!important; height:1px!important; padding:0!important; margin:-1px!important; overflow:hidden!important; clip:rect(0,0,0,0)!important; white-space:nowrap!important; border:0!important; }
+@media(prefers-reduced-motion:reduce) { #billFixedRows .bill-fixed-entry.just-dropped { animation:none; } }
