@@ -1,153 +1,108 @@
-// Fixed bill drag sorting: pointer long-press, smooth FLIP reflow and keyboard arrows.
+// Fixed bill ordering: explicit up/down controls, persisted to the matching local list.
 (() => {
   const container = document.getElementById('billFixedRows');
   if (!container) return;
   const status = document.getElementById('billFixedSortStatus');
   const keys = { expense:'checkin_fixed_v1', income:'checkin_fixed_in_v1' };
-  let drag = null;
-  let holdTimer = null;
+  const currentType = () => document.body.dataset.billType === 'income' ? 'income' : 'expense';
+  const readItems = type => {
+    try { return JSON.parse(localStorage.getItem(keys[type || currentType()]) || '[]') || []; }
+    catch (_) { return []; }
+  };
+  const writeItems = (items, type) => {
+    try { localStorage.setItem(keys[type], JSON.stringify(items)); return true; }
+    catch (_) { return false; }
+  };
+  const rows = () => [...container.querySelectorAll('.bill-fixed-entry')];
+  const say = message => { if (status) status.textContent = message; };
 
-  function currentType() { return document.body.dataset.billType === 'income' ? 'income' : 'expense'; }
-  function readItems(type = currentType()) {
-    try { return JSON.parse(localStorage.getItem(keys[type]) || '[]') || []; } catch (_) { return []; }
-  }
-  function writeItems(items, type = currentType()) {
-    try { localStorage.setItem(keys[type], JSON.stringify(items)); } catch (_) {}
-  }
-  function say(message) { if (status) status.textContent = message; }
-  function itemKey(item, index) { return item && item.id != null ? String(item.id) : `legacy-${index}`; }
-  function enhanceRows() {
-    const items = readItems();
-    const rows = [...container.querySelectorAll('.bill-row:not(.bill-total-row)')];
-    rows.forEach((row, index) => {
-      row.classList.add('bill-fixed-entry');
-      if (!row.dataset.fixedId && items[index]) row.dataset.fixedId = itemKey(items[index], index);
-      if (row.querySelector('.bill-reorder-handle')) return;
-      const handle = document.createElement('button');
-      handle.type = 'button';
-      handle.className = 'bill-reorder-handle';
-      handle.setAttribute('aria-label', `长按拖动${items[index]?.name || '固定账单'}排序；也可使用方向键调整顺序`);
-      handle.title = '长按拖动排序';
-      handle.innerHTML = '<svg viewBox="0 0 20 20" aria-hidden="true"><circle cx="7" cy="5" r="1"/><circle cx="13" cy="5" r="1"/><circle cx="7" cy="10" r="1"/><circle cx="13" cy="10" r="1"/><circle cx="7" cy="15" r="1"/><circle cx="13" cy="15" r="1"/></svg>';
-      const deleteButton = row.querySelector('.br-del');
-      row.insertBefore(handle, deleteButton || null);
+  function refreshOrder(items = readItems()) {
+    const list = rows();
+    list.forEach((row, index) => {
+      row.dataset.fixedId = items[index]?.id != null ? String(items[index].id) : `legacy-${index}`;
+      const up = row.querySelector('[data-move="up"]');
+      const down = row.querySelector('[data-move="down"]');
+      if (!up || !down) return;
+      const name = row.querySelector('.br-name')?.textContent?.trim() || '固定账单';
+      up.disabled = index === 0;
+      down.disabled = index === list.length - 1;
+      up.setAttribute('aria-label', `上移${name}`);
+      down.setAttribute('aria-label', `下移${name}`);
     });
   }
-  function persistDomOrder(type) {
+
+  function animateSwap(changedRows, oldRects) {
+    changedRows.forEach(row => {
+      const before = oldRects.get(row);
+      if (!before || typeof row.animate !== 'function') return;
+      const after = row.getBoundingClientRect();
+      const dy = before.top - after.top;
+      if (Math.abs(dy) > 1) row.animate(
+        [{ transform:`translate3d(0,${dy}px,0)` }, { transform:'translate3d(0,0,0)' }],
+        { duration:180, easing:'cubic-bezier(.2,.75,.25,1)' }
+      );
+    });
+  }
+
+  function moveRow(row, delta) {
+    const type = currentType();
+    const list = rows();
+    const from = list.indexOf(row);
+    const to = from + delta;
+    if (from < 0 || to < 0 || to >= list.length) return;
     const items = readItems(type);
-    const byKey = new Map(items.map((item, index) => [itemKey(item, index), item]));
-    const ordered = [...container.querySelectorAll('.bill-fixed-entry')]
-      .map(row => byKey.get(row.dataset.fixedId)).filter(Boolean);
-    const used = new Set(ordered.map((item, index) => {
-      const originalIndex = items.findIndex(candidate => candidate === item);
-      return itemKey(item, originalIndex >= 0 ? originalIndex : index);
-    }));
-    writeItems(ordered.concat(items.filter((item, index) => !used.has(itemKey(item, index)))), type);
-  }
-  function animateOthers(rows, oldRects) {
-    rows.forEach(row => {
-      const oldRect = oldRects.get(row);
-      if (!oldRect || typeof row.animate !== 'function') return;
-      const newRect = row.getBoundingClientRect();
-      const dy = oldRect.top - newRect.top;
-      if (Math.abs(dy) < 1) return;
-      row.animate([{ transform:`translate3d(0,${dy}px,0)` }, { transform:'translate3d(0,0,0)' }], {
-        duration:180, easing:'cubic-bezier(.2,.75,.25,1)'
-      });
-    });
-  }
-  function reorderAroundPointer(event) {
-    const rows = [...container.querySelectorAll('.bill-fixed-entry')].filter(row => row !== drag.row);
-    const oldRects = new Map(rows.map(row => [row, row.getBoundingClientRect()]));
-    const target = rows.find(row => event.clientY < row.getBoundingClientRect().top + row.getBoundingClientRect().height / 2)
-      || container.querySelector('.bill-total-row');
-    if (drag.row.nextElementSibling !== target) {
-      container.insertBefore(drag.row, target || null);
-      animateOthers(rows, oldRects);
-      const rect = drag.row.getBoundingClientRect();
-      drag.translateY = event.clientY - drag.grabOffset - (rect.top - drag.translateY);
-    } else {
-      const rect = drag.row.getBoundingClientRect();
-      drag.translateY = event.clientY - drag.grabOffset - (rect.top - drag.translateY);
-    }
-    drag.row.style.transform = `translate3d(0,${drag.translateY}px,0)`;
-  }
-  function finish(event, cancelled = false) {
-    if (!drag || (event && event.pointerId !== drag.pointerId)) return;
-    clearTimeout(holdTimer); holdTimer = null;
-    drag.handle.classList.remove('is-pressing');
-    if (drag.active) {
-      const finished = drag;
-      finished.row.classList.remove('is-dragging');
-      finished.handle.classList.remove('is-dragging');
-      finished.row.style.transform = '';
-      finished.container.classList.remove('is-reordering');
-      persistDomOrder(finished.type);
-      const index = [...container.querySelectorAll('.bill-fixed-entry')].indexOf(finished.row) + 1;
-      const label = finished.row.querySelector('.br-name')?.textContent || '固定账单';
-      say(cancelled ? `已保存${label}的新位置` : `${label}已移动到第 ${index} 项`);
-      finished.row.classList.add('just-dropped');
-      setTimeout(() => finished.row.classList.remove('just-dropped'), 240);
-      try { if (finished.handle.hasPointerCapture(finished.pointerId)) finished.handle.releasePointerCapture(finished.pointerId); } catch (_) {}
-    }
-    drag = null;
-  }
-
-  container.addEventListener('pointerdown', event => {
-    const handle = event.target.closest('.bill-reorder-handle');
-    const row = handle && handle.closest('.bill-fixed-entry');
-    if (!row || (event.pointerType === 'mouse' && event.button !== 0)) return;
-    clearTimeout(holdTimer);
-    drag = {
-      row, handle, pointerId:event.pointerId, type:currentType(),
-      startY:event.clientY, grabOffset:event.clientY - row.getBoundingClientRect().top,
-      translateY:0, active:false, container
-    };
-    try { handle.setPointerCapture(event.pointerId); } catch (_) {}
-    handle.classList.add('is-pressing');
-    holdTimer = setTimeout(() => {
-      if (!drag || drag.pointerId !== event.pointerId) return;
-      drag.active = true;
-      row.classList.add('is-dragging');
-      handle.classList.add('is-dragging');
-      container.classList.add('is-reordering');
-
-      say(`正在移动${row.querySelector('.br-name')?.textContent || '固定账单'}`);
-    }, 180);
-  });
-  container.addEventListener('pointermove', event => {
-    if (!drag || drag.pointerId !== event.pointerId) return;
-    if (!drag.active) {
-      if (Math.abs(event.clientY - drag.startY) > 18) { clearTimeout(holdTimer); holdTimer = null; drag.handle.classList.remove('is-pressing'); drag = null; }
+    if (items.length !== list.length) {
+      say('账单列表刚刚发生变化，请再点一次。');
       return;
     }
-    event.preventDefault();
-    const edge = 72;
-    if (event.clientY < edge) window.scrollBy(0,-10);
-    else if (event.clientY > window.innerHeight-edge) window.scrollBy(0,10);
-    reorderAroundPointer(event);
-  }, { passive:false });
-  container.addEventListener('pointerup', event => finish(event));
-  container.addEventListener('pointercancel', event => finish(event, true));
-  container.addEventListener('lostpointercapture', event => finish(event, true));
-  container.addEventListener('keydown', event => {
-    const handle = event.target.closest('.bill-reorder-handle');
-    if (!handle || !['ArrowUp','ArrowDown'].includes(event.key)) return;
-    const row = handle.closest('.bill-fixed-entry');
-    const entries = [...container.querySelectorAll('.bill-fixed-entry')];
-    const index = entries.indexOf(row), next = index + (event.key === 'ArrowUp' ? -1 : 1);
-    if (next < 0 || next >= entries.length) return;
-    event.preventDefault();
-    const other = entries[next];
-    const moving = [row, other];
-    const oldRects = new Map(moving.map(item => [item, item.getBoundingClientRect()]));
-    if (event.key === 'ArrowUp') container.insertBefore(row, other);
-    else container.insertBefore(other, row);
-    animateOthers(moving, oldRects);
-    persistDomOrder(currentType());
-    handle.focus();
-    say(`${row.querySelector('.br-name')?.textContent || '固定账单'}已移至第 ${next + 1} 项`);
-  });
+    const oldRects = new Map([list[from], list[to]].map(item => [item, item.getBoundingClientRect()]));
+    [items[from], items[to]] = [items[to], items[from]];
+    if (!writeItems(items, type)) {
+      say('保存顺序失败，请检查设备存储空间。');
+      return;
+    }
+    if (delta < 0) container.insertBefore(row, list[to]);
+    else container.insertBefore(list[to], row);
+    refreshOrder(items);
+    animateSwap([row, list[to]], oldRects);
+    const name = row.querySelector('.br-name')?.textContent?.trim() || '固定账单';
+    say(`${name}已移至第 ${to + 1} 项`);
+    row.querySelector(delta < 0 ? '[data-move="up"]' : '[data-move="down"]')?.focus({ preventScroll:true });
+  }
+
+  function makeButton(direction, label) {
+    const button = document.createElement('button');
+    button.type = 'button';
+    button.className = 'bill-reorder-btn';
+    button.dataset.move = direction;
+    button.title = label;
+    button.innerHTML = direction === 'up'
+      ? '<svg viewBox="0 0 20 20" aria-hidden="true"><path d="m5 12 5-5 5 5"/></svg>'
+      : '<svg viewBox="0 0 20 20" aria-hidden="true"><path d="m5 8 5 5 5-5"/></svg>';
+    button.addEventListener('click', event => {
+      event.stopPropagation();
+      moveRow(button.closest('.bill-fixed-entry'), direction === 'up' ? -1 : 1);
+    });
+    return button;
+  }
+
+  function enhanceRows() {
+    const items = readItems();
+    const list = [...container.querySelectorAll('.bill-row:not(.bill-total-row)')];
+    list.forEach((row, index) => {
+      row.classList.add('bill-fixed-entry');
+      row.querySelector('.bill-reorder-handle')?.remove();
+      if (row.querySelector('.bill-reorder-controls')) return;
+      const controls = document.createElement('div');
+      controls.className = 'bill-reorder-controls';
+      controls.append(makeButton('up', '上移'), makeButton('down', '下移'));
+      const deleteButton = row.querySelector('.br-del');
+      row.insertBefore(controls, deleteButton || null);
+      if (items[index]) row.dataset.fixedId = items[index].id != null ? String(items[index].id) : `legacy-${index}`;
+    });
+    refreshOrder(items);
+  }
+
   new MutationObserver(enhanceRows).observe(container, { childList:true });
   enhanceRows();
 })();
