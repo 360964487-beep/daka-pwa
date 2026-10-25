@@ -1,26 +1,49 @@
-// 仅在确认另一个活动页面在线时，才拦截重复实例。
+// Keep one usable app window. The PWA manifest also requests focus-existing on supported browsers.
 const APP_INSTANCE_ID = (Date.now() + Math.random()).toString(36);
 let APP_DUPLICATE_INSTANCE = false;
+let appChannel = null;
+function requestExistingAppFocus() {
+  try { appChannel?.postMessage({ type:'focus-existing', id:APP_INSTANCE_ID }); } catch (_) {}
+  if (!('serviceWorker' in navigator)) return;
+  const controller = navigator.serviceWorker.controller;
+  if (controller) controller.postMessage({ type:'FOCUS_EXISTING_INSTANCE' });
+  else navigator.serviceWorker.ready.then(reg => reg.active?.postMessage({ type:'FOCUS_EXISTING_INSTANCE' })).catch(() => {});
+}
 function showDuplicateInstanceNotice() {
   if (APP_DUPLICATE_INSTANCE) return;
   APP_DUPLICATE_INSTANCE = true;
   const lock = document.createElement('div');
-  lock.style.cssText = 'position:fixed;inset:0;z-index:9999;background:rgba(247,246,243,.97);display:flex;align-items:center;justify-content:center;padding:24px;text-align:center;font:16px sans-serif;color:#1f2329;';
-  lock.textContent = '打卡工具已在另一个页面打开，请切换到已打开的页面继续使用。';
+  lock.style.cssText = 'position:fixed;inset:0;z-index:9999;background:rgba(247,246,243,.97);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:16px;padding:24px;text-align:center;font:16px sans-serif;color:#1f2329;';
+  const message = document.createElement('p');
+  message.textContent = '打卡工具已在另一个窗口打开，正在切回已打开的窗口。';
+  const button = document.createElement('button');
+  button.type = 'button';
+  button.textContent = '切回已打开的窗口';
+  button.style.cssText = 'min-height:44px;padding:0 18px;border:0;border-radius:10px;background:#98502b;color:#fff;font:inherit;';
+  button.addEventListener('click', requestExistingAppFocus);
+  const closeButton = document.createElement('button');
+  closeButton.type = 'button';
+  closeButton.textContent = '关闭当前窗口';
+  closeButton.style.cssText = 'min-height:40px;padding:0 14px;border:1px solid #c8b9a8;border-radius:10px;background:transparent;color:#51483e;font:inherit;';
+  closeButton.addEventListener('click', () => window.close());
+  lock.append(message, button, closeButton);
   document.body.appendChild(lock);
+  requestExistingAppFocus();
 }
 if ('BroadcastChannel' in window) {
- try {
-  const appChannel = new BroadcastChannel('checkin-app-single-instance');
-  appChannel.onmessage = e => {
-    if (e.data && e.data.type === 'hello' && !APP_DUPLICATE_INSTANCE) {
-      if (APP_INSTANCE_ID < e.data.id) appChannel.postMessage({ type:'active', id:e.data.id });
-      else showDuplicateInstanceNotice();
-    }
-    if (e.data && e.data.type === 'active' && e.data.id === APP_INSTANCE_ID) showDuplicateInstanceNotice();
-  };
-  setTimeout(() => appChannel.postMessage({ type:'hello', id:APP_INSTANCE_ID }), 80);
- } catch (e) { /* 某些本地文件预览会限制跨标签通信 */ }
+  try {
+    appChannel = new BroadcastChannel('checkin-app-single-instance');
+    appChannel.onmessage = event => {
+      const data = event.data || {};
+      if (data.type === 'hello' && !APP_DUPLICATE_INSTANCE) {
+        if (APP_INSTANCE_ID <= data.id) appChannel.postMessage({ type:'active', id:data.id });
+        else showDuplicateInstanceNotice();
+      }
+      if (data.type === 'active' && data.id === APP_INSTANCE_ID) showDuplicateInstanceNotice();
+      if (data.type === 'focus-existing' && !APP_DUPLICATE_INSTANCE) window.focus();
+    };
+    setTimeout(() => appChannel.postMessage({ type:'hello', id:APP_INSTANCE_ID }), 80);
+  } catch (_) { /* 浏览器不支持跨窗口通信时由 PWA launch_handler 处理 */ }
 }
 const COLORS = 8;
 const KEY_WEEK = 'checkin_weeks_v6';
