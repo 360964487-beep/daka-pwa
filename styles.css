@@ -1055,3 +1055,6 @@ body[data-theme="monochrome"] .app-update-card { border-color:#dededb; }
 @keyframes fixedBillDrop { 0% { scale:1.025; } 70% { scale:.995; } 100% { scale:1; } }
 .sr-only { position:absolute!important; width:1px!important; height:1px!important; padding:0!important; margin:-1px!important; overflow:hidden!important; clip:rect(0,0,0,0)!important; white-space:nowrap!important; border:0!important; }
 @media(prefers-reduced-motion:reduce) { #billFixedRows .bill-fixed-entry.just-dropped { animation:none; } }
+
+.bill-reorder-handle.is-pressing { color:var(--ui-accent); background:var(--ui-accent-soft); transform:scale(1.04); transition:transform 120ms ease,background-color 120ms ease; }
+@media(prefers-reduced-motion:reduce) { .bill-reorder-handle.is-pressing { transform:none; transition:none; } }

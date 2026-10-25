@@ -75,6 +75,7 @@
   function finish(event, cancelled = false) {
     if (!drag || (event && event.pointerId !== drag.pointerId)) return;
     clearTimeout(holdTimer); holdTimer = null;
+    drag.handle.classList.remove('is-pressing');
     if (drag.active) {
       const finished = drag;
       finished.row.classList.remove('is-dragging');
@@ -102,23 +103,28 @@
       startY:event.clientY, grabOffset:event.clientY - row.getBoundingClientRect().top,
       translateY:0, active:false, container
     };
+    try { handle.setPointerCapture(event.pointerId); } catch (_) {}
+    handle.classList.add('is-pressing');
     holdTimer = setTimeout(() => {
       if (!drag || drag.pointerId !== event.pointerId) return;
       drag.active = true;
       row.classList.add('is-dragging');
       handle.classList.add('is-dragging');
       container.classList.add('is-reordering');
-      try { handle.setPointerCapture(event.pointerId); } catch (_) {}
+
       say(`正在移动${row.querySelector('.br-name')?.textContent || '固定账单'}`);
-    }, 230);
+    }, 180);
   });
   container.addEventListener('pointermove', event => {
     if (!drag || drag.pointerId !== event.pointerId) return;
     if (!drag.active) {
-      if (Math.abs(event.clientY - drag.startY) > 8) { clearTimeout(holdTimer); holdTimer = null; drag = null; }
+      if (Math.abs(event.clientY - drag.startY) > 18) { clearTimeout(holdTimer); holdTimer = null; drag.handle.classList.remove('is-pressing'); drag = null; }
       return;
     }
     event.preventDefault();
+    const edge = 72;
+    if (event.clientY < edge) window.scrollBy(0,-10);
+    else if (event.clientY > window.innerHeight-edge) window.scrollBy(0,10);
     reorderAroundPointer(event);
   }, { passive:false });
   container.addEventListener('pointerup', event => finish(event));
