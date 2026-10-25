@@ -1,5 +1,5 @@
 // Service Worker：打卡应用离线缓存，页面优先从线上获取最新版本
-const CACHE = 'daka-latest-v75';
+const CACHE = 'daka-latest-v76';
 const ASSETS = [
   './', './index.html', './manifest.webmanifest', './apple-touch-icon.png', './apple-touch-icon-20261022.png',
   './icon-192-rounded.png', './icon-512-rounded.png', './icon-192-v2.png', './icon-512-v2.png', './icon-maskable-192-v2.png', './icon-maskable-512-v2.png', './styles.css', './compact-header.css',
@@ -11,6 +11,14 @@ self.addEventListener('install', (event) => {
 });
 self.addEventListener('activate', (event) => {
   event.waitUntil(caches.keys().then((keys) => Promise.all(keys.filter((key) => key.startsWith('daka-latest-v') && key !== CACHE).map((key) => caches.delete(key)))).then(() => self.clients.claim()));
+});
+self.addEventListener('message', (event) => {
+  if (!event.data || event.data.type !== 'FOCUS_EXISTING_INSTANCE') return;
+  event.waitUntil(self.clients.matchAll({ type:'window', includeUncontrolled:true }).then(windows => {
+    const scope = self.registration.scope;
+    const other = windows.find(client => client.id !== event.source?.id && client.url.startsWith(scope));
+    return other ? other.focus().catch(() => {}) : undefined;
+  }));
 });
 self.addEventListener('fetch', (event) => {
   if (event.request.method !== 'GET') return;
