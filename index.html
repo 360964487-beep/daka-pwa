@@ -197,6 +197,16 @@
 <button class="theme-option" type="button" data-theme-option="monochrome" onclick="setAppTheme('monochrome')" aria-pressed="false"><span class="theme-swatches"><i style="background:#171717"></i><i style="background:#d8d8d4"></i><i style="background:#f4f4f2"></i></span><span class="theme-option-name">黑白留白<small>克制简洁</small></span></button>
         </div>
       </section>
+      <section class="app-update-card" aria-label="应用更新">
+        <div class="app-update-head">
+          <div class="app-update-copy">
+            <h2>应用更新</h2>
+            <p id="appVersionLabel">当前版本 v67</p>
+          </div>
+          <button type="button" class="app-update-button" id="checkAppUpdateButton" onclick="checkForAppUpdate()">检查更新</button>
+        </div>
+        <p class="app-update-status" id="appUpdateStatus" role="status" aria-live="polite">检查新版不会清除本机数据。</p>
+      </section>
       <div class="mine-stats">
         <div class="stat-box">
           <div class="stat-num" id="statDone">0</div>
@@ -292,6 +302,7 @@
 <script defer src="./js/finance.js"></script>
 <script defer src="./js/credentials.js"></script>
 <script defer src="./js/notes-settings.js"></script>
+<script defer src="./js/app-updates.js"></script>
 <script defer src="./js/timetable.js"></script>
 <script defer src="./js/deepseek-assistant.js"></script>
 <script defer src="./js/bootstrap.js"></script>
