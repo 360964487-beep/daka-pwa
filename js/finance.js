@@ -41,8 +41,8 @@ function switchBillTab(tab) {
   // 固定模块文案跟随收支
   const isExpense = billType === 'expense';
   document.getElementById('billFixedHint').textContent = isExpense
-    ? '每月自动计入的固定扣费（话费、会员费等），会累加到月度明细与年账单'
-    : '每月自动计入的固定进账（工资、零花钱等），会累加到月度明细与年账单';
+    ? '每月自动计入的固定扣费（话费、会员费等），会累加到月度明细与年账单。长按右侧手柄可调整顺序。'
+    : '每月自动计入的固定进账（工资、零花钱等），会累加到月度明细与年账单。长按右侧手柄可调整顺序。';
   document.getElementById('billFixedAddTitle').textContent = isExpense ? '添加固定支出' : '添加固定收入';
   renderBill();
 }
