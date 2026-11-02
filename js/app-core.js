@@ -103,6 +103,64 @@ function save(k, d) {
   catch(e) { memStore[k] = s; warnVolatileStorage('浏览器保存失败（可能是存储空间不足或受限），本次修改暂存在内存中，关闭页面后可能丢失。请尽快保存备份。'); return false; }
 }
 
+// 任务打卡是长期清单，不绑定具体日期。旧版本按周/日期保存，升级时归并到固定分类。
+const CHECKIN_OTHER_KEY = '__persistent__';
+function checkinDayKey(date) {
+  const d = date instanceof Date ? date : new Date(String(date) + 'T12:00:00');
+  return 'weekday-' + ((d.getDay() + 6) % 7);
+}
+function mergeCheckinTaskGroups(groups) {
+  const merged = new Map();
+  groups.forEach(({ tasks, period }) => {
+    (Array.isArray(tasks) ? tasks : []).forEach(task => {
+      if (!task || typeof task !== 'object') return;
+      const identity = [String(task.text || '').trim(), String(task.start || ''), String(task.dayId || ''), String(task.partId || '')].join('\u0000');
+      const old = merged.get(identity);
+      if (!old) merged.set(identity, { ...task, __period: period });
+      else {
+        // Keep a completed state if any previous period had it; identical recurring items collapse to one.
+        old.done = !!old.done || !!task.done;
+        if (period >= (old.__period || '')) {
+          if (task.text != null) old.text = task.text;
+          if (task.start != null) old.start = task.start;
+          if (task.color != null) old.color = task.color;
+          old.__period = period;
+        }
+      }
+    });
+  });
+  return Array.from(merged.values()).map(task => { delete task.__period; return task; });
+}
+function normalizeCheckinTaskStore(store, scope) {
+  const source = store && typeof store === 'object' && !Array.isArray(store) ? store : {};
+  const groups = new Map();
+  Object.entries(source).forEach(([period, tasks]) => {
+    let key;
+    if (scope === 'week') key = CHECKIN_OTHER_KEY;
+    else if (/^weekday-[0-6]$/.test(period)) key = period;
+    else if (/^\d{4}-\d{2}-\d{2}$/.test(period)) key = checkinDayKey(period);
+    else return;
+    if (!groups.has(key)) groups.set(key, []);
+    groups.get(key).push({ tasks, period });
+  });
+  const normalized = {};
+  groups.forEach((items, key) => { normalized[key] = mergeCheckinTaskGroups(items); });
+  if (scope === 'week' && !normalized[CHECKIN_OTHER_KEY]) normalized[CHECKIN_OTHER_KEY] = [];
+  return normalized;
+}
+function migrateCheckinTaskStorage() {
+  [[KEY_WEEK, 'week'], [KEY_DAY, 'day'], [KEY_TT, 'week']].forEach(([storageKey, scope]) => {
+    const previous = load(storageKey, {});
+    const normalized = normalizeCheckinTaskStore(previous, scope);
+    if (JSON.stringify(previous) !== JSON.stringify(normalized)) save(storageKey, normalized);
+  });
+  const week = normalizeCheckinTaskStore(load(KEY_WEEK, {}), 'week');
+  const day = normalizeCheckinTaskStore(load(KEY_DAY, {}), 'day');
+  const tt = normalizeCheckinTaskStore(load(KEY_TT, {}), 'week');
+  return { week, day, tt };
+}
+migrateCheckinTaskStorage();
+
 // 通用页内编辑栏：直接插入到被编辑记录之后，不弹出模态窗口。
 let activeInlineEditor = null;
 let activeInlineAnchor = null;
@@ -442,13 +500,13 @@ function goPage(page) {
 }
 
 function getData(scope) {
-  const dataKey = scope === 'week' ? weekKey(currentWeekStart) : dateKey(currentDayDate);
+  const dataKey = scope === 'week' ? CHECKIN_OTHER_KEY : checkinDayKey(currentDayDate);
   const all = load(scope === 'week' ? KEY_WEEK : KEY_DAY, {});
   return { dataKey, tasks: all[dataKey] || [] };
 }
 function setData(scope, tasks) {
   const storeKey = scope === 'week' ? KEY_WEEK : KEY_DAY;
-  const dataKey = scope === 'week' ? weekKey(currentWeekStart) : dateKey(currentDayDate);
+  const dataKey = scope === 'week' ? CHECKIN_OTHER_KEY : checkinDayKey(currentDayDate);
   const all = load(storeKey, {});
   all[dataKey] = tasks; save(storeKey, all);
 }

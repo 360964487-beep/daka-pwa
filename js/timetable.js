@@ -3,7 +3,7 @@
 // 任务块按文字长度决定大小，全局布局：
 //   未完成任务 → 浮到整个大框左上角；完成任务 → 沉到整个大框右下角
 // 任务带 dayId(1-7)/partId(am|pm)，块上显示「周X·上午/下午」标签
-// 数据：按周 key 存任务数组，任务对象含 text/start/dayId/partId/done/color
+// 数据：使用固定 key 保存，不随周日期变化；任务对象含 text/start/dayId/partId/done/color
 const TT_DAYS = [
   { id: 1, label: '周一', short: '一' },
   { id: 2, label: '周二', short: '二' },
@@ -19,12 +19,12 @@ const TT_TILE_COLS = 1, TT_TILE_ROWS = 1; // 每块占 1 列宽 × 1 行高
 
 function ttGetWeekTasks() {
   const all = load(KEY_TT, {});
-  const wk = weekKey(currentWeekStart);
+  const wk = CHECKIN_OTHER_KEY;
   return { wk, tasks: all[wk] || [] };
 }
 function ttSetWeekTasks(tasks) {
   const all = load(KEY_TT, {});
-  const wk = weekKey(currentWeekStart);
+  const wk = CHECKIN_OTHER_KEY;
   all[wk] = tasks;
   save(KEY_TT, all);
 }

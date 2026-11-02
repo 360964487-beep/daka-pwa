@@ -195,10 +195,10 @@ function importData() {
         const data = JSON.parse(reader.result);
         if (!data || typeof data !== 'object' || Array.isArray(data)) throw new Error('文件内容不是有效的备份对象');
         const staged = [
-          [KEY_WEEK, importField(data, 'week', KEY_WEEK, 'object', '周任务')],
-          [KEY_DAY, importField(data, 'day', KEY_DAY, 'object', '日任务')],
+          [KEY_WEEK, normalizeCheckinTaskStore(importField(data, 'week', KEY_WEEK, 'object', '周任务'), 'week')],
+          [KEY_DAY, normalizeCheckinTaskStore(importField(data, 'day', KEY_DAY, 'object', '日任务'), 'day')],
           [KEY_CAL, importField(data, 'calendar', KEY_CAL, 'object', '日历待办')],
-          [KEY_TT, importField(data, 'tt', KEY_TT, 'object', '周打卡')],
+          [KEY_TT, normalizeCheckinTaskStore(importField(data, 'tt', KEY_TT, 'object', '周打卡'), 'week')],
           [KEY_BILL, importField(data, 'bill', KEY_BILL, 'array', '账本')],
           [KEY_PWD, importField(data, 'pwd', KEY_PWD, 'array', '密钥记录')],
           [KEY_FIXED, importField(data, 'fixed', KEY_FIXED, 'array', '固定支出')],

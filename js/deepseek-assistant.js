@@ -75,7 +75,7 @@ function buildAssistantDataContext(query) {
   const wants = {
     bills: allModules || /账本|账单|记账|消费|花费|支出|收入|固定账目/.test(q),
     daily: allModules || /待办|日历|提醒|日任务|每日任务/.test(q),
-    weekly: allModules || /任务打卡|打卡任务|周卡|周任务|日打卡/.test(q),
+    weekly: allModules || /任务打卡|打卡任务|周卡|周任务|日打卡|(?:周|星期)[一二三四五六日天].{0,8}(?:打卡|任务)|(?:打卡|任务).{0,8}(?:周|星期)[一二三四五六日天]/.test(q),
     timetable: allModules || /时间表|课程表|课表|周计划|时间安排/.test(q),
     notes: allModules || /小纸条|纸条|便签/.test(q),
     credentials: allModules || /密钥|账号密钥|账号记录|密码记录|账号|密钥|密码|口令|登录信息/.test(q)
@@ -113,15 +113,17 @@ function buildAssistantDataContext(query) {
   }
   if (wants.weekly) {
     const weekly = load(KEY_WEEK, {});
+    const dayNames = ['周一','周二','周三','周四','周五','周六','周日'];
+    const daily = load(KEY_DAY, {});
     context.日周打卡任务 = {
-      周任务:Object.entries(weekly).sort(([a],[b])=>b.localeCompare(a)).slice(0,52).map(([week,list])=>({周起始:week,事项:(Array.isArray(list)?list:[]).slice(0,30).map(x=>({内容:String(x.text||'').slice(0,300),时间:String(x.start||''),完成:!!x.done}))})),
-      日任务:Object.entries(load(KEY_DAY, {})).sort(([a],[b])=>b.localeCompare(a)).slice(0,180).map(([date,list])=>({日期:date,事项:(Array.isArray(list)?list:[]).slice(0,30).map(x=>({内容:String(x.text||'').slice(0,300),时间:String(x.start||''),完成:!!x.done}))})),
-      说明:'日任务、周任务和日历待办是三个独立数据集。'
+      其他:(weekly[CHECKIN_OTHER_KEY]||[]).map(x=>({内容:String(x.text||'').slice(0,300),时间:String(x.start||''),完成:!!x.done})),
+      每周任务:Object.fromEntries(dayNames.map((name,i)=>[name,(daily['weekday-'+i]||[]).map(x=>({内容:String(x.text||'').slice(0,300),时间:String(x.start||''),完成:!!x.done}))])),
+      说明:'任务打卡是长期固定清单，内容与完成状态均不按日期重置；日历待办独立按日期管理。'
     };
   }
   if (wants.timetable) {
     const timetable = load(KEY_TT, {});
-    context.周时间表 = Object.entries(timetable).sort(([a],[b])=>b.localeCompare(a)).slice(0,52).map(([week,list])=>({周起始:week,事项:(Array.isArray(list)?list:[]).slice(0,40).map(x=>({星期:x.day,内容:String(x.text||'').slice(0,300),时间:String(x.start||'')}))}));
+    context.周时间表 = (timetable[CHECKIN_OTHER_KEY]||[]).slice(0,120).map(x=>({星期:x.dayId,内容:String(x.text||'').slice(0,300),时间:String(x.start||''),完成:!!x.done}));
   }
   if (wants.notes) {
     context.小纸条 = noteGetAll().slice(-120).map(x=>({内容:String(x.text||'').slice(0,1000),时间:x.time ? new Date(x.time).toISOString() : ''}));
@@ -156,9 +158,8 @@ async function sendDoubaoMessage() {
     }
     const recentContextQuery = [...doubaoHistory.filter(x=>x.role==='user').slice(-4).map(x=>x.content), text].join('\n');
     const localContext = buildAssistantDataContext(recentContextQuery);
-    const activeCheckinDate = checkinTab === 'week' ? currentWeekStart : currentDayDate;
     const activeCheckinScope = checkinTab === 'week' ? 'week' : 'day';
-    const system = `你是这款个人管理应用的助手。今天日期 ${today}，用户时区 ${timezone}。用户当前任务打卡页签为 ${activeCheckinScope === 'week' ? '周任务（其他）' : '日任务'}，当前页签日期为 ${dateKey(activeCheckinDate)}。你可以读取本轮系统消息提供的应用本地数据快照，回答账本历史、待办、日周任务打卡、周时间表、账号记录和小纸条查询。汇总字段基于全部本地记录；明细字段若有截取，必须说明。没有提供某模块数据时不要声称读取过。用户输入中文指令后，协助管理：日历待办、打卡任务（日/周）、记账、固定账目、小纸条。你不能直接改数据，只能提出一个待确认操作。只输出合法 JSON，不要 Markdown，格式为 {"reply":"简短说明","bill":null或账目对象,"action":null或操作对象}。普通问答、查询和信息不足时 action 为 null；每次最多提出一个操作，不确定目标或缺少必填字段时先追问，不要猜。涉及收入支出可用 bill：{"type":"expense或income","amount":正数,"text":"项目","date":"YYYY-MM-DD或unknown","note":"备注"}。其他 action 的 kind 只能是：add_calendar_todo(date,text,time), edit_calendar_todo(date,target,text,time), delete_calendar_todo(date,target), complete_calendar_todo(date,target,done), add_checkin_task(scope,date,text,time), edit_checkin_task(scope,date,target,text,time), delete_checkin_task(scope,date,target), complete_checkin_task(scope,date,target,done), add_note(text), edit_note(target,text), delete_note(target), edit_bill(target,text,amount,type,note), delete_bill(target,type), add_fixed_bill(type,name,amount), edit_fixed_bill(type,target,name,amount), delete_fixed_bill(type,target)。scope 为 day/week；type 为 expense/income；打卡任务明确指定周任务/周打卡时用 week，明确指定星期几时用 day 并使用本周对应日期；只说打卡任务时默认使用用户当前打开的打卡页签和日期，不能因缺少周期而拒绝有明确任务内容的添加。打卡任务未提供日期时使用当前打卡页签日期，其他日期用今天；时间用 HH:mm 或空字符串。修改和删除的 target 必须是用户在本轮明确说出的原内容，不能凭空猜。固定账目金额指每月金额。密钥只允许只读查询，绝不提出新增、修改、删除密钥的操作；不得索要或处理验证码。只有当上下文包含密钥明文且用户明确询问时才可以回答密钥值，否则不要猜测或暴露密钥。所有操作都必须在回复中说明将要做什么，应用会再要求用户确认。把“消费/花了/支出”视为 expense，把“收入/收到/赚了”视为 income。`;
+    const system = `你是这款个人管理应用的助手。今天日期 ${today}，用户时区 ${timezone}。用户当前任务打卡页签为 ${activeCheckinScope === 'week' ? '周任务（其他）' : '日任务'}。你可以读取本轮系统消息提供的应用本地数据快照，回答账本历史、待办、日周任务打卡、周时间表、账号记录和小纸条查询。汇总字段基于全部本地记录；明细字段若有截取，必须说明。没有提供某模块数据时不要声称读取过。用户输入中文指令后，协助管理：日历待办、打卡任务（日/周）、记账、固定账目、小纸条。你不能直接改数据，只能提出一个待确认操作。只输出合法 JSON，不要 Markdown，格式为 {"reply":"简短说明","bill":null或账目对象,"action":null或操作对象}。普通问答、查询和信息不足时 action 为 null；每次最多提出一个操作，不确定目标或缺少必填字段时先追问，不要猜。涉及收入支出可用 bill：{"type":"expense或income","amount":正数,"text":"项目","date":"YYYY-MM-DD或unknown","note":"备注"}。其他 action 的 kind 只能是：add_calendar_todo(date,text,time), edit_calendar_todo(date,target,text,time), delete_calendar_todo(date,target), complete_calendar_todo(date,target,done), add_checkin_task(scope,date,text,time), edit_checkin_task(scope,date,target,text,time), delete_checkin_task(scope,date,target), complete_checkin_task(scope,date,target,done), add_note(text), edit_note(target,text), delete_note(target), edit_bill(target,text,amount,type,note), delete_bill(target,type), add_fixed_bill(type,name,amount), edit_fixed_bill(type,target,name,amount), delete_fixed_bill(type,target)。打卡任务是独立的长期清单，绝不按日期重置：scope=week 表示“其他”分类；scope=day 表示指定星期分类，date 仅用于表达星期几，明确说周一至周日就选对应星期，不创建日历待办；只说打卡任务时默认使用当前打开的打卡分类。日历待办才按真实日期保存。时间用 HH:mm 或空字符串。修改和删除的 target 必须是用户在本轮明确说出的原内容，不能凭空猜。固定账目金额指每月金额。密钥只允许只读查询，绝不提出新增、修改、删除密钥的操作；不得索要或处理验证码。只有当上下文包含密钥明文且用户明确询问时才可以回答密钥值，否则不要猜测或暴露密钥。所有操作都必须在回复中说明将要做什么，应用会再要求用户确认。把“消费/花了/支出”视为 expense，把“收入/收到/赚了”视为 income。`;
     const responseRules = '回复必须使用清楚、自然的中文，reply 必须始终是非空字符串，禁止返回空值、空字符串或只含空白的回复。遇到难题时不要沉默：先说明目前能确定的部分；如果信息不足，提出一个最关键的澄清问题；如果超出能力或没有足够数据，明确说明限制并给出可行的下一步。面对多步骤指令，先用 reply 简要复述理解和待执行步骤；若范围、日期或对象存在歧义，先追问，不要擅自猜测。';
     const dataMessage = localContext ? {role:'system',content:`本轮相关的应用本地数据(JSON)：\n${localContext}`} : null;
     if (dataMessage && /密钥内容":"[^"\\]/.test(localContext)) doubaoStatus('本次会把你明确要求查看的密钥内容发送给 DeepSeek。');
@@ -177,7 +178,7 @@ async function sendDoubaoMessage() {
     let checkinNeedsTaskText = false;
     let routedCheckinScope = null;
     let routedCheckinDate = '';
-    const asksToAddCheckin = /(添加|新增|设定|设置|安排|创建|加上|帮我加)/.test(text) && /(打卡任务|任务打卡|日任务|周任务)/.test(text);
+    const asksToAddCheckin = /(添加|新增|设定|设置|安排|创建|加上|帮我加)/.test(text) && /(打卡任务|任务打卡|日任务|周任务|打卡|任务)/.test(text) && !/日历待办|日历任务/.test(text);
     const weekday = asksToAddCheckin ? text.match(/(?:周|星期)([一二三四五六日天])/) : null;
     if (asksToAddCheckin && (!suggestedAction || ['add_calendar_todo','add_checkin_task'].includes(suggestedAction.kind))) {
       const explicitWeek = /周任务|周打卡|每周/.test(text) && !weekday;
@@ -207,7 +208,7 @@ async function sendDoubaoMessage() {
     const reply = routedToCheckin
       ? (checkinNeedsTaskText
           ? `可以，${weekday ? '周' + (weekday[1] === '天' ? '日' : weekday[1]) : ''}会放在任务打卡的日任务里，不会放进日历待办。请告诉我具体任务内容，例如“背单词 30 分钟”。`
-          : `明白，我会把“${suggestedAction.text}”添加到${routedCheckinScope === 'week' ? '周打卡' : '日任务打卡'}（${routedCheckinDate}），不会放进日历待办。`)
+          : `明白，我会把“${suggestedAction.text}”添加到${routedCheckinScope === 'week' ? '其他' : '周' + (weekday?.[1] === '天' ? '日' : weekday?.[1] || ['一','二','三','四','五','六','日'][((new Date(routedCheckinDate + 'T12:00:00').getDay() + 6) % 7)])}打卡任务，不会放进日历待办。`)
       : (String(parsed.reply || '').trim() || '我没能整理出明确答复。你可以换一种说法，或补充目标、时间和具体内容，我会继续帮你处理。');
     doubaoBubble(reply);
     doubaoHistory.push({ role:'assistant', content:reply });
@@ -265,9 +266,11 @@ function validateAssistantAction(action) {
   return normalized;
 }
 function assistantActionDescription(a) {
-  const label = { add_calendar_todo:'添加日历待办',edit_calendar_todo:'修改日历待办',delete_calendar_todo:'删除日历待办',complete_calendar_todo:a.done?'完成日历待办':'取消完成状态',add_checkin_task:a.scope==='week'?'添加周打卡任务':'添加日打卡任务',edit_checkin_task:'修改打卡任务',delete_checkin_task:'删除打卡任务',complete_checkin_task:a.done?'完成打卡任务':'取消完成状态',add_note:'添加小纸条',edit_note:'修改小纸条',delete_note:'删除小纸条',edit_bill:'修改记账',delete_bill:'删除记账',add_fixed_bill:'添加固定账目',edit_fixed_bill:'修改固定账目',delete_fixed_bill:'删除固定账目' }[a.kind] || '执行操作';
+  const weekdayLabels = ['周一','周二','周三','周四','周五','周六','周日'];
+  const weekdayLabel = a.date ? weekdayLabels[(new Date(a.date + 'T12:00:00').getDay() + 6) % 7] : '';
+  const label = { add_calendar_todo:'添加日历待办',edit_calendar_todo:'修改日历待办',delete_calendar_todo:'删除日历待办',complete_calendar_todo:a.done?'完成日历待办':'取消完成状态',add_checkin_task:a.scope==='week'?'添加其他打卡任务':`添加${weekdayLabel || '日常'}打卡任务`,edit_checkin_task:'修改打卡任务',delete_checkin_task:'删除打卡任务',complete_checkin_task:a.done?'完成打卡任务':'取消完成状态',add_note:'添加小纸条',edit_note:'修改小纸条',delete_note:'删除小纸条',edit_bill:'修改记账',delete_bill:'删除记账',add_fixed_bill:'添加固定账目',edit_fixed_bill:'修改固定账目',delete_fixed_bill:'删除固定账目' }[a.kind] || '执行操作';
   let detail = a.text || a.name || a.target || '';
-  if (a.date && /calendar_todo|checkin_task/.test(a.kind)) detail = a.date + ' · ' + detail;
+  if (a.date && /calendar_todo/.test(a.kind)) detail = a.date + ' · ' + detail;
   if (/bill/.test(a.kind) && a.amount) detail += ' · ¥' + a.amount;
   return label + (detail ? '：' + detail : '');
 }
@@ -302,7 +305,8 @@ function applyAssistantAction(a) {
     save(KEY_CAL,all); renderCalendar(); return success('日历待办已更新。');
   }
   if (a.kind.includes('checkin_task')) {
-    const isWeek = a.scope==='week', keyDate = isWeek ? dateKey(getMonday(new Date(a.date+'T12:00:00'))) : a.date;
+    const isWeek = a.scope==='week';
+    const keyDate = isWeek ? CHECKIN_OTHER_KEY : checkinDayKey(a.date);
     const storageKey = isWeek ? KEY_WEEK : KEY_DAY, all = load(storageKey, {}), list = all[keyDate] || [];
     if (a.kind==='add_checkin_task') list.push({id:Date.now()+Math.random(),text:a.text,start:a.time,done:false,color:list.length%COLORS});
     else {
@@ -314,16 +318,10 @@ function applyAssistantAction(a) {
     if (a.kind==='add_checkin_task') all[keyDate]=list;
     save(storageKey,all);
     if (currentPage === 'checkin') {
-      if (isWeek) {
-        currentWeekStart = getMonday(new Date(keyDate+'T12:00:00'));
-        switchCheckinTab('week');
-      } else {
-        const targetDate = new Date(keyDate+'T12:00:00');
-        currentWeekStart = getMonday(targetDate);
-        switchCheckinTab('day-' + ((targetDate.getDay() + 6) % 7));
-      }
-    } else if (isWeek && weekKey(currentWeekStart)===keyDate) render('week');
-    else if (!isWeek && dateKey(currentDayDate)===keyDate) render('day');
+      if (isWeek) switchCheckinTab('week');
+      else switchCheckinTab(keyDate.replace('weekday-', 'day-'));
+    } else if (isWeek) render('week');
+    else if (checkinTab === keyDate.replace('weekday-', 'day-')) render('day');
     return success('打卡任务已更新。');
   }
   if (a.kind.endsWith('_note')) {
