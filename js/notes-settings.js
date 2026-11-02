@@ -239,8 +239,30 @@ function importData() {
           for (const [key, value] of staged) memStore[key] = JSON.stringify(value);
           warnVolatileStorage('导入数据仅保存在本次页面会话中，关闭后可能丢失。请尽快保存备份。');
         }
-        refreshVisiblePage();
-        alert(storageOK ? '导入完成。' : '导入完成，但当前浏览器不支持永久保存；请保持页面打开并尽快保存备份。');
+        const importedWeek = staged.find(([key]) => key === KEY_WEEK)?.[1] || {};
+        const importedDay = staged.find(([key]) => key === KEY_DAY)?.[1] || {};
+        const importedTimetable = staged.find(([key]) => key === KEY_TT)?.[1] || {};
+        const dayNames = ['周一','周二','周三','周四','周五','周六','周日'];
+        const weekCount = (importedWeek[CHECKIN_OTHER_KEY] || []).length;
+        const dayCounts = dayNames.map((name, i) => (importedDay['weekday-' + i] || []).length);
+        const timetableCount = (importedTimetable[CHECKIN_OTHER_KEY] || []).length;
+        if (weekCount || dayCounts.some(Boolean) || timetableCount) {
+          if (weekCount || timetableCount) goPage('week');
+          else {
+            checkinTab = 'day-' + dayCounts.findIndex(Boolean);
+            goPage('checkin');
+          }
+          renderMine();
+        } else refreshVisiblePage();
+        const importedCheckinSummary = [
+          weekCount ? '其他 ' + weekCount + ' 项' : '',
+          ...dayNames.map((name, i) => dayCounts[i] ? name + ' ' + dayCounts[i] + ' 项' : ''),
+          timetableCount ? '周时间表 ' + timetableCount + ' 项' : ''
+        ].filter(Boolean).join('，');
+        const completionMessage = '导入完成。' + (importedCheckinSummary
+          ? '任务打卡已导入：' + importedCheckinSummary + '。已打开“' + (weekCount || timetableCount ? '其他' : dayNames[dayCounts.findIndex(Boolean)]) + '”分类；日历待办仍按日期独立保存。'
+          : '备份中没有任务打卡记录。');
+        alert(storageOK ? completionMessage : completionMessage + ' 当前浏览器不支持永久保存；请保持页面打开并尽快保存备份。');
       } catch(e) { alert('导入失败：' + (e && e.message ? e.message : '文件格式不正确')); }
     };
     reader.onerror = () => alert('导入失败：无法读取所选文件。');
