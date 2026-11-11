@@ -783,7 +783,7 @@ input::placeholder,textarea::placeholder { color:var(--ui-muted); opacity:1; }
 .checkin-category-item > .vt-btn { width:100%; }
 .checkin-module-tab { touch-action:manipulation; -webkit-touch-callout:none; user-select:none; }
 .checkin-category-name-input { position:absolute; inset:0; z-index:3; box-sizing:border-box; width:100%; min-width:0; padding:2px 20px 2px 3px; border:1px solid var(--ui-accent); border-radius:9px; outline:none; background:var(--ui-surface); color:var(--ui-ink); text-align:center; font:inherit; }
-.checkin-tabs .checkin-category-add { width:100%; min-height:40px; padding:0; border:1px dashed color-mix(in srgb,var(--ui-accent) 48%,var(--ui-border)); border-radius:9px; background:transparent; color:var(--ui-accent-ink); font-size:23px; line-height:1; font-weight:500; }
+.checkin-tabs .checkin-category-add { flex:0 0 38px; justify-self:center; align-self:center; width:38px; min-height:38px; padding:0; border:0; border-radius:50%; background:var(--ui-raised); color:var(--ui-accent-ink); font-size:23px; line-height:1; font-weight:500; }
 .checkin-category-menu { position:fixed; z-index:1100; display:flex; align-items:center; gap:5px; padding:5px; border:1px solid var(--ui-border); border-radius:11px; background:var(--ui-surface); box-shadow:0 8px 26px #20180f24; }
 .checkin-category-menu button { min-height:36px; padding:0 11px; border:0; border-radius:8px; background:var(--ui-raised); color:var(--ui-ink); font:inherit; font-size:13px; font-weight:650; white-space:nowrap; }
 .checkin-category-menu button.danger { color:var(--ui-danger,var(--ui-accent-ink)); }
