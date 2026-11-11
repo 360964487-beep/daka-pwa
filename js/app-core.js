@@ -131,7 +131,7 @@ function showCheckinCategoryMenu(id,anchor,confirmDelete=false) {
     action('确认删除模块',()=>deleteCheckinCategory(id,true),'danger');
     action('取消',closeCheckinCategoryMenu);
   } else {
-    action('修改名称',()=>{closeCheckinCategoryMenu();beginCheckinCategoryRename(id,anchor.parentElement);});
+    action('修改名称',()=>{closeCheckinCategoryMenu();beginCheckinCategoryRename(id,anchor.closest('.checkin-tabs'));});
     action('删除模块',()=>{
       if(getCheckinCategories().length<=1)return;
       pendingCheckinCategoryDelete=id; showCheckinCategoryMenu(id,anchor,true);
@@ -144,28 +144,63 @@ document.addEventListener('pointerdown',event=>{
   if(activeCheckinCategoryMenu&&!activeCheckinCategoryMenu.contains(event.target))closeCheckinCategoryMenu();
 });
 document.addEventListener('keydown',event=>{if(event.key==='Escape')closeCheckinCategoryMenu();});
-function beginCheckinCategoryRename(id,item) {
-  const category=getCheckinCategories().find(c=>c.id===id); if(!category||item.querySelector('input'))return;
-  const tab=item.querySelector('.vt-btn');
-  const input=document.createElement('input'); input.type='text'; input.className='checkin-category-name-input';
-  input.value=category.name; input.maxLength=20; input.setAttribute('aria-label','编辑模块名称');
-  tab.hidden=true; item.appendChild(input); input.focus(); input.select();
-  let finished=false;
-  const finish=saveName=>{
-    if(finished)return; finished=true;
-    const name=input.value.trim();
-    if(saveName&&name&&name!==category.name&&!getCheckinCategories().some(c=>c.id!==id&&c.name===name)){
-      category.name=name; save(KEY_CHECKIN_CATEGORIES,getCheckinCategories());
+function beginCheckinCategoryRename(id,tabs) {
+  const category=getCheckinCategories().find(c=>c.id===id);
+  if(!category||!tabs)return;
+  openCheckinCategoryEditor(tabs,{mode:'rename',id,name:category.name});
+}
+function openCheckinCategoryEditor(tabs,{mode='add',id=null,name=''}={}) {
+  if(!tabs||tabs.querySelector('.checkin-category-editor'))return;
+  const editor=document.createElement('div'); editor.className='checkin-category-editor';
+  const label=document.createElement('label'); label.textContent=mode==='rename'?'修改模块名称':'新建任务模块';
+  const input=document.createElement('input'); input.type='text'; input.maxLength=20;
+  input.value=name; input.placeholder='输入 1–20 个字'; input.autocomplete='off'; input.spellcheck=false;
+  const error=document.createElement('div'); error.id='checkin-category-editor-error-'+Date.now().toString(36)+Math.random().toString(36).slice(2,6); error.className='checkin-category-editor-error'; error.setAttribute('role','status'); error.setAttribute('aria-live','polite');
+  input.setAttribute('aria-label',label.textContent); input.setAttribute('aria-describedby',error.id);
+  const saveButton=document.createElement('button'); saveButton.type='button'; saveButton.textContent=mode==='rename'?'保存':'添加';
+  const cancelButton=document.createElement('button'); cancelButton.type='button'; cancelButton.className='secondary'; cancelButton.textContent='取消';
+  editor.append(label,input,error,saveButton,cancelButton); tabs.appendChild(editor);
+  const close=()=>editor.remove(); cancelButton.onclick=close;
+  const normalized=value=>value.trim().normalize('NFC').toLocaleLowerCase();
+  const saveCategory=()=>{
+    const nextName=input.value.trim();
+    if(!nextName){error.textContent='名称不能为空';input.setAttribute('aria-invalid','true');input.focus();return;}
+    const categories=getCheckinCategories();
+    const duplicate=categories.some(c=>c.id!==id&&normalized(c.name)===normalized(nextName));
+    if(duplicate){error.textContent='这个名称已经使用，请换一个名称';input.setAttribute('aria-invalid','true');input.focus();input.select();return;}
+    if(mode==='rename'){
+      const target=categories.find(c=>c.id===id); if(!target){close();renderCheckinCategoryTabs();return;}
+      target.name=nextName;
+    } else {
+      const newId='custom-'+Date.now().toString(36)+Math.random().toString(36).slice(2,6);
+      categories.push({id:newId,name:nextName}); checkinTab='day-'+newId;
     }
-    renderCheckinCategoryTabs();
+    save(KEY_CHECKIN_CATEGORIES,categories);
+    close(); renderCheckinCategoryTabs();
+    if(mode==='add')goPage('checkin');
   };
+  saveButton.onclick=saveCategory;
+  input.addEventListener('input',()=>{error.textContent='';input.removeAttribute('aria-invalid');});
+  let composing=false,submitWhenCompositionEnds=false;
+  input.addEventListener('compositionstart',()=>{composing=true;});
+  input.addEventListener('compositionend',()=>{
+    composing=false;
+    if(submitWhenCompositionEnds){submitWhenCompositionEnds=false;requestAnimationFrame(saveCategory);}
+  });
   input.addEventListener('keydown',e=>{
     e.stopPropagation();
-    if(e.key==='Enter'){e.preventDefault();finish(true);}
-    else if(e.key==='Escape'){e.preventDefault();finish(false);}
+    if(e.key==='Enter'){
+      if(e.isComposing||composing||e.keyCode===229){submitWhenCompositionEnds=true;return;}
+      e.preventDefault();saveCategory();
+    } else if(e.key==='Escape'&&!e.isComposing&&!composing){e.preventDefault();close();}
   });
-  input.addEventListener('blur',()=>finish(true),{once:true}); input.addEventListener('click',e=>e.stopPropagation());
+  input.focus(); if(mode==='rename')input.select();
 }
+function addCheckinCategoryInline(button) {
+  const tabs=button.closest('.checkin-tabs'); if(!tabs||tabs.querySelector('.checkin-category-editor'))return;
+  openCheckinCategoryEditor(tabs);
+}
+
 function deleteCheckinCategory(id,confirmed=false) {
   const categories=getCheckinCategories(); if(categories.length<=1||!confirmed)return;
   save(KEY_CHECKIN_CATEGORIES,categories.filter(c=>c.id!==id));
