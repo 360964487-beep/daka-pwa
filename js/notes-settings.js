@@ -286,4 +286,3 @@ function clearAllData() {
   save(KEY_NOTE, []);
   refreshVisiblePage();
 }
-

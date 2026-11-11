@@ -62,7 +62,6 @@ let pendingCheckinCategoryDelete = null;
 let checkinCategoryHoldTimer = null;
 let suppressCheckinCategoryClick = false;
 let activeCheckinCategoryMenu = null;
-let checkinCategoryDrag = null;
 function getCheckinCategories() {
   const saved = load(KEY_CHECKIN_CATEGORIES, null);
   if (!Array.isArray(saved) || !saved.length) { save(KEY_CHECKIN_CATEGORIES, DEFAULT_CHECKIN_CATEGORIES); return DEFAULT_CHECKIN_CATEGORIES; }
@@ -78,10 +77,7 @@ function renderCheckinCategoryTabs() {
       const row=document.getElementById(id); if(!row)return;
       const item=document.createElement('div'); item.className='checkin-category-item';
       const button=document.createElement('button'); button.type='button'; button.className='vt-btn checkin-module-tab';
-      button.dataset.checkin='day-'+category.id;
-      const name=document.createElement('span'); name.className='checkin-module-name'; name.textContent=category.name;
-      const grip=document.createElement('span'); grip.className='checkin-module-grip'; grip.setAttribute('aria-hidden','true'); grip.textContent='⠿';
-      button.append(name,grip); button.title='拖动排序；长按管理模块';
+      button.dataset.checkin='day-'+category.id; button.textContent=category.name; button.title='长按管理模块';
       button.onpointerdown=e=>beginCheckinCategoryHold(e,category.id,button);
       button.onpointerup=cancelCheckinCategoryHold; button.onpointerleave=cancelCheckinCategoryHold; button.onpointercancel=cancelCheckinCategoryHold;
       button.oncontextmenu=e=>{e.preventDefault();suppressCheckinCategoryClick=true;setTimeout(()=>{suppressCheckinCategoryClick=false;},900);showCheckinCategoryMenu(category.id,button);};
@@ -104,44 +100,11 @@ function renderCheckinCategoryTabs() {
 function beginCheckinCategoryHold(event,id,button) {
   if(event.button!=null&&event.button!==0)return;
   cancelCheckinCategoryHold();
-  checkinCategoryDrag={id,startX:event.clientX,startY:event.clientY,button,moved:false};
-  try { button.setPointerCapture(event.pointerId); } catch (_) {}
   checkinCategoryHoldTimer=setTimeout(()=>{
     checkinCategoryHoldTimer=null; suppressCheckinCategoryClick=true;
     setTimeout(()=>{suppressCheckinCategoryClick=false;},900);
     showCheckinCategoryMenu(id,button);
   },520);
-  button.onpointermove=e=>moveCheckinCategory(e);
-  button.onpointerup=e=>finishCheckinCategoryDrag(e);
-  button.onpointercancel=()=>finishCheckinCategoryDrag(null,true);
-}
-function moveCheckinCategory(event) {
-  const drag=checkinCategoryDrag;if(!drag)return;
-  const dx=event.clientX-drag.startX,dy=event.clientY-drag.startY;
-  if(!drag.moved&&Math.hypot(dx,dy)<8)return;
-  if(!drag.moved){drag.moved=true;cancelCheckinCategoryHold();suppressCheckinCategoryClick=true;drag.button.classList.add('is-category-dragging');document.body.classList.add('is-reordering-checkin-categories');}
-  event.preventDefault();
-  document.querySelectorAll('.checkin-category-item').forEach(item=>item.classList.remove('drop-target'));
-  const target=document.elementFromPoint(event.clientX,event.clientY)?.closest('.checkin-category-item');
-  if(target&&target!==drag.button.parentElement)target.classList.add('drop-target');
-}
-function finishCheckinCategoryDrag(event,cancelled=false) {
-  const drag=checkinCategoryDrag;if(!drag)return;
-  checkinCategoryDrag=null;cancelCheckinCategoryHold();
-  drag.button.onpointermove=null;drag.button.onpointerup=null;drag.button.onpointercancel=null;
-  drag.button.classList.remove('is-category-dragging');document.body.classList.remove('is-reordering-checkin-categories');
-  document.querySelectorAll('.checkin-category-item').forEach(item=>item.classList.remove('drop-target'));
-  if(!drag.moved||cancelled||!event)return;
-  const target=document.elementFromPoint(event.clientX,event.clientY)?.closest('.checkin-category-item');
-  const targetButton=target?.querySelector('[data-checkin^="day-"]');
-  if(!targetButton||targetButton===drag.button){setTimeout(()=>{suppressCheckinCategoryClick=false;},0);return;}
-  const categories=getCheckinCategories(),from=categories.findIndex(item=>item.id===drag.id),to=categories.findIndex(item=>'day-'+item.id===targetButton.dataset.checkin);
-  if(from<0||to<0){setTimeout(()=>{suppressCheckinCategoryClick=false;},0);return;}
-  const rect=targetButton.getBoundingClientRect(),sourceRow=drag.button.closest('.checkin-tabs-row'),targetRow=targetButton.closest('.checkin-tabs-row');
-  const after=sourceRow!==targetRow?event.clientY>rect.top+rect.height/2:event.clientX>rect.left+rect.width/2;
-  const [moved]=categories.splice(from,1);let insertAt=to+(after?1:0);if(from<insertAt)insertAt--;
-  categories.splice(Math.max(0,Math.min(categories.length,insertAt)),0,moved);
-  save(KEY_CHECKIN_CATEGORIES,categories);renderCheckinCategoryTabs();setTimeout(()=>{suppressCheckinCategoryClick=false;},0);
 }
 function cancelCheckinCategoryHold() {
   if(checkinCategoryHoldTimer)clearTimeout(checkinCategoryHoldTimer);
@@ -191,8 +154,8 @@ function openCheckinCategoryEditor(tabs,{mode='add',id=null,name=''}={}) {
   const backdrop=document.createElement('div'); backdrop.className='checkin-category-backdrop';
   const editor=document.createElement('section'); editor.className='checkin-category-editor';
   editor.setAttribute('role','dialog'); editor.setAttribute('aria-modal','true');
-  const label=document.createElement('label'); label.id='checkin-category-title-'+Date.now().toString(36); label.textContent=mode==='rename'?'修改模块名称':'新建任务模块';
-  editor.setAttribute('aria-labelledby',label.id);
+  const titleId='checkin-category-title-'+Date.now().toString(36); editor.setAttribute('aria-labelledby',titleId);
+  const label=document.createElement('label'); label.id=titleId; label.textContent=mode==='rename'?'修改模块名称':'新建任务模块';
   const input=document.createElement('input'); input.type='text'; input.maxLength=20;
   input.value=name; input.placeholder='输入 1–20 个字'; input.autocomplete='off'; input.spellcheck=false;
   const error=document.createElement('div'); error.id='checkin-category-editor-error-'+Date.now().toString(36)+Math.random().toString(36).slice(2,6); error.className='checkin-category-editor-error'; error.setAttribute('role','status'); error.setAttribute('aria-live','polite');
@@ -200,7 +163,7 @@ function openCheckinCategoryEditor(tabs,{mode='add',id=null,name=''}={}) {
   const saveButton=document.createElement('button'); saveButton.type='button'; saveButton.textContent=mode==='rename'?'保存':'添加';
   const cancelButton=document.createElement('button'); cancelButton.type='button'; cancelButton.className='secondary'; cancelButton.textContent='取消';
   editor.append(label,input,error,saveButton,cancelButton); backdrop.appendChild(editor); document.body.appendChild(backdrop);
-  const close=()=>{backdrop.remove();if(tabs.isConnected){const focusTarget=mode==='rename'?tabs.querySelector('[data-checkin="day-'+id+'"]'):tabs.querySelector('.checkin-category-add');focusTarget?.focus();}};
+  const close=()=>{backdrop.remove();if(tabs.isConnected&&tabs.contains(document.activeElement)===false){const focusTarget=mode==='rename'?tabs.querySelector('[data-checkin="day-'+id+'"]'):tabs.querySelector('.checkin-category-add');focusTarget?.focus();}};
   cancelButton.onclick=close;
   backdrop.addEventListener('pointerdown',event=>{if(event.target===backdrop)close();});
   const normalized=value=>value.trim().normalize('NFC').toLocaleLowerCase();
@@ -238,11 +201,6 @@ function openCheckinCategoryEditor(tabs,{mode='add',id=null,name=''}={}) {
   });
   input.focus(); if(mode==='rename')input.select();
 }
-function addCheckinCategoryInline(button) {
-  const tabs=button.closest('.checkin-tabs'); if(!tabs||tabs.querySelector('.checkin-category-editor'))return;
-  openCheckinCategoryEditor(tabs);
-}
-
 function deleteCheckinCategory(id,confirmed=false) {
   const categories=getCheckinCategories(); if(categories.length<=1||!confirmed)return;
   save(KEY_CHECKIN_CATEGORIES,categories.filter(c=>c.id!==id));
@@ -253,23 +211,7 @@ function deleteCheckinCategory(id,confirmed=false) {
 }
 function addCheckinCategoryInline(button) {
   const tabs=button.closest('.checkin-tabs'); if(!tabs||tabs.querySelector('.checkin-category-editor'))return;
-  const editor=document.createElement('div'); editor.className='checkin-category-editor';
-  const input=document.createElement('input'); input.type='text'; input.maxLength=20; input.placeholder='新模块名称'; input.setAttribute('aria-label','新模块名称');
-  const saveButton=document.createElement('button'); saveButton.type='button'; saveButton.textContent='添加';
-  const cancelButton=document.createElement('button'); cancelButton.type='button'; cancelButton.textContent='取消';
-  editor.append(input,saveButton,cancelButton); tabs.appendChild(editor);
-  const close=()=>editor.remove(); cancelButton.onclick=close;
-  const saveCategory=()=>{
-    const name=input.value.trim(); if(!name)return;
-    const categories=getCheckinCategories();
-    if(categories.some(c=>c.name===name)){input.setCustomValidity('这个名称已经使用');input.reportValidity();return;}
-    const id='custom-'+Date.now().toString(36)+Math.random().toString(36).slice(2,6);
-    categories.push({id,name}); save(KEY_CHECKIN_CATEGORIES,categories);
-    checkinTab='day-'+id; close(); renderCheckinCategoryTabs(); goPage('checkin');
-  };
-  saveButton.onclick=saveCategory; input.addEventListener('input',()=>input.setCustomValidity(''));
-  input.addEventListener('keydown',e=>{if(e.key==='Enter'){e.preventDefault();saveCategory();}else if(e.key==='Escape')close();});
-  input.focus();
+  openCheckinCategoryEditor(tabs);
 }
 
 // 将任务文本渲染为 HTML：转义特殊字符 + 把换行符转成 <br>
@@ -719,14 +661,9 @@ function getData(scope) {
 function setData(scope, tasks) {
   const storeKey = scope === 'week' ? KEY_WEEK : KEY_DAY;
   const dataKey = scope === 'week' ? CHECKIN_OTHER_KEY : (checkinTab.startsWith('day-') ? checkinTab.slice(4) : checkinDayKey(currentDayDate));
-  if (tasks.some(task => Number.isFinite(task.manualOrder))) {
-    let nextOrder = Math.max(...tasks.filter(task => Number.isFinite(task.manualOrder)).map(task => task.manualOrder)) + 1;
-    tasks.forEach(task => { if (!Number.isFinite(task.manualOrder)) task.manualOrder = nextOrder++; });
-  }
   const all = load(storeKey, {});
   all[dataKey] = tasks; save(storeKey, all);
 }
-
 
 
 

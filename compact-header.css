@@ -585,7 +585,7 @@ body[data-bill-type="income"] {
   #week:not(.hidden),
   #day:not(.hidden) {
     display: grid;
-    grid-template-columns: minmax(0, 1fr) 52px;
+    grid-template-columns: minmax(0, 1fr) 44px;
     column-gap: 8px;
     align-content: start;
   }
@@ -597,7 +597,7 @@ body[data-bill-type="income"] {
     grid-row: 2;
     display: flex;
     flex-direction: column;
-    width: 52px;
+    width: 44px;
     max-width: none;
     gap: 6px;
     align-self: start;
@@ -615,7 +615,7 @@ body[data-bill-type="income"] {
   }
   #week > .checkin-tabs .vt-btn,
   #day > .checkin-tabs .vt-btn {
-    width: 52px;
+    width: 44px;
     min-width: 0;
     min-height: 44px;
     padding: 7px 2px;
@@ -637,6 +637,16 @@ body[data-bill-type="income"] {
   }
   #week > .topbar,
   #day > .topbar { display: none; }
+}
+
+/* Give narrow phone rails enough width for weekday labels without enlarging their height. */
+@media (max-width: 599px) {
+  #week:not(.hidden),
+  #day:not(.hidden) { grid-template-columns: minmax(0, 1fr) 52px; }
+  #week > .checkin-tabs,
+  #day > .checkin-tabs { width: 52px; }
+  #week > .checkin-tabs .checkin-tabs-row .vt-btn,
+  #day > .checkin-tabs .checkin-tabs-row .vt-btn { font-size: 10px; }
 }
 
 .checkin-add-form {
@@ -879,7 +889,6 @@ body[data-bill-type="income"] {
   }
 }
 
-
 /* Check-in page: align the task canvas and entry form, with a true edge-aligned category rail. */
 @media (min-width: 600px) {
   #week:not(.hidden),
@@ -999,7 +1008,6 @@ body[data-bill-type="income"] {
   .checkin-category-backdrop,.checkin-category-editor { animation: none; }
 }
 
-
 /* Keep the category editor independent from the narrow weekday rail. */
 .checkin-category-backdrop {
   position: fixed !important;
@@ -1090,4 +1098,3 @@ body[data-bill-type="income"] {
     padding: 22px 18px !important;
   }
 }
-

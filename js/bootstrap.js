@@ -13,4 +13,3 @@ initTimePicker();
 initAppTheme();
 renderCheckinCategoryTabs();
 goPage('checkin');
-

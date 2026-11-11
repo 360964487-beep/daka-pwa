@@ -128,11 +128,8 @@ function render(scope, animate = true) {
   }
 
   const bySeq = (a, b) => cmpSeq(a.t, b.t);
-  const sortTaskGroup = list => list.every(x => Number.isFinite(x.t.manualOrder))
-    ? list.sort((a, b) => a.t.manualOrder - b.t.manualOrder)
-    : list.sort(bySeq);
-  const undone = sortTaskGroup(tiles.filter(x => !x.t.done));
-  const done = sortTaskGroup(tiles.filter(x => x.t.done));
+  const undone = tiles.filter(x => !x.t.done).sort(bySeq);
+  const done = tiles.filter(x => x.t.done).sort(bySeq);
 
   // 未完成块从左上角向右下浮起。
   for (const u of undone) {
@@ -193,13 +190,6 @@ function render(scope, animate = true) {
       el.appendChild(span);
       const check = document.createElement('div');
       check.className = 'tile-check'; check.textContent = '✓'; el.appendChild(check);
-      const dragHandle = document.createElement('button');
-      dragHandle.type = 'button';
-      dragHandle.className = 'tile-drag-handle';
-      dragHandle.setAttribute('aria-label', '拖动任务调整顺序');
-      dragHandle.title = '拖动调整位置';
-      dragHandle.innerHTML = '<svg viewBox="0 0 12 16" aria-hidden="true"><circle cx="3" cy="3" r="1.25"/><circle cx="9" cy="3" r="1.25"/><circle cx="3" cy="8" r="1.25"/><circle cx="9" cy="8" r="1.25"/><circle cx="3" cy="13" r="1.25"/><circle cx="9" cy="13" r="1.25"/></svg>';
-      el.appendChild(dragHandle);
       // 新块从面板中央出现
       el.style.width = pw + 'px';
       el.style.height = ph + 'px';
@@ -207,7 +197,6 @@ function render(scope, animate = true) {
       el.style.transform = tileTransform(bw/2 - pw/2, bh/2 - ph/2);
       board.appendChild(el);
       bindTileEvents(el, scope, t);
-      bindTileDrag(dragHandle, el, board, scope, t);
     } else {
       el.className = 'tile c' + (t.color % COLORS) + (t.done ? ' done' : ' balloon');
       el.classList.toggle('has-time', !!t.start);
@@ -241,89 +230,6 @@ function render(scope, animate = true) {
     if (!tasks.find(t => String(t.id) === el.dataset.id)) el.remove();
   });
 
-}
-
-function bindTileDrag(handle, el, board, scope, task) {
-  let pointer = null;
-  const stopBubble = event => event.stopPropagation();
-  handle.addEventListener('touchstart', stopBubble, { passive:true });
-  handle.addEventListener('mousedown', stopBubble);
-  handle.addEventListener('click', stopBubble);
-  handle.addEventListener('pointerdown', event => {
-    event.stopPropagation();
-    if (!event.isPrimary || (event.button != null && event.button !== 0)) return;
-    pointer = { id:event.pointerId, x:event.clientX, y:event.clientY, left:parseFloat(el.style.left) || 0, top:parseFloat(el.style.top) || 0, moved:false };
-    try { handle.setPointerCapture(event.pointerId); } catch (_) {}
-  });
-  handle.addEventListener('pointermove', event => {
-    if (!pointer || event.pointerId !== pointer.id) return;
-    const dx = event.clientX - pointer.x, dy = event.clientY - pointer.y;
-    if (!pointer.moved && Math.hypot(dx, dy) < 5) return;
-    if (!pointer.moved) {
-      pointer.moved = true;
-      if (el.getAnimations) el.getAnimations().forEach(animation => animation.cancel());
-      el.style.transform = 'none';
-      el.classList.add('is-dragging');
-      el.style.willChange = 'left, top';
-    }
-    event.preventDefault();
-    el.style.left = Math.max(0, Math.min(board.clientWidth - el.offsetWidth, pointer.left + dx)) + 'px';
-    el.style.top = Math.max(0, Math.min(board.clientHeight - el.offsetHeight, pointer.top + dy)) + 'px';
-  });
-  const finish = (event, cancelled = false) => {
-    if (!pointer || (event && event.pointerId !== pointer.id)) return;
-    const active = pointer;
-    pointer = null;
-    el.classList.remove('is-dragging');
-    el.style.willChange = 'auto';
-    if (!active.moved || cancelled) {
-      el.style.left = active.left + 'px';
-      el.style.top = active.top + 'px';
-      return;
-    }
-    reorderCheckinTask(scope, task.id, !!task.done, event.clientX, event.clientY, el, board);
-  };
-  handle.addEventListener('pointerup', event => finish(event));
-  handle.addEventListener('pointercancel', event => finish(event, true));
-  handle.addEventListener('lostpointercapture', event => finish(event, true));
-}
-
-function reorderCheckinTask(scope, taskId, isDone, clientX, clientY, draggedEl, board) {
-  const { tasks } = getData(scope);
-  const group = tasks.filter(item => !!item.done === isDone);
-  const otherGroup = tasks.filter(item => !!item.done !== isDone);
-  if (group.length < 2) return;
-  const orderedGroup = group.every(item => Number.isFinite(item.manualOrder))
-    ? group.slice().sort((a, b) => a.manualOrder - b.manualOrder)
-    : group.slice().sort(cmpSeq);
-  const orderedOther = otherGroup.every(item => Number.isFinite(item.manualOrder))
-    ? otherGroup.slice().sort((a, b) => a.manualOrder - b.manualOrder)
-    : otherGroup.slice().sort(cmpSeq);
-  const candidates = [...board.querySelectorAll('.tile')].filter(tile =>
-    tile !== draggedEl && tile.classList.contains(isDone ? 'done' : 'balloon')
-  );
-  if (!candidates.length) return;
-  const target = candidates.reduce((best, tile) => {
-    const rect = tile.getBoundingClientRect();
-    const distance = Math.hypot(clientX - (rect.left + rect.width / 2), clientY - (rect.top + rect.height / 2));
-    return !best || distance < best.distance ? { tile, rect, distance } : best;
-  }, null);
-  const targetIndex = orderedGroup.findIndex(item => String(item.id) === target.tile.dataset.id);
-  const fromIndex = orderedGroup.findIndex(item => String(item.id) === String(taskId));
-  if (fromIndex < 0 || targetIndex < 0) return;
-  const verticalIntent = Math.abs(clientY - (target.rect.top + target.rect.height / 2)) > Math.max(12, target.rect.height * .35);
-  const after = verticalIntent
-    ? clientY > target.rect.top + target.rect.height / 2
-    : clientX > target.rect.left + target.rect.width / 2;
-  const [moved] = orderedGroup.splice(fromIndex, 1);
-  let insertAt = targetIndex + (after ? 1 : 0);
-  if (fromIndex < insertAt) insertAt--;
-  orderedGroup.splice(Math.max(0, Math.min(orderedGroup.length, insertAt)), 0, moved);
-  const undone = isDone ? orderedOther : orderedGroup;
-  const done = isDone ? orderedGroup : orderedOther;
-  [...undone, ...done].forEach((item, index) => { item.manualOrder = index; });
-  setData(scope, tasks);
-  render(scope);
 }
 
 // ===== 交互绑定 =====
