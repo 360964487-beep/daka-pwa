@@ -11,4 +11,6 @@ doubaoVoiceButton.addEventListener('pointercancel', () => stopDoubaoVoice(true, 
 document.addEventListener('visibilitychange', () => { if (document.hidden) stopDoubaoVoice(true, 'page-hidden'); });
 initTimePicker();
 initAppTheme();
+renderCheckinCategoryTabs();
 goPage('checkin');
+
