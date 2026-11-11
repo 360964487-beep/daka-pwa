@@ -56,6 +56,54 @@ const KEY_FIXED = 'checkin_fixed_v1';   // 月固定支出
 const KEY_FIXED_IN = 'checkin_fixed_in_v1'; // 月固定收入
 const KEY_NOTE = 'checkin_notes_v1'; // 小纸条
 const KEY_PROFILE_NAME = 'checkin_profile_name_v1';
+const KEY_CHECKIN_CATEGORIES = 'checkin_categories_v1';
+const DEFAULT_CHECKIN_CATEGORIES = ['周一','周二','周三','周四','周五','周六','周日'].map((name, i) => ({ id:'weekday-' + i, name }));
+function getCheckinCategories() {
+  const saved = load(KEY_CHECKIN_CATEGORIES, null);
+  if (!Array.isArray(saved) || !saved.length) { save(KEY_CHECKIN_CATEGORIES, DEFAULT_CHECKIN_CATEGORIES); return DEFAULT_CHECKIN_CATEGORIES; }
+  return saved.filter(c => c && typeof c.id === 'string' && typeof c.name === 'string');
+}
+function renderCheckinCategoryTabs() {
+  const categories = getCheckinCategories();
+  ['checkinWeekdayRow','checkinWeekdayRowMobile'].forEach(id => {
+    const row = document.getElementById(id); if (row) row.replaceChildren();
+  });
+  ['checkinWeekendRow','checkinWeekendRowMobile'].forEach(id => {
+    const row = document.getElementById(id); if (row) row.replaceChildren();
+  });
+  categories.forEach((category, index) => {
+    (index < 5 ? ['checkinWeekdayRow','checkinWeekdayRowMobile'] : ['checkinWeekendRow','checkinWeekendRowMobile']).forEach(id => {
+      const row = document.getElementById(id); if (!row) return;
+      const button = document.createElement('button'); button.type='button'; button.className='vt-btn';
+      button.dataset.checkin='day-' + category.id; button.textContent=category.name;
+      button.onclick=()=>switchCheckinTab('day-' + category.id); row.appendChild(button);
+    });
+  });
+  document.querySelectorAll('.checkin-tabs .vt-btn').forEach(b=>b.classList.toggle('active',b.dataset.checkin===checkinTab));
+}
+function manageCheckinCategories() {
+  const categories=getCheckinCategories();
+  const action=prompt('分类管理：输入“新增”添加分类，或输入要改名/删除的分类名称。');
+  if (!action) return;
+  if (action.trim()==='新增') {
+    const name=prompt('请输入新分类名称'); if (!name || !name.trim()) return;
+    const id='custom-' + Date.now().toString(36) + Math.random().toString(36).slice(2,6);
+    categories.push({id,name:name.trim()}); save(KEY_CHECKIN_CATEGORIES,categories); renderCheckinCategoryTabs(); return;
+  }
+  const category=categories.find(c=>c.name===action.trim());
+  if (!category) { alert('没有找到这个分类名称'); return; }
+  const choice=prompt('对“' + category.name + '”输入：改名 或 删除');
+  if (choice==='改名') {
+    const name=prompt('请输入新名称',category.name); if (!name || !name.trim()) return;
+    category.name=name.trim(); save(KEY_CHECKIN_CATEGORIES,categories); renderCheckinCategoryTabs();
+  } else if (choice==='删除') {
+    if (!confirm('删除分类“' + category.name + '”及其任务？')) return;
+    save(KEY_CHECKIN_CATEGORIES,categories.filter(c=>c.id!==category.id));
+    const all=load(KEY_DAY,{}); delete all[category.id]; save(KEY_DAY,all);
+    if (checkinTab==='day-' + category.id) checkinTab=categories.length>1 ? 'day-' + categories.find(c=>c.id!==category.id).id : 'week';
+    renderCheckinCategoryTabs(); goPage('checkin');
+  }
+}
 
 // 将任务文本渲染为 HTML：转义特殊字符 + 把换行符转成 <br>
 function textToHTML(s) {
@@ -137,7 +185,7 @@ function normalizeCheckinTaskStore(store, scope) {
   Object.entries(source).forEach(([period, tasks]) => {
     let key;
     if (scope === 'week') key = CHECKIN_OTHER_KEY;
-    else if (/^weekday-[0-6]$/.test(period)) key = period;
+    else if (/^(weekday-[0-6]|custom-[a-z0-9]+)$/.test(period)) key = period;
     else if (/^\d{4}-\d{2}-\d{2}$/.test(period)) key = checkinDayKey(period);
     else return;
     if (!groups.has(key)) groups.set(key, []);
@@ -454,12 +502,9 @@ let weekView = 'board';
 let checkinTab = 'week';
 function switchCheckinTab(tab) {
   checkinTab = tab;
-  const dayMatch = /^day-(\d)$/.exec(tab);
+  renderCheckinCategoryTabs();
+  const dayMatch = /^day-(.+)$/.exec(tab);
   const showDay = !!dayMatch;
-  if (showDay) {
-    currentDayDate = new Date(currentWeekStart);
-    currentDayDate.setDate(currentWeekStart.getDate() + Number(dayMatch[1]));
-  }
   const title = document.querySelector('#' + (showDay ? 'day' : 'week') + ' .topbar h1');
   if (title) { title.textContent = ''; title.style.display = 'none'; }
   document.getElementById('week').classList.toggle('hidden', showDay);
@@ -500,16 +545,17 @@ function goPage(page) {
 }
 
 function getData(scope) {
-  const dataKey = scope === 'week' ? CHECKIN_OTHER_KEY : checkinDayKey(currentDayDate);
+  const dataKey = scope === 'week' ? CHECKIN_OTHER_KEY : (checkinTab.startsWith('day-') ? checkinTab.slice(4) : checkinDayKey(currentDayDate));
   const all = load(scope === 'week' ? KEY_WEEK : KEY_DAY, {});
   return { dataKey, tasks: all[dataKey] || [] };
 }
 function setData(scope, tasks) {
   const storeKey = scope === 'week' ? KEY_WEEK : KEY_DAY;
-  const dataKey = scope === 'week' ? CHECKIN_OTHER_KEY : checkinDayKey(currentDayDate);
+  const dataKey = scope === 'week' ? CHECKIN_OTHER_KEY : (checkinTab.startsWith('day-') ? checkinTab.slice(4) : checkinDayKey(currentDayDate));
   const all = load(storeKey, {});
   all[dataKey] = tasks; save(storeKey, all);
 }
+
 
 
 
