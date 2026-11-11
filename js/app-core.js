@@ -62,7 +62,6 @@ let pendingCheckinCategoryDelete = null;
 let checkinCategoryHoldTimer = null;
 let suppressCheckinCategoryClick = false;
 let activeCheckinCategoryMenu = null;
-let checkinCategoryDrag = null;
 function getCheckinCategories() {
   const saved = load(KEY_CHECKIN_CATEGORIES, null);
   if (!Array.isArray(saved) || !saved.length) { save(KEY_CHECKIN_CATEGORIES, DEFAULT_CHECKIN_CATEGORIES); return DEFAULT_CHECKIN_CATEGORIES; }
@@ -78,10 +77,7 @@ function renderCheckinCategoryTabs() {
       const row=document.getElementById(id); if(!row)return;
       const item=document.createElement('div'); item.className='checkin-category-item';
       const button=document.createElement('button'); button.type='button'; button.className='vt-btn checkin-module-tab';
-      button.dataset.checkin='day-'+category.id;
-      const name=document.createElement('span'); name.className='checkin-module-name'; name.textContent=category.name;
-      const grip=document.createElement('span'); grip.className='checkin-module-grip'; grip.setAttribute('aria-hidden','true'); grip.textContent='⠿';
-      button.append(name,grip); button.title='拖动排序；长按管理模块';
+      button.dataset.checkin='day-'+category.id; button.textContent=category.name; button.title='长按管理模块';
       button.onpointerdown=e=>beginCheckinCategoryHold(e,category.id,button);
       button.onpointerup=cancelCheckinCategoryHold; button.onpointerleave=cancelCheckinCategoryHold; button.onpointercancel=cancelCheckinCategoryHold;
       button.oncontextmenu=e=>{e.preventDefault();suppressCheckinCategoryClick=true;setTimeout(()=>{suppressCheckinCategoryClick=false;},900);showCheckinCategoryMenu(category.id,button);};
@@ -90,7 +86,17 @@ function renderCheckinCategoryTabs() {
         if(activeCheckinCategoryMenu)closeCheckinCategoryMenu();
         switchCheckinTab('day-'+category.id);
       };
-      item.appendChild(button); row.appendChild(item);
+      const controls=document.createElement('div'); controls.className='checkin-module-reorder';
+      const moveButton=(direction,label,path)=>{
+        const control=document.createElement('button'); control.type='button'; control.className='checkin-module-reorder-btn';
+        control.dataset.move=direction; control.dataset.categoryId=category.id; control.disabled=direction==='up'?index===0:index===categories.length-1;
+        control.setAttribute('aria-label',label+category.name); control.title=label+category.name;
+        control.innerHTML='<svg viewBox="0 0 20 20" aria-hidden="true"><path d="'+path+'"/></svg>';
+        control.onclick=e=>{e.stopPropagation();moveCheckinCategory(category.id,direction==='up'?-1:1);};
+        controls.appendChild(control);
+      };
+      moveButton('up','上移','m5 12 5-5 5 5'); moveButton('down','下移','m5 8 5 5 5-5');
+      item.append(button,controls); row.appendChild(item);
     });
   });
   ['checkinWeekendRow','checkinWeekendRowMobile'].forEach(id=>{
@@ -104,63 +110,28 @@ function renderCheckinCategoryTabs() {
 function beginCheckinCategoryHold(event,id,button) {
   if(event.button!=null&&event.button!==0)return;
   cancelCheckinCategoryHold();
-  checkinCategoryDrag={id,startX:event.clientX,startY:event.clientY,button,moved:false};
-  try { button.setPointerCapture(event.pointerId); } catch (_) {}
   checkinCategoryHoldTimer=setTimeout(()=>{
     checkinCategoryHoldTimer=null; suppressCheckinCategoryClick=true;
     setTimeout(()=>{suppressCheckinCategoryClick=false;},900);
     showCheckinCategoryMenu(id,button);
   },520);
-  button.onpointermove=e=>moveCheckinCategory(e);
-  button.onpointerup=e=>finishCheckinCategoryDrag(e);
-  button.onpointercancel=()=>finishCheckinCategoryDrag(null,true);
 }
-function moveCheckinCategory(event) {
-  const drag=checkinCategoryDrag; if(!drag)return;
-  const dx=event.clientX-drag.startX,dy=event.clientY-drag.startY;
-  if(!drag.moved&&Math.hypot(dx,dy)<8)return;
-  if(!drag.moved){drag.moved=true;cancelCheckinCategoryHold();suppressCheckinCategoryClick=true;drag.button.classList.add('is-category-dragging');document.body.classList.add('is-reordering-checkin-categories');}
-  event.preventDefault();
-  drag.button.style.transform='translate3d('+dx+'px,'+dy+'px,0) scale(1.045)';
-  document.querySelectorAll('.checkin-category-item').forEach(item=>item.classList.remove('drop-target'));
-  const target=document.elementFromPoint(event.clientX,event.clientY)?.closest('.checkin-category-item');
-  if(target&&target!==drag.button.parentElement)target.classList.add('drop-target');
-}
-function finishCheckinCategoryDrag(event,cancelled=false) {
-  const drag=checkinCategoryDrag; if(!drag)return;
-  const targetItem=drag.moved&&event?document.elementFromPoint(event.clientX,event.clientY)?.closest('.checkin-category-item'):null;
-  const targetButton=targetItem?.querySelector('[data-checkin^="day-"]');
-  const before=new Map();
-  if(drag.moved&&!cancelled&&targetButton&&targetButton!==drag.button) {
-    document.querySelectorAll('.checkin-module-tab').forEach(button=>before.set(button.dataset.checkin,button.getBoundingClientRect()));
-  }
-  checkinCategoryDrag=null; cancelCheckinCategoryHold();
-  drag.button.onpointermove=null; drag.button.onpointerup=null; drag.button.onpointercancel=null;
-  drag.button.classList.remove('is-category-dragging'); document.body.classList.remove('is-reordering-checkin-categories');
-  document.querySelectorAll('.checkin-category-item').forEach(item=>item.classList.remove('drop-target'));
-  if(!drag.moved||cancelled||!event){drag.button.style.transform=''; return;}
-  if(!targetButton||targetButton===drag.button){
-    drag.button.style.transition='transform 220ms cubic-bezier(.2,.8,.2,1)'; drag.button.style.transform='';
-    setTimeout(()=>{drag.button.style.transition='';suppressCheckinCategoryClick=false;},230); return;
-  }
+function moveCheckinCategory(id,delta) {
   const categories=getCheckinCategories();
-  const from=categories.findIndex(item=>item.id===drag.id),to=categories.findIndex(item=>'day-'+item.id===targetButton.dataset.checkin);
-  if(from<0||to<0){drag.button.style.transform='';setTimeout(()=>{suppressCheckinCategoryClick=false;},0);return;}
-  const rect=targetButton.getBoundingClientRect();
-  const sourceRow=drag.button.closest('.checkin-tabs-row'),targetRow=targetButton.closest('.checkin-tabs-row');
-  const after=sourceRow!==targetRow?event.clientY>rect.top+rect.height/2:event.clientX>rect.left+rect.width/2;
-  const [moved]=categories.splice(from,1); let insertAt=to+(after?1:0); if(from<insertAt)insertAt--;
-  categories.splice(Math.max(0,Math.min(categories.length,insertAt)),0,moved);
-  drag.button.style.transform='';
+  const from=categories.findIndex(item=>item.id===id),to=from+delta;
+  if(from<0||to<0||to>=categories.length)return;
+  const slotKey=button=>button.closest('.checkin-tabs-row').id+'|'+button.dataset.checkin;
+  const oldRects=new Map([...document.querySelectorAll('.checkin-module-tab')].map(button=>[slotKey(button),button.getBoundingClientRect()]));
+  [categories[from],categories[to]]=[categories[to],categories[from]];
   save(KEY_CHECKIN_CATEGORIES,categories); renderCheckinCategoryTabs();
   if(!matchMedia('(prefers-reduced-motion: reduce)').matches) {
     document.querySelectorAll('.checkin-module-tab').forEach(button=>{
-      const oldRect=before.get(button.dataset.checkin); if(!oldRect)return;
-      const rect=button.getBoundingClientRect(),dx=oldRect.left-rect.left,dy=oldRect.top-rect.top;
-      if(Math.abs(dx)+Math.abs(dy)>1)button.animate([{transform:'translate3d('+dx+'px,'+dy+'px,0)'},{transform:'translate3d(0,0,0)'}],{duration:320,easing:'cubic-bezier(.22,.8,.2,1)'});
+      const before=oldRects.get(slotKey(button)); if(!before)return;
+      const after=button.getBoundingClientRect(),dx=before.left-after.left,dy=before.top-after.top;
+      if(Math.abs(dx)+Math.abs(dy)>1)button.animate([{transform:'translate3d('+dx+'px,'+dy+'px,0)'},{transform:'translate3d(0,0,0)'}],{duration:180,easing:'cubic-bezier(.2,.75,.25,1)'});
     });
   }
-  setTimeout(()=>{suppressCheckinCategoryClick=false;},0);
+  document.querySelectorAll('.checkin-module-reorder-btn[data-category-id="'+id+'"][data-move="'+(delta<0?'up':'down')+'"]').item(0)?.focus({preventScroll:true});
 }
 function cancelCheckinCategoryHold() {
   if(checkinCategoryHoldTimer)clearTimeout(checkinCategoryHoldTimer);

@@ -782,14 +782,15 @@ input::placeholder,textarea::placeholder { color:var(--ui-muted); opacity:1; }
 .checkin-tabs .vt-btn.active { background:var(--ui-accent); color:var(--ui-on-accent); box-shadow:none; }
 .checkin-category-item { position:relative; min-width:0; width:100%; }
 .checkin-category-item > .vt-btn { width:100%; }
-.checkin-module-tab { touch-action:none; -webkit-touch-callout:none; user-select:none; cursor:grab; }
-.checkin-tabs .checkin-module-tab { display:flex; align-items:center; justify-content:center; gap:3px; }
-.checkin-module-name { min-width:0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
-.checkin-module-grip { flex:none; margin-left:3px; color:var(--ui-muted); font-size:15px; line-height:1; opacity:.65; }
-.checkin-module-tab:active { cursor:grabbing; }
-.checkin-module-tab.is-category-dragging { position:relative; z-index:20; opacity:.9; pointer-events:none; box-shadow:0 10px 24px color-mix(in srgb,var(--ui-ink) 22%,transparent); will-change:transform; transition:none!important; }
-.checkin-category-item.drop-target { outline:2px solid var(--ui-accent); outline-offset:1px; border-radius:9px; }
-.is-reordering-checkin-categories,.is-reordering-checkin-categories * { user-select:none!important; -webkit-user-select:none!important; }
+.checkin-module-tab { touch-action:manipulation; -webkit-touch-callout:none; user-select:none; }
+.checkin-category-item { display:grid; grid-template-columns:minmax(0,1fr) 18px; align-items:stretch; gap:1px; }
+.checkin-category-item > .vt-btn { grid-column:1; min-width:0; }
+.checkin-module-reorder { grid-column:2; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:0; }
+.checkin-module-reorder-btn { display:grid; place-items:center; width:18px; height:21px; min-width:18px; min-height:21px; margin:0; padding:0; border:0; border-radius:5px; background:transparent; color:var(--ui-muted); touch-action:manipulation; -webkit-tap-highlight-color:transparent; }
+.checkin-module-reorder-btn svg { width:13px; height:13px; fill:none; stroke:currentColor; stroke-width:1.8; stroke-linecap:round; stroke-linejoin:round; }
+.checkin-module-reorder-btn:active:not(:disabled) { background:var(--ui-accent-soft); color:var(--ui-accent); transform:scale(.92); }
+.checkin-module-reorder-btn:disabled { opacity:.28; }
+.checkin-module-reorder-btn:focus-visible { outline:2px solid var(--ui-focus); outline-offset:-2px; }
 .checkin-tabs .checkin-category-add { flex:0 0 38px; justify-self:center; align-self:center; width:38px; min-height:38px; padding:0; border:0; border-radius:50%; background:var(--ui-raised); color:var(--ui-accent-ink); font-size:23px; line-height:1; font-weight:500; }
 .checkin-category-menu { position:fixed; z-index:1100; display:flex; align-items:center; gap:5px; padding:5px; border:1px solid var(--ui-border); border-radius:11px; background:var(--ui-surface); box-shadow:0 8px 26px #20180f24; }
 .checkin-category-menu button { min-height:36px; padding:0 11px; border:0; border-radius:8px; background:var(--ui-raised); color:var(--ui-ink); font:inherit; font-size:13px; font-weight:650; white-space:nowrap; }
