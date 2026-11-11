@@ -81,28 +81,38 @@ function renderCheckinCategoryTabs() {
   });
   document.querySelectorAll('.checkin-tabs .vt-btn').forEach(b=>b.classList.toggle('active',b.dataset.checkin===checkinTab));
 }
-function manageCheckinCategories() {
+async function manageCheckinCategories() {
   const categories=getCheckinCategories();
-  const action=prompt('分类管理：输入“新增”添加分类，或输入要改名/删除的分类名称。');
-  if (!action) return;
-  if (action.trim()==='新增') {
-    const name=prompt('请输入新分类名称'); if (!name || !name.trim()) return;
+  const actionValue=await askInput('管理任务模块','输入“新增”“改名”或“删除”');
+  if (actionValue == null) return;
+  const action=actionValue.trim();
+  if (action==='新增') {
+    const nameValue=await askInput('添加任务模块','输入新模块名称');
+    const name=(nameValue || '').trim(); if (!name) return;
+    if (categories.some(c=>c.name===name)) { await askInput('模块名称已存在','请关闭后重新操作'); return; }
     const id='custom-' + Date.now().toString(36) + Math.random().toString(36).slice(2,6);
-    categories.push({id,name:name.trim()}); save(KEY_CHECKIN_CATEGORIES,categories); renderCheckinCategoryTabs(); return;
+    categories.push({id,name}); save(KEY_CHECKIN_CATEGORIES,categories);
+    checkinTab='day-' + id; renderCheckinCategoryTabs(); goPage('checkin'); return;
   }
-  const category=categories.find(c=>c.name===action.trim());
-  if (!category) { alert('没有找到这个分类名称'); return; }
-  const choice=prompt('对“' + category.name + '”输入：改名 或 删除');
-  if (choice==='改名') {
-    const name=prompt('请输入新名称',category.name); if (!name || !name.trim()) return;
-    category.name=name.trim(); save(KEY_CHECKIN_CATEGORIES,categories); renderCheckinCategoryTabs();
-  } else if (choice==='删除') {
-    if (!confirm('删除分类“' + category.name + '”及其任务？')) return;
-    save(KEY_CHECKIN_CATEGORIES,categories.filter(c=>c.id!==category.id));
-    const all=load(KEY_DAY,{}); delete all[category.id]; save(KEY_DAY,all);
-    if (checkinTab==='day-' + category.id) checkinTab=categories.length>1 ? 'day-' + categories.find(c=>c.id!==category.id).id : 'week';
-    renderCheckinCategoryTabs(); goPage('checkin');
+  if (action!=='改名' && action!=='删除') return;
+  const names=categories.map(c=>c.name).join('、');
+  const targetValue=await askInput(action==='改名'?'修改模块名称':'删除任务模块','输入要操作的模块名称：' + names);
+  if (targetValue == null) return;
+  const category=categories.find(c=>c.name===targetValue.trim());
+  if (!category) { await askInput('没有找到这个模块','请关闭后重新操作'); return; }
+  if (action==='改名') {
+    const nameValue=await askInput('修改模块名称','输入新的模块名称',category.name);
+    const name=(nameValue || '').trim(); if (!name || name===category.name) return;
+    if (categories.some(c=>c.id!==category.id && c.name===name)) { await askInput('模块名称已存在','请关闭后重新操作'); return; }
+    category.name=name; save(KEY_CHECKIN_CATEGORIES,categories); renderCheckinCategoryTabs(); return;
   }
+  if (categories.length<=1) { await askInput('无法删除','至少保留一个任务模块'); return; }
+  const confirmation=await askInput('确认删除任务模块','删除“' + category.name + '”及其中的任务？输入“删除”确认');
+  if (confirmation!=='删除') return;
+  save(KEY_CHECKIN_CATEGORIES,categories.filter(c=>c.id!==category.id));
+  const all=load(KEY_DAY,{}); delete all[category.id]; save(KEY_DAY,all);
+  if (checkinTab==='day-' + category.id) checkinTab='day-' + categories.find(c=>c.id!==category.id).id;
+  renderCheckinCategoryTabs(); goPage('checkin');
 }
 
 // 将任务文本渲染为 HTML：转义特殊字符 + 把换行符转成 <br>
