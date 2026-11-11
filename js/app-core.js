@@ -113,7 +113,7 @@ function beginCheckinCategoryRename(id,item) {
   const tab=item.querySelector('.vt-btn');
   const input=document.createElement('input'); input.type='text'; input.className='checkin-category-name-input';
   input.value=category.name; input.maxLength=20; input.setAttribute('aria-label','编辑模块名称');
-  tab.replaceChildren(input); input.focus(); input.select();
+  tab.hidden=true; item.appendChild(input); input.focus(); input.select();
   let finished=false;
   const finish=saveName=>{
     if(finished)return; finished=true;
