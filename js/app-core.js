@@ -58,6 +58,8 @@ const KEY_NOTE = 'checkin_notes_v1'; // 小纸条
 const KEY_PROFILE_NAME = 'checkin_profile_name_v1';
 const KEY_CHECKIN_CATEGORIES = 'checkin_categories_v1';
 const DEFAULT_CHECKIN_CATEGORIES = ['周一','周二','周三','周四','周五','周六','周日'].map((name, i) => ({ id:'weekday-' + i, name }));
+let checkinCategoryEditMode = false;
+let pendingCheckinCategoryDelete = null;
 function getCheckinCategories() {
   const saved = load(KEY_CHECKIN_CATEGORIES, null);
   if (!Array.isArray(saved) || !saved.length) { save(KEY_CHECKIN_CATEGORIES, DEFAULT_CHECKIN_CATEGORIES); return DEFAULT_CHECKIN_CATEGORIES; }
@@ -74,45 +76,93 @@ function renderCheckinCategoryTabs() {
   categories.forEach((category, index) => {
     (index < 5 ? ['checkinWeekdayRow','checkinWeekdayRowMobile'] : ['checkinWeekendRow','checkinWeekendRowMobile']).forEach(id => {
       const row = document.getElementById(id); if (!row) return;
+      const item=document.createElement('div'); item.className='checkin-category-item';
       const button = document.createElement('button'); button.type='button'; button.className='vt-btn';
       button.dataset.checkin='day-' + category.id; button.textContent=category.name;
-      button.onclick=()=>switchCheckinTab('day-' + category.id); row.appendChild(button);
+      button.onclick=()=>checkinCategoryEditMode ? beginCheckinCategoryRename(category.id, item) : switchCheckinTab('day-' + category.id);
+      item.appendChild(button);
+      if (checkinCategoryEditMode) {
+        const remove=document.createElement('button'); remove.type='button';
+        remove.className='checkin-category-remove'; remove.textContent=pendingCheckinCategoryDelete===category.id?'确认?':'×';
+        remove.setAttribute('aria-label',pendingCheckinCategoryDelete===category.id?'确认删除'+category.name:'删除'+category.name);
+        remove.onclick=e=>{ e.stopPropagation(); deleteCheckinCategory(category.id); };
+        item.appendChild(remove);
+      }
+      row.appendChild(item);
     });
   });
   document.querySelectorAll('.checkin-tabs .vt-btn').forEach(b=>b.classList.toggle('active',b.dataset.checkin===checkinTab));
+  document.querySelectorAll('.checkin-tabs').forEach(tabs=>{
+    tabs.classList.toggle('editing-categories',checkinCategoryEditMode);
+    const edit=tabs.querySelector('.checkin-category-manage');
+    const add=tabs.querySelector('.checkin-category-add');
+    const done=tabs.querySelector('.checkin-category-done');
+    if(edit) edit.hidden=checkinCategoryEditMode;
+    if(add) add.hidden=!checkinCategoryEditMode;
+    if(done) done.hidden=!checkinCategoryEditMode;
+  });
 }
-async function manageCheckinCategories() {
+function manageCheckinCategories() {
+  checkinCategoryEditMode=!checkinCategoryEditMode;
+  pendingCheckinCategoryDelete=null;
+  renderCheckinCategoryTabs();
+}
+function beginCheckinCategoryRename(id,item) {
+  if (!checkinCategoryEditMode || item.querySelector('input')) return;
+  const category=getCheckinCategories().find(c=>c.id===id); if (!category) return;
+  const tab=item.querySelector('.vt-btn');
+  const input=document.createElement('input'); input.type='text'; input.className='checkin-category-name-input';
+  input.value=category.name; input.maxLength=20; input.setAttribute('aria-label','编辑模块名称');
+  tab.replaceChildren(input); input.focus(); input.select();
+  let finished=false;
+  const finish=saveName=>{
+    if(finished)return; finished=true;
+    const name=input.value.trim();
+    if(saveName && name && name!==category.name && !getCheckinCategories().some(c=>c.id!==id&&c.name===name)) {
+      category.name=name; save(KEY_CHECKIN_CATEGORIES,getCheckinCategories());
+    }
+    renderCheckinCategoryTabs();
+  };
+  input.addEventListener('keydown',e=>{
+    e.stopPropagation();
+    if(e.key==='Enter'){e.preventDefault();finish(true);}
+    else if(e.key==='Escape'){e.preventDefault();finish(false);}
+  });
+  input.addEventListener('blur',()=>finish(true),{once:true});
+  input.addEventListener('click',e=>e.stopPropagation());
+}
+function deleteCheckinCategory(id) {
   const categories=getCheckinCategories();
-  const actionValue=await askInput('管理任务模块','输入“新增”“改名”或“删除”');
-  if (actionValue == null) return;
-  const action=actionValue.trim();
-  if (action==='新增') {
-    const nameValue=await askInput('添加任务模块','输入新模块名称');
-    const name=(nameValue || '').trim(); if (!name) return;
-    if (categories.some(c=>c.name===name)) { await askInput('模块名称已存在','请关闭后重新操作'); return; }
-    const id='custom-' + Date.now().toString(36) + Math.random().toString(36).slice(2,6);
-    categories.push({id,name}); save(KEY_CHECKIN_CATEGORIES,categories);
-    checkinTab='day-' + id; renderCheckinCategoryTabs(); goPage('checkin'); return;
-  }
-  if (action!=='改名' && action!=='删除') return;
-  const names=categories.map(c=>c.name).join('、');
-  const targetValue=await askInput(action==='改名'?'修改模块名称':'删除任务模块','输入要操作的模块名称：' + names);
-  if (targetValue == null) return;
-  const category=categories.find(c=>c.name===targetValue.trim());
-  if (!category) { await askInput('没有找到这个模块','请关闭后重新操作'); return; }
-  if (action==='改名') {
-    const nameValue=await askInput('修改模块名称','输入新的模块名称',category.name);
-    const name=(nameValue || '').trim(); if (!name || name===category.name) return;
-    if (categories.some(c=>c.id!==category.id && c.name===name)) { await askInput('模块名称已存在','请关闭后重新操作'); return; }
-    category.name=name; save(KEY_CHECKIN_CATEGORIES,categories); renderCheckinCategoryTabs(); return;
-  }
-  if (categories.length<=1) { await askInput('无法删除','至少保留一个任务模块'); return; }
-  const confirmation=await askInput('确认删除任务模块','删除“' + category.name + '”及其中的任务？输入“删除”确认');
-  if (confirmation!=='删除') return;
-  save(KEY_CHECKIN_CATEGORIES,categories.filter(c=>c.id!==category.id));
-  const all=load(KEY_DAY,{}); delete all[category.id]; save(KEY_DAY,all);
-  if (checkinTab==='day-' + category.id) checkinTab='day-' + categories.find(c=>c.id!==category.id).id;
+  if(categories.length<=1)return;
+  if(pendingCheckinCategoryDelete!==id) { pendingCheckinCategoryDelete=id; renderCheckinCategoryTabs(); return; }
+  save(KEY_CHECKIN_CATEGORIES,categories.filter(c=>c.id!==id));
+  const all=load(KEY_DAY,{}); delete all[id]; save(KEY_DAY,all);
+  pendingCheckinCategoryDelete=null;
+  if(checkinTab==='day-'+id) checkinTab='day-'+categories.find(c=>c.id!==id).id;
   renderCheckinCategoryTabs(); goPage('checkin');
+}
+function addCheckinCategoryInline(button) {
+  const tabs=button.closest('.checkin-tabs');
+  if(!tabs || tabs.querySelector('.checkin-category-editor'))return;
+  const editor=document.createElement('div'); editor.className='checkin-category-editor';
+  const input=document.createElement('input'); input.type='text'; input.maxLength=20; input.placeholder='新模块名称'; input.setAttribute('aria-label','新模块名称');
+  const saveButton=document.createElement('button'); saveButton.type='button'; saveButton.textContent='添加';
+  const cancelButton=document.createElement('button'); cancelButton.type='button'; cancelButton.textContent='取消';
+  editor.append(input,saveButton,cancelButton);
+  tabs.insertBefore(editor,tabs.querySelector('.checkin-category-actions'));
+  const close=()=>editor.remove();
+  cancelButton.onclick=close;
+  const saveCategory=()=>{
+    const name=input.value.trim(); if(!name)return;
+    const categories=getCheckinCategories(); if(categories.some(c=>c.name===name)){input.setCustomValidity('这个名称已经使用');input.reportValidity();return;}
+    const id='custom-'+Date.now().toString(36)+Math.random().toString(36).slice(2,6);
+    categories.push({id,name}); save(KEY_CHECKIN_CATEGORIES,categories);
+    checkinTab='day-'+id; pendingCheckinCategoryDelete=null; close(); renderCheckinCategoryTabs(); goPage('checkin');
+  };
+  saveButton.onclick=saveCategory;
+  input.addEventListener('input',()=>input.setCustomValidity(''));
+  input.addEventListener('keydown',e=>{if(e.key==='Enter'){e.preventDefault();saveCategory();}else if(e.key==='Escape')close();});
+  input.focus();
 }
 
 // 将任务文本渲染为 HTML：转义特殊字符 + 把换行符转成 <br>
