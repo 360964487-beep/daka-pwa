@@ -1,4 +1,4 @@
-const APP_VERSION = 'v81';
+const APP_VERSION = 'v82';
 
 function setAppUpdateStatus(message) {
   const status = document.getElementById('appUpdateStatus');
@@ -70,3 +70,4 @@ async function checkForAppUpdate() {
 
 const appVersionLabel = document.getElementById('appVersionLabel');
 if (appVersionLabel) appVersionLabel.textContent = '当前版本 ' + APP_VERSION;
+
