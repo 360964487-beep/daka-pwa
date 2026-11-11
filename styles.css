@@ -784,7 +784,7 @@ input::placeholder,textarea::placeholder { color:var(--ui-muted); opacity:1; }
 .checkin-tabs.editing-categories .checkin-category-item > .vt-btn { outline:1px dashed color-mix(in srgb,var(--ui-accent) 55%,transparent); outline-offset:-2px; }
 .checkin-category-remove { position:absolute; z-index:2; top:-4px; right:-3px; min-width:20px; height:20px; padding:0 4px; border:0; border-radius:999px; background:var(--ui-accent); color:var(--ui-on-accent); font:700 13px/20px sans-serif; cursor:pointer; }
 .checkin-category-remove[aria-label^="确认删除"] { width:auto; padding:0 7px; font-size:10px; }
-.checkin-category-name-input { width:100%; min-width:0; padding:2px 3px; border:0; border-bottom:1px solid var(--ui-accent); outline:none; background:transparent; color:var(--ui-ink); text-align:center; font:inherit; }
+.checkin-category-name-input { position:absolute; inset:0; z-index:3; box-sizing:border-box; width:100%; min-width:0; padding:2px 20px 2px 3px; border:1px solid var(--ui-accent); border-radius:9px; outline:none; background:var(--ui-surface); color:var(--ui-ink); text-align:center; font:inherit; }
 .checkin-category-actions { grid-column:1 / -1; display:flex; justify-content:flex-end; gap:8px; padding:4px 2px 0; }
 .checkin-category-actions button { border:0; background:transparent; color:var(--ui-muted); font:inherit; font-size:12px; padding:5px 9px; cursor:pointer; }
 .checkin-category-actions .checkin-category-add { color:var(--ui-accent-ink); font-weight:650; }
