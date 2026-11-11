@@ -103,6 +103,16 @@
   }
   .tile.done { opacity: .55; filter: saturate(.6); }
   .tile.done .tile-check { opacity:1; transform:scale(1); }
+  .tile-drag-handle {
+    position:absolute; top:3px; left:3px; z-index:4; width:28px; height:28px; padding:7px;
+    display:flex; align-items:center; justify-content:center; border:0; border-radius:8px;
+    color:var(--ui-ink); background:color-mix(in srgb,var(--ui-surface) 72%,transparent);
+    opacity:.68; cursor:grab; touch-action:none; -webkit-tap-highlight-color:transparent;
+  }
+  .tile-drag-handle svg { width:12px; height:16px; fill:currentColor; pointer-events:none; }
+  .tile-drag-handle:active { opacity:1; cursor:grabbing; }
+  .tile.is-dragging { z-index:30!important; opacity:.98!important; filter:none!important; box-shadow:0 14px 30px color-mix(in srgb,var(--ui-ink) 24%,transparent); transition:none!important; }
+  .tile.is-dragging .tile-drag-handle { opacity:1; }
   .tile.balloon { box-shadow: 0 3px 10px rgba(16,24,40,.14); }
   /* 时间签：块内第一行，占据真实空间，文字排在下方，结构上不重叠 */
   .tile .tile-time {

@@ -682,6 +682,10 @@ function getData(scope) {
 function setData(scope, tasks) {
   const storeKey = scope === 'week' ? KEY_WEEK : KEY_DAY;
   const dataKey = scope === 'week' ? CHECKIN_OTHER_KEY : (checkinTab.startsWith('day-') ? checkinTab.slice(4) : checkinDayKey(currentDayDate));
+  if (tasks.some(task => Number.isFinite(task.manualOrder))) {
+    let nextOrder = Math.max(...tasks.filter(task => Number.isFinite(task.manualOrder)).map(task => task.manualOrder)) + 1;
+    tasks.forEach(task => { if (!Number.isFinite(task.manualOrder)) task.manualOrder = nextOrder++; });
+  }
   const all = load(storeKey, {});
   all[dataKey] = tasks; save(storeKey, all);
 }
