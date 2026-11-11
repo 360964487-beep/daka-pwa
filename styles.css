@@ -779,6 +779,7 @@ input::placeholder,textarea::placeholder { color:var(--ui-muted); opacity:1; }
 .checkin-tabs-row.weekend-row { grid-template-columns:repeat(3,minmax(0,1fr)); margin:0; }
 .checkin-tabs .vt-btn { font-size:12px; padding:10px 0; min-width:0; min-height:44px; border:0; color:var(--ui-ink); }
 .checkin-tabs .vt-btn.active { background:var(--ui-accent); color:var(--ui-on-accent); box-shadow:none; }
+.checkin-category-manage { grid-column:1 / -1; justify-self:end; border:0; background:transparent; color:var(--ui-muted); font:inherit; font-size:12px; padding:5px 9px; cursor:pointer; }
 .board-wrap { width:100%; max-width:520px; margin-inline:auto; }
 .board { aspect-ratio:16/21; border:0; border-radius:16px; background:var(--ui-surface); box-shadow:none; }
 .board-hint { color:var(--ui-muted); font-size:14px; }
@@ -1053,3 +1054,4 @@ body[data-theme="monochrome"] .app-update-card { border-color:#dededb; }
 .bill-reorder-btn:focus-visible { outline:2px solid var(--ui-focus); outline-offset:-2px; }
 .sr-only { position:absolute!important; width:1px!important; height:1px!important; padding:0!important; margin:-1px!important; overflow:hidden!important; clip:rect(0,0,0,0)!important; white-space:nowrap!important; border:0!important; }
 @media(prefers-reduced-motion:reduce) { .bill-reorder-btn { transition:none!important; } }
+
