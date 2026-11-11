@@ -1,4 +1,4 @@
-const APP_VERSION = 'v91';
+const APP_VERSION = 'v92';
 
 function setAppUpdateStatus(message) {
   const status = document.getElementById('appUpdateStatus');
