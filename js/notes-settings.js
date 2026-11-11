@@ -130,7 +130,7 @@ function editMineName(event) {
 }
 
 async function exportData() {
-  const data = { backupVersion:1, app:'焦糖打卡', exportedAt:new Date().toISOString(), KEY_WEEK, KEY_DAY, KEY_CAL, KEY_TT, profileName:load(KEY_PROFILE_NAME, '我的打卡'), week: load(KEY_WEEK, {}), day: load(KEY_DAY, {}), calendar: load(KEY_CAL, {}), tt: load(KEY_TT, {}), bill: load(KEY_BILL, []), pwd: load(KEY_PWD, []), fixed: load(KEY_FIXED, []), fixedIn: load(KEY_FIXED_IN, []), note: load(KEY_NOTE, []) };
+  const data = { backupVersion:1, app:'焦糖打卡', exportedAt:new Date().toISOString(), KEY_WEEK, KEY_DAY, KEY_CAL, KEY_TT, categories:getCheckinCategories(), profileName:load(KEY_PROFILE_NAME, '我的打卡'), week: load(KEY_WEEK, {}), day: load(KEY_DAY, {}), calendar: load(KEY_CAL, {}), tt: load(KEY_TT, {}), bill: load(KEY_BILL, []), pwd: load(KEY_PWD, []), fixed: load(KEY_FIXED, []), fixedIn: load(KEY_FIXED_IN, []), note: load(KEY_NOTE, []) };
   const contents = JSON.stringify(data, null, 2);
   const filename = '焦糖打卡' + dateKey(new Date()) + '.json';
   if (window.showSaveFilePicker) {
@@ -205,6 +205,7 @@ function importData() {
           [KEY_FIXED_IN, importField(data, 'fixedIn', KEY_FIXED_IN, 'array', '固定收入')],
           [KEY_NOTE, importField(data, 'note', KEY_NOTE, 'array', '小纸条')]
         ];
+        const importedCategories = Array.isArray(data.categories) && data.categories.length ? data.categories : DEFAULT_CHECKIN_CATEGORIES;
         if (own(data, 'profileName') && typeof data.profileName !== 'string') throw new Error('备份中的名称格式错误');
         for (const [key, value] of staged) {
           JSON.stringify(value);
@@ -217,6 +218,7 @@ function importData() {
         }
         if (!confirm('即将用备份覆盖本机的任务、账本、密钥和小纸条数据。建议先保存当前数据。确定导入吗？')) return;
 
+        staged.push([KEY_CHECKIN_CATEGORIES, importedCategories]);
         if (own(data, 'profileName')) staged.push([KEY_PROFILE_NAME, data.profileName]);
         const keys = staged.map(([key]) => key);
         const previous = new Map(keys.map(key => [key, storageOK ? localStorage.getItem(key) : null]));
@@ -242,14 +244,14 @@ function importData() {
         const importedWeek = staged.find(([key]) => key === KEY_WEEK)?.[1] || {};
         const importedDay = staged.find(([key]) => key === KEY_DAY)?.[1] || {};
         const importedTimetable = staged.find(([key]) => key === KEY_TT)?.[1] || {};
-        const dayNames = ['周一','周二','周三','周四','周五','周六','周日'];
+        const dayNames = importedCategories.map(c => c.name);
         const weekCount = (importedWeek[CHECKIN_OTHER_KEY] || []).length;
-        const dayCounts = dayNames.map((name, i) => (importedDay['weekday-' + i] || []).length);
+        const dayCounts = importedCategories.map(c => (importedDay[c.id] || []).length);
         const timetableCount = (importedTimetable[CHECKIN_OTHER_KEY] || []).length;
         if (weekCount || dayCounts.some(Boolean) || timetableCount) {
           if (weekCount || timetableCount) goPage('week');
           else {
-            checkinTab = 'day-' + dayCounts.findIndex(Boolean);
+            checkinTab = 'day-' + importedCategories[dayCounts.findIndex(Boolean)].id;
             goPage('checkin');
           }
           renderMine();
@@ -284,3 +286,4 @@ function clearAllData() {
   save(KEY_NOTE, []);
   refreshVisiblePage();
 }
+
