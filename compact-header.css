@@ -585,7 +585,7 @@ body[data-bill-type="income"] {
   #week:not(.hidden),
   #day:not(.hidden) {
     display: grid;
-    grid-template-columns: minmax(0, 1fr) 44px;
+    grid-template-columns: minmax(0, 1fr) 52px;
     column-gap: 8px;
     align-content: start;
   }
@@ -597,7 +597,7 @@ body[data-bill-type="income"] {
     grid-row: 2;
     display: flex;
     flex-direction: column;
-    width: 44px;
+    width: 52px;
     max-width: none;
     gap: 6px;
     align-self: start;
@@ -615,7 +615,7 @@ body[data-bill-type="income"] {
   }
   #week > .checkin-tabs .vt-btn,
   #day > .checkin-tabs .vt-btn {
-    width: 44px;
+    width: 52px;
     min-width: 0;
     min-height: 44px;
     padding: 7px 2px;
@@ -679,35 +679,38 @@ body[data-bill-type="income"] {
 
 
 
-/* Stretch the weekday rail to the board height and distribute all choices evenly. */
-@media (min-width: 600px) {
-  #week > .checkin-tabs,
-  #day > .checkin-tabs { align-self: stretch; }
-}
-@media (max-width: 599px) {
-  #week > .checkin-tabs,
-  #day > .checkin-tabs { align-self: stretch; }
-}
-#week > .checkin-tabs .weekday-row,
-#day > .checkin-tabs .weekday-row {
-  flex: 5 1 0;
-  grid-template-rows: repeat(5, minmax(0, 1fr));
-  min-height: 0;
-}
-#week > .checkin-tabs .weekend-row,
-#day > .checkin-tabs .weekend-row {
-  flex: 3 1 0;
-  grid-template-rows: repeat(3, minmax(0, 1fr));
-  min-height: 0;
+/* Check-in workspace: the board owns the space; category controls stay compact. */
+#week > .checkin-tabs,
+#day > .checkin-tabs {
+  align-self: start;
+  justify-self: end;
+  gap: 8px;
 }
 #week > .checkin-tabs .checkin-tabs-row,
-#day > .checkin-tabs .checkin-tabs-row {
+#day > .checkin-tabs .checkin-tabs-row,
+#week > .checkin-tabs .checkin-tabs-row.weekend-row,
+#day > .checkin-tabs .checkin-tabs-row.weekend-row {
+  display: grid;
   grid-template-columns: minmax(0, 1fr);
+  grid-template-rows: none;
+  grid-auto-rows: 46px;
+  align-content: start;
+  gap: 6px;
+  flex: none;
+  min-height: 0;
 }
 #week > .checkin-tabs .checkin-tabs-row .vt-btn,
 #day > .checkin-tabs .checkin-tabs-row .vt-btn {
-  min-height: 0;
-  height: 100%;
+  box-sizing: border-box;
+  width: 100%;
+  height: 46px;
+  min-height: 46px;
+  padding: 0 3px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  border-radius: 11px;
+  line-height: 1.2;
 }
 
 
