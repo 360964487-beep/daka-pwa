@@ -121,29 +121,45 @@ function moveCheckinCategory(event) {
   if(!drag.moved&&Math.hypot(dx,dy)<8)return;
   if(!drag.moved){drag.moved=true;cancelCheckinCategoryHold();suppressCheckinCategoryClick=true;drag.button.classList.add('is-category-dragging');document.body.classList.add('is-reordering-checkin-categories');}
   event.preventDefault();
+  drag.button.style.transform='translate3d('+dx+'px,'+dy+'px,0) scale(1.045)';
   document.querySelectorAll('.checkin-category-item').forEach(item=>item.classList.remove('drop-target'));
   const target=document.elementFromPoint(event.clientX,event.clientY)?.closest('.checkin-category-item');
   if(target&&target!==drag.button.parentElement)target.classList.add('drop-target');
 }
 function finishCheckinCategoryDrag(event,cancelled=false) {
   const drag=checkinCategoryDrag; if(!drag)return;
+  const targetItem=drag.moved&&event?document.elementFromPoint(event.clientX,event.clientY)?.closest('.checkin-category-item'):null;
+  const targetButton=targetItem?.querySelector('[data-checkin^="day-"]');
+  const before=new Map();
+  if(drag.moved&&!cancelled&&targetButton&&targetButton!==drag.button) {
+    document.querySelectorAll('.checkin-module-tab').forEach(button=>before.set(button.dataset.checkin,button.getBoundingClientRect()));
+  }
   checkinCategoryDrag=null; cancelCheckinCategoryHold();
   drag.button.onpointermove=null; drag.button.onpointerup=null; drag.button.onpointercancel=null;
   drag.button.classList.remove('is-category-dragging'); document.body.classList.remove('is-reordering-checkin-categories');
   document.querySelectorAll('.checkin-category-item').forEach(item=>item.classList.remove('drop-target'));
-  if(!drag.moved||cancelled||!event)return;
-  const target=document.elementFromPoint(event.clientX,event.clientY)?.closest('.checkin-category-item');
-  const targetButton=target?.querySelector('[data-checkin^="day-"]');
-  if(!targetButton||targetButton===drag.button){setTimeout(()=>{suppressCheckinCategoryClick=false;},0);return;}
+  if(!drag.moved||cancelled||!event){drag.button.style.transform=''; return;}
+  if(!targetButton||targetButton===drag.button){
+    drag.button.style.transition='transform 220ms cubic-bezier(.2,.8,.2,1)'; drag.button.style.transform='';
+    setTimeout(()=>{drag.button.style.transition='';suppressCheckinCategoryClick=false;},230); return;
+  }
   const categories=getCheckinCategories();
   const from=categories.findIndex(item=>item.id===drag.id),to=categories.findIndex(item=>'day-'+item.id===targetButton.dataset.checkin);
-  if(from<0||to<0){setTimeout(()=>{suppressCheckinCategoryClick=false;},0);return;}
+  if(from<0||to<0){drag.button.style.transform='';setTimeout(()=>{suppressCheckinCategoryClick=false;},0);return;}
   const rect=targetButton.getBoundingClientRect();
   const sourceRow=drag.button.closest('.checkin-tabs-row'),targetRow=targetButton.closest('.checkin-tabs-row');
   const after=sourceRow!==targetRow?event.clientY>rect.top+rect.height/2:event.clientX>rect.left+rect.width/2;
   const [moved]=categories.splice(from,1); let insertAt=to+(after?1:0); if(from<insertAt)insertAt--;
   categories.splice(Math.max(0,Math.min(categories.length,insertAt)),0,moved);
+  drag.button.style.transform='';
   save(KEY_CHECKIN_CATEGORIES,categories); renderCheckinCategoryTabs();
+  if(!matchMedia('(prefers-reduced-motion: reduce)').matches) {
+    document.querySelectorAll('.checkin-module-tab').forEach(button=>{
+      const oldRect=before.get(button.dataset.checkin); if(!oldRect)return;
+      const rect=button.getBoundingClientRect(),dx=oldRect.left-rect.left,dy=oldRect.top-rect.top;
+      if(Math.abs(dx)+Math.abs(dy)>1)button.animate([{transform:'translate3d('+dx+'px,'+dy+'px,0)'},{transform:'translate3d(0,0,0)'}],{duration:320,easing:'cubic-bezier(.22,.8,.2,1)'});
+    });
+  }
   setTimeout(()=>{suppressCheckinCategoryClick=false;},0);
 }
 function cancelCheckinCategoryHold() {

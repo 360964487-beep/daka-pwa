@@ -787,7 +787,7 @@ input::placeholder,textarea::placeholder { color:var(--ui-muted); opacity:1; }
 .checkin-module-name { min-width:0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
 .checkin-module-grip { flex:none; margin-left:3px; color:var(--ui-muted); font-size:15px; line-height:1; opacity:.65; }
 .checkin-module-tab:active { cursor:grabbing; }
-.checkin-module-tab.is-category-dragging { position:relative; z-index:20; opacity:.72; transform:scale(1.04); box-shadow:0 8px 20px color-mix(in srgb,var(--ui-ink) 18%,transparent); }
+.checkin-module-tab.is-category-dragging { position:relative; z-index:20; opacity:.9; pointer-events:none; box-shadow:0 10px 24px color-mix(in srgb,var(--ui-ink) 22%,transparent); will-change:transform; transition:none!important; }
 .checkin-category-item.drop-target { outline:2px solid var(--ui-accent); outline-offset:1px; border-radius:9px; }
 .is-reordering-checkin-categories,.is-reordering-checkin-categories * { user-select:none!important; -webkit-user-select:none!important; }
 .checkin-tabs .checkin-category-add { flex:0 0 38px; justify-self:center; align-self:center; width:38px; min-height:38px; padding:0; border:0; border-radius:50%; background:var(--ui-raised); color:var(--ui-accent-ink); font-size:23px; line-height:1; font-weight:500; }
