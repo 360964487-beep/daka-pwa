@@ -999,3 +999,95 @@ body[data-bill-type="income"] {
   .checkin-category-backdrop,.checkin-category-editor { animation: none; }
 }
 
+
+/* Keep the category editor independent from the narrow weekday rail. */
+.checkin-category-backdrop {
+  position: fixed !important;
+  inset: 0 !important;
+  z-index: 2000 !important;
+  display: grid !important;
+  place-items: center !important;
+  box-sizing: border-box;
+  width: 100vw;
+  min-height: 100vh;
+  min-height: 100dvh;
+  padding: max(16px, env(safe-area-inset-top)) max(16px, env(safe-area-inset-right)) max(16px, env(safe-area-inset-bottom)) max(16px, env(safe-area-inset-left));
+}
+.checkin-category-backdrop > .checkin-category-editor {
+  position: relative !important;
+  inset: auto !important;
+  display: grid !important;
+  grid-template-columns: minmax(0, 1fr) auto auto !important;
+  gap: 12px 8px !important;
+  width: min(420px, calc(100vw - 32px)) !important;
+  min-width: 0 !important;
+  max-width: 100% !important;
+  height: auto !important;
+  max-height: calc(100dvh - 32px) !important;
+  overflow: auto;
+  box-sizing: border-box;
+  margin: auto !important;
+  padding: clamp(20px, 6vw, 28px) !important;
+  border: 1px solid var(--ui-border);
+  border-radius: 22px !important;
+  background: var(--ui-surface) !important;
+  box-shadow: 0 24px 70px color-mix(in srgb, var(--ui-ink) 24%, transparent) !important;
+}
+.checkin-category-backdrop > .checkin-category-editor > label,
+.checkin-category-backdrop > .checkin-category-editor > input,
+.checkin-category-backdrop > .checkin-category-editor > .checkin-category-editor-error {
+  grid-column: 1 / -1 !important;
+}
+.checkin-category-backdrop > .checkin-category-editor > label {
+  margin: 0 0 2px;
+  color: var(--ui-ink);
+  font-size: 18px;
+  font-weight: 750;
+}
+.checkin-category-backdrop > .checkin-category-editor > input {
+  display: block;
+  width: 100% !important;
+  min-width: 0 !important;
+  height: 52px !important;
+  box-sizing: border-box;
+  padding: 0 15px !important;
+  border: 1px solid var(--ui-border) !important;
+  border-radius: 13px !important;
+  background: var(--ui-page) !important;
+  color: var(--ui-ink) !important;
+  font: inherit;
+  font-size: 16px !important;
+}
+.checkin-category-backdrop > .checkin-category-editor > input:focus-visible {
+  outline: 3px solid color-mix(in srgb, var(--ui-accent) 28%, transparent);
+  outline-offset: 1px;
+}
+.checkin-category-backdrop > .checkin-category-editor > .checkin-category-editor-error {
+  color: var(--ui-danger, var(--ui-accent-ink));
+  font-size: 13px;
+  line-height: 1.4;
+}
+.checkin-category-backdrop > .checkin-category-editor > button {
+  min-width: 84px !important;
+  min-height: 46px !important;
+  padding: 0 16px !important;
+  border-radius: 12px !important;
+  font-size: 14px !important;
+  font-weight: 700;
+}
+.checkin-category-backdrop > .checkin-category-editor > button:first-of-type {
+  grid-column: 2 !important;
+  justify-self: stretch !important;
+}
+.checkin-category-backdrop > .checkin-category-editor > button.secondary {
+  grid-column: 3 !important;
+}
+@media (max-width: 420px) {
+  .checkin-category-backdrop { place-items: center !important; }
+  .checkin-category-backdrop > .checkin-category-editor {
+    width: min(360px, calc(100vw - 32px)) !important;
+    max-height: calc(100dvh - 32px) !important;
+    padding: 22px 18px !important;
+  }
+}
+
