@@ -150,17 +150,22 @@ function beginCheckinCategoryRename(id,tabs) {
   openCheckinCategoryEditor(tabs,{mode:'rename',id,name:category.name});
 }
 function openCheckinCategoryEditor(tabs,{mode='add',id=null,name=''}={}) {
-  if(!tabs||tabs.querySelector('.checkin-category-editor'))return;
-  const editor=document.createElement('div'); editor.className='checkin-category-editor';
-  const label=document.createElement('label'); label.textContent=mode==='rename'?'修改模块名称':'新建任务模块';
+  if(!tabs||document.querySelector('.checkin-category-backdrop'))return;
+  const backdrop=document.createElement('div'); backdrop.className='checkin-category-backdrop';
+  const editor=document.createElement('section'); editor.className='checkin-category-editor';
+  editor.setAttribute('role','dialog'); editor.setAttribute('aria-modal','true');
+  const label=document.createElement('label'); label.id='checkin-category-title-'+Date.now().toString(36); label.textContent=mode==='rename'?'修改模块名称':'新建任务模块';
+  editor.setAttribute('aria-labelledby',label.id);
   const input=document.createElement('input'); input.type='text'; input.maxLength=20;
   input.value=name; input.placeholder='输入 1–20 个字'; input.autocomplete='off'; input.spellcheck=false;
   const error=document.createElement('div'); error.id='checkin-category-editor-error-'+Date.now().toString(36)+Math.random().toString(36).slice(2,6); error.className='checkin-category-editor-error'; error.setAttribute('role','status'); error.setAttribute('aria-live','polite');
   input.setAttribute('aria-label',label.textContent); input.setAttribute('aria-describedby',error.id);
   const saveButton=document.createElement('button'); saveButton.type='button'; saveButton.textContent=mode==='rename'?'保存':'添加';
   const cancelButton=document.createElement('button'); cancelButton.type='button'; cancelButton.className='secondary'; cancelButton.textContent='取消';
-  editor.append(label,input,error,saveButton,cancelButton); tabs.appendChild(editor);
-  const close=()=>editor.remove(); cancelButton.onclick=close;
+  editor.append(label,input,error,saveButton,cancelButton); backdrop.appendChild(editor); document.body.appendChild(backdrop);
+  const close=()=>{backdrop.remove();if(tabs.isConnected){const focusTarget=mode==='rename'?tabs.querySelector('[data-checkin="day-'+id+'"]'):tabs.querySelector('.checkin-category-add');focusTarget?.focus();}};
+  cancelButton.onclick=close;
+  backdrop.addEventListener('pointerdown',event=>{if(event.target===backdrop)close();});
   const normalized=value=>value.trim().normalize('NFC').toLocaleLowerCase();
   const saveCategory=()=>{
     const nextName=input.value.trim();
